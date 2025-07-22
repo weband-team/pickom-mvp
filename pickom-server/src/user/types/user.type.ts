@@ -29,7 +29,7 @@ export class User {
   @ApiProperty({
     description: 'Роль пользователя в системе',
     example: 'picker',
-    enum: ['picker', 'admin', 'moderator'],
+    enum: ['picker', 'sender', 'moderator'],
   })
   role: string;
 

@@ -2,20 +2,19 @@ import {
   BadRequestException,
   Controller,
   Get,
-  Ip,
   Logger,
   Post,
   Req,
   Res,
   UseGuards,
   Headers,
+  Body,
 } from '@nestjs/common';
 import { Response, Request } from 'express';
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
-  ApiBearerAuth,
   ApiCookieAuth,
   ApiHeader,
   ApiBadRequestResponse,
@@ -24,7 +23,7 @@ import {
 import { FirebaseAuthGuard, FirebaseAuthGuardMe, ReqWithUser } from './guards/firebase-auth.guard';
 import { admin } from './firebase-admin.module';
 import { AuthService } from './auth.service';
-import { LoginResponseDto } from './dto/login.dto';
+import { LoginBodyDto, LoginResponseDto } from './dto/login.dto';
 import { MeResponseDto, LogoutResponseDto, ErrorResponseDto } from './dto/auth-response.dto';
 
 @ApiTags('auth')
@@ -59,7 +58,8 @@ export class AuthController {
   public async login(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
-    @Headers('authorization') authorization?: string
+    @Headers('authorization') authorization?: string,
+    @Body() body?: LoginBodyDto,
   ) {
     try {
       console.log('🔥 Login request received');
@@ -68,7 +68,7 @@ export class AuthController {
         throw new BadRequestException('Authorization token is missing');
       }
 
-      const { userInfo } = await this.authService.verifyAndUpsertUser(accessToken);
+      const { userInfo } = await this.authService.verifyAndUpsertUser(accessToken, body?.role);
       const { sessionCookie, expiresIn } = await this.authService.createSessionCookie(accessToken);
       const { emailVerified } = await admin.auth().getUser(userInfo.uid);
 

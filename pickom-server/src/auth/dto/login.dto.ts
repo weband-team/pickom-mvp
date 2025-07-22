@@ -8,6 +8,10 @@ export class LoginDto {
     authorization: string;
 }
 
+export class LoginBodyDto {
+    role?: string;
+}
+
 export class LoginResponseDto {
     @ApiProperty({
         description: 'Уникальный идентификатор пользователя',

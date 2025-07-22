@@ -14,6 +14,7 @@ export class AuthService {
 
   public async verifyAndUpsertUser(
     accessToken: string,
+    role?: string,
   ): Promise<{
     decodedToken: DecodedIdToken;
     userInfo: User;
@@ -29,6 +30,7 @@ export class AuthService {
         prevLoginAt: new Date(),
         avatarUrl: avatar,
         createdAt: new Date(),
+        role: role ?? 'sender',
       });
     } else {
       userInfo = await this.userService.update(userInfo.uid, {
