@@ -2,15 +2,113 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
 import PhoneWrapper from '../components/PhoneWrapper';
 import BottomNavigation from '../components/BottomNavigation';
+import LocationInput from '../components/LocationInput';
+import Toast from '../components/Toast';
+
+interface FormData {
+    pickupLocation: string;
+    dropoffLocation: string;
+    pickupDetails?: google.maps.places.PlaceResult;
+    dropoffDetails?: google.maps.places.PlaceResult;
+}
+
+interface FormErrors {
+    pickupLocation?: string;
+    dropoffLocation?: string;
+}
 
 export default function SendPackagePage() {
     const [selectedType, setSelectedType] = useState('Within City');
+    const [formData, setFormData] = useState<FormData>({
+        pickupLocation: '',
+        dropoffLocation: '',
+    });
+    const [errors, setErrors] = useState<FormErrors>({});
+    const [isLoading, setIsLoading] = useState(false);
+    const router = useRouter();
+
+    const validateForm = (): boolean => {
+        const newErrors: FormErrors = {};
+
+        if (!formData.pickupLocation.trim()) {
+            newErrors.pickupLocation = 'Pickup location is required';
+        }
+
+        if (!formData.dropoffLocation.trim()) {
+            newErrors.dropoffLocation = 'Drop-off location is required';
+        }
+
+        if (formData.pickupLocation.trim() === formData.dropoffLocation.trim()) {
+            newErrors.dropoffLocation = 'Drop-off location must be different from pickup location';
+        }
+
+        setErrors(newErrors);
+
+        if (Object.keys(newErrors).length > 0) {
+            // Show error toast
+            const firstError = Object.values(newErrors)[0];
+            toast.error(firstError);
+            return false;
+        }
+
+        return true;
+    };
+
+    const handleContinue = async () => {
+        if (!validateForm()) {
+            return;
+        }
+
+        setIsLoading(true);
+
+        // Simulate API call
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
+        setIsLoading(false);
+        toast.success('Locations validated successfully!');
+
+        // Navigate to next page
+        setTimeout(() => {
+            router.push('/select-traveler');
+        }, 500);
+    };
+
+    const handleLocationChange = (field: 'pickupLocation' | 'dropoffLocation') =>
+        (value: string, placeDetails?: google.maps.places.PlaceResult) => {
+            setFormData(prev => ({
+                ...prev,
+                [field]: value,
+                [`${field.replace('Location', 'Details')}`]: placeDetails
+            }));
+
+            // Clear error when user starts typing
+            if (errors[field]) {
+                setErrors(prev => ({
+                    ...prev,
+                    [field]: undefined
+                }));
+            }
+        };
 
     return (
         <PhoneWrapper>
             <div className="page">
+                <Toast />
+
+                {/* Loading overlay */}
+                {isLoading && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                        <div className="bg-gray-900 rounded-xl p-8 flex flex-col items-center">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
+                            <p className="text-white text-lg font-medium">Finding the best routes...</p>
+                        </div>
+                    </div>
+                )}
+
                 {/* Status Bar */}
                 <div className="status-bar">
                     <span>9:41</span>
@@ -53,28 +151,30 @@ export default function SendPackagePage() {
                     </div>
 
                     <div className="space-y-6 pb-safe">
-                        <div className="form-group">
-                            <label className="form-label">Pickup Location</label>
-                            <input
-                                type="text"
-                                className="form-input"
-                                placeholder=""
-                            />
-                        </div>
+                        <LocationInput
+                            label="Pickup Location"
+                            value={formData.pickupLocation}
+                            onChange={handleLocationChange('pickupLocation')}
+                            placeholder="Enter pickup address..."
+                            error={errors.pickupLocation}
+                        />
 
-                        <div className="form-group">
-                            <label className="form-label">Drop-off Location</label>
-                            <input
-                                type="text"
-                                className="form-input"
-                                placeholder=""
-                            />
-                        </div>
+                        <LocationInput
+                            label="Drop-off Location"
+                            value={formData.dropoffLocation}
+                            onChange={handleLocationChange('dropoffLocation')}
+                            placeholder="Enter drop-off address..."
+                            error={errors.dropoffLocation}
+                        />
 
                         <div style={{ marginTop: '40px' }}>
-                            <Link href="/select-traveler" className="btn-primary">
-                                Continue
-                            </Link>
+                            <button
+                                onClick={handleContinue}
+                                className="btn-primary"
+                                disabled={isLoading}
+                            >
+                                {isLoading ? 'Processing...' : 'Continue'}
+                            </button>
                         </div>
                     </div>
                 </div>

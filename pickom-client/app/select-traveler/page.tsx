@@ -1,32 +1,65 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import PhoneWrapper from '../components/PhoneWrapper';
 
+interface Traveler {
+    id: number;
+    name: string;
+    time: string;
+    price: string;
+    trust: string;
+    rating: number;
+    deliveries: number;
+    route: string;
+    avatar: string;
+}
+
+// Generate 50 travelers
+const generateTravelers = (): Traveler[] => {
+    const firstNames = ['Michael', 'Anna', 'John', 'Ewa', 'David', 'Maria', 'Robert', 'Katarzyna', 'James', 'Agnieszka', 'Thomas', 'Magdalena', 'Daniel', 'Joanna', 'Matthew', 'Barbara', 'Christopher', 'Monika', 'Andrew', 'Paulina'];
+    const lastNames = ['K.', 'S.', 'A.', 'W.', 'B.', 'M.', 'L.', 'N.', 'P.', 'T.', 'R.', 'G.', 'H.', 'C.', 'D.', 'F.', 'J.', 'Z.', 'O.', 'V.'];
+    const routes = ['Pickup to Drop-off', 'Direct Route', 'Via City Center', 'Express Route', 'Scenic Route'];
+
+    return Array.from({ length: 50 }, (_, i) => ({
+        id: i + 1,
+        name: `${firstNames[i % firstNames.length]} ${lastNames[i % lastNames.length]}`,
+        time: `${30 + Math.floor(Math.random() * 90)} min`,
+        price: `${20 + Math.floor(Math.random() * 30)} zł`,
+        trust: `${85 + Math.floor(Math.random() * 15)}%`,
+        rating: 3.5 + Math.random() * 1.5,
+        deliveries: 10 + Math.floor(Math.random() * 500),
+        route: routes[i % routes.length],
+        avatar: firstNames[i % firstNames.length].charAt(0) + lastNames[i % lastNames.length].charAt(0)
+    }));
+};
+
 export default function SelectTravelerPage() {
-    const travelers = [
-        {
-            id: 1,
-            name: 'Michael K.',
-            time: '50 min',
-            price: '30 zł',
-            trust: '96%',
-        },
-        {
-            id: 2,
-            name: 'Ewa S.',
-            time: '55 min',
-            price: '35 zł',
-            trust: '92%',
-        },
-        {
-            id: 3,
-            name: 'John A.',
-            time: '1 hr 5 min',
-            price: '28 zł',
-            trust: '88%',
+    const [currentPage, setCurrentPage] = useState(1);
+    const [travelers] = useState<Traveler[]>(generateTravelers());
+    const itemsPerPage = 10;
+
+    const totalPages = Math.ceil(travelers.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const currentTravelers = travelers.slice(startIndex, endIndex);
+
+    const goToPage = (page: number) => {
+        setCurrentPage(page);
+    };
+
+    const nextPage = () => {
+        if (currentPage < totalPages) {
+            setCurrentPage(currentPage + 1);
         }
-    ];
+    };
+
+    const prevPage = () => {
+        if (currentPage > 1) {
+            setCurrentPage(currentPage - 1);
+        }
+    };
 
     return (
         <PhoneWrapper>
@@ -60,26 +93,34 @@ export default function SelectTravelerPage() {
                         <h2 className="title-section">Select a Picker</h2>
                     </div>
 
-                    <div style={{ marginBottom: '16px', paddingLeft: '0' }}>
-                        <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#fff' }}>Best Match</h3>
+                    <div style={{ marginBottom: '16px', paddingLeft: '0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#fff' }}>
+                            Best Match ({travelers.length} available)
+                        </h3>
+                        <div style={{ fontSize: '14px', color: '#999' }}>
+                            Page {currentPage} of {totalPages}
+                        </div>
                     </div>
 
                     <div className="space-y-4 pb-safe">
-                        {travelers.map((traveler, index) => (
+                        {currentTravelers.map((traveler) => (
                             <div key={traveler.id} className="picker-item">
                                 <div className="picker-avatar">
-                                    {traveler.name.charAt(0)}
+                                    {traveler.avatar}
                                 </div>
 
                                 <div className="picker-info">
                                     <div className="picker-name">{traveler.name}</div>
-                                    <div className="picker-route">Pickup to Drop-off</div>
+                                    <div className="picker-route">{traveler.route}</div>
                                     <div className="picker-trust">
-                                        <div style={{ width: '8px', height: '8px', background: '#4ade80', borderRadius: '50%' }}></div>
-                                        Trust: {traveler.trust}
-                                        <button style={{ color: '#60a5fa', textDecoration: 'underline', background: 'none', border: 'none', fontSize: '12px', marginLeft: '8px' }}>
-                                            Chat
-                                        </button>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <div style={{ width: '8px', height: '8px', background: '#4ade80', borderRadius: '50%' }}></div>
+                                            <span>Trust: {traveler.trust}</span>
+                                            <span>•</span>
+                                            <span>★ {traveler.rating.toFixed(1)}</span>
+                                            <span>•</span>
+                                            <span>{traveler.deliveries} deliveries</span>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -92,6 +133,82 @@ export default function SelectTravelerPage() {
                                 </div>
                             </div>
                         ))}
+
+                        {/* Pagination */}
+                        <div style={{
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            gap: '12px',
+                            marginTop: '32px',
+                            paddingBottom: '20px'
+                        }}>
+                            <button
+                                onClick={prevPage}
+                                disabled={currentPage === 1}
+                                style={{
+                                    padding: '8px 16px',
+                                    background: currentPage === 1 ? '#374151' : '#4f46e5',
+                                    color: currentPage === 1 ? '#6b7280' : 'white',
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    fontSize: '14px',
+                                    cursor: currentPage === 1 ? 'not-allowed' : 'pointer'
+                                }}
+                            >
+                                Previous
+                            </button>
+
+                            <div style={{ display: 'flex', gap: '4px' }}>
+                                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                                    let pageNum;
+                                    if (totalPages <= 5) {
+                                        pageNum = i + 1;
+                                    } else if (currentPage <= 3) {
+                                        pageNum = i + 1;
+                                    } else if (currentPage >= totalPages - 2) {
+                                        pageNum = totalPages - 4 + i;
+                                    } else {
+                                        pageNum = currentPage - 2 + i;
+                                    }
+
+                                    return (
+                                        <button
+                                            key={pageNum}
+                                            onClick={() => goToPage(pageNum)}
+                                            style={{
+                                                padding: '8px 12px',
+                                                background: currentPage === pageNum ? '#4f46e5' : '#374151',
+                                                color: 'white',
+                                                border: 'none',
+                                                borderRadius: '6px',
+                                                fontSize: '14px',
+                                                cursor: 'pointer',
+                                                minWidth: '36px'
+                                            }}
+                                        >
+                                            {pageNum}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+
+                            <button
+                                onClick={nextPage}
+                                disabled={currentPage === totalPages}
+                                style={{
+                                    padding: '8px 16px',
+                                    background: currentPage === totalPages ? '#374151' : '#4f46e5',
+                                    color: currentPage === totalPages ? '#6b7280' : 'white',
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    fontSize: '14px',
+                                    cursor: currentPage === totalPages ? 'not-allowed' : 'pointer'
+                                }}
+                            >
+                                Next
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -1,9 +1,22 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import PhoneWrapper from '../components/PhoneWrapper';
 
 export default function ConfirmPaymentPage() {
+    const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('card');
+    const [isProcessing, setIsProcessing] = useState(false);
+
+    const handlePayment = async () => {
+        setIsProcessing(true);
+        // Simulate payment processing
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        setIsProcessing(false);
+        // Redirect to orders page
+        window.location.href = '/orders';
+    };
+
     return (
         <PhoneWrapper>
             <div className="page">
@@ -30,67 +43,260 @@ export default function ConfirmPaymentPage() {
 
                 {/* Content */}
                 <div className="content">
-                    <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+                    {/* Header */}
+                    <div style={{ textAlign: 'center', marginBottom: '32px' }}>
                         <h1 className="title-main">Pickom</h1>
                         <p className="subtitle">People-Powered Delivery</p>
 
-                        {/* Icon */}
-                        <div style={{ width: '64px', height: '64px', margin: '32px auto 24px' }}>
-                            <div style={{ width: '48px', height: '48px', background: '#ff8c00', borderRadius: '50%', margin: '0 auto 8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
-                                    <circle cx="12" cy="12" r="9" fill="white" />
-                                    <circle cx="9" cy="9" r="1" fill="#ff8c00" />
-                                    <circle cx="15" cy="9" r="1" fill="#ff8c00" />
-                                    <path d="M8 14 Q12 17 16 14" stroke="#ff8c00" strokeWidth="1" fill="none" />
-                                </svg>
-                            </div>
-                            <div style={{ width: '32px', height: '32px', background: '#333', borderRadius: '8px', margin: '0 auto' }}></div>
+                        {/* Success Icon */}
+                        <div style={{
+                            width: '80px',
+                            height: '80px',
+                            margin: '24px auto',
+                            background: 'linear-gradient(135deg, #10b981, #059669)',
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            boxShadow: '0 8px 32px rgba(16, 185, 129, 0.3)'
+                        }}>
+                            <svg width="40" height="40" viewBox="0 0 24 24" fill="white">
+                                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
                         </div>
 
                         <h2 className="title-section">Confirm & Pay</h2>
                     </div>
 
                     <div className="space-y-6 pb-safe">
+                        {/* Route Summary */}
+                        <div style={{
+                            background: 'rgba(255, 255, 255, 0.05)',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            borderRadius: '16px',
+                            padding: '20px'
+                        }}>
+                            <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '16px', color: '#fff' }}>
+                                Delivery Details
+                            </h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    <div style={{
+                                        width: '12px',
+                                        height: '12px',
+                                        background: '#10b981',
+                                        borderRadius: '50%',
+                                        flexShrink: 0
+                                    }}></div>
+                                    <div>
+                                        <div style={{ fontSize: '14px', color: '#999' }}>Pickup</div>
+                                        <div style={{ fontSize: '16px', color: '#fff' }}>Warsaw Central Station</div>
+                                    </div>
+                                </div>
+                                <div style={{
+                                    width: '1px',
+                                    height: '20px',
+                                    background: '#374151',
+                                    marginLeft: '5px'
+                                }}></div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    <div style={{
+                                        width: '12px',
+                                        height: '12px',
+                                        background: '#ef4444',
+                                        borderRadius: '50%',
+                                        flexShrink: 0
+                                    }}></div>
+                                    <div>
+                                        <div style={{ fontSize: '14px', color: '#999' }}>Drop-off</div>
+                                        <div style={{ fontSize: '16px', color: '#fff' }}>Krakow Main Square</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         {/* Traveler Info */}
-                        <div>
-                            <h3 style={{ fontSize: '18px', fontWeight: '500', marginBottom: '16px', color: '#999' }}>Traveler</h3>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                <div style={{ width: '48px', height: '48px', background: '#333', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: '600' }}>
+                        <div style={{
+                            background: 'rgba(255, 255, 255, 0.05)',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            borderRadius: '16px',
+                            padding: '20px'
+                        }}>
+                            <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '16px', color: '#fff' }}>
+                                Your Picker
+                            </h3>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                                <div style={{
+                                    width: '56px',
+                                    height: '56px',
+                                    background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                                    borderRadius: '50%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontSize: '20px',
+                                    fontWeight: '600',
+                                    color: 'white'
+                                }}>
                                     AK
                                 </div>
-                                <div>
-                                    <div style={{ fontSize: '18px', fontWeight: '600', marginBottom: '4px' }}>Anna K.</div>
-                                    <div style={{ fontSize: '14px', color: '#999' }}>En route, Tomorrow</div>
+                                <div style={{ flex: 1 }}>
+                                    <div style={{ fontSize: '18px', fontWeight: '600', marginBottom: '4px', color: '#fff' }}>Anna K.</div>
+                                    <div style={{ fontSize: '14px', color: '#999', marginBottom: '4px' }}>★ 4.8 • 127 deliveries</div>
+                                    <div style={{ fontSize: '14px', color: '#10b981' }}>En route • Tomorrow 2:00 PM</div>
                                 </div>
+                                <div style={{ textAlign: 'right' }}>
+                                    <div style={{ fontSize: '14px', color: '#999' }}>Estimated</div>
+                                    <div style={{ fontSize: '16px', fontWeight: '600', color: '#fff' }}>45 min</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Payment Method */}
+                        <div style={{
+                            background: 'rgba(255, 255, 255, 0.05)',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            borderRadius: '16px',
+                            padding: '20px'
+                        }}>
+                            <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '16px', color: '#fff' }}>
+                                Payment Method
+                            </h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                {[
+                                    { id: 'card', label: 'Credit Card', icon: '💳', details: '**** **** **** 1234' },
+                                    { id: 'paypal', label: 'PayPal', icon: '🅿️', details: 'anna@example.com' },
+                                    { id: 'apple', label: 'Apple Pay', icon: '🍎', details: 'Touch ID' }
+                                ].map((method) => (
+                                    <button
+                                        key={method.id}
+                                        onClick={() => setSelectedPaymentMethod(method.id)}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '12px',
+                                            padding: '16px',
+                                            background: selectedPaymentMethod === method.id ? 'rgba(99, 102, 241, 0.2)' : 'transparent',
+                                            border: selectedPaymentMethod === method.id ? '2px solid #6366f1' : '1px solid rgba(255, 255, 255, 0.1)',
+                                            borderRadius: '12px',
+                                            width: '100%',
+                                            textAlign: 'left',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s'
+                                        }}
+                                    >
+                                        <span style={{ fontSize: '20px' }}>{method.icon}</span>
+                                        <div style={{ flex: 1 }}>
+                                            <div style={{ fontSize: '16px', fontWeight: '500', color: '#fff' }}>{method.label}</div>
+                                            <div style={{ fontSize: '14px', color: '#999' }}>{method.details}</div>
+                                        </div>
+                                        <div style={{
+                                            width: '20px',
+                                            height: '20px',
+                                            borderRadius: '50%',
+                                            border: selectedPaymentMethod === method.id ? '6px solid #6366f1' : '2px solid #374151',
+                                            background: selectedPaymentMethod === method.id ? '#fff' : 'transparent'
+                                        }}></div>
+                                    </button>
+                                ))}
                             </div>
                         </div>
 
                         {/* Payment Breakdown */}
-                        <div className="space-y-4">
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span style={{ fontSize: '18px' }}>Total Price</span>
-                                <span style={{ fontSize: '18px', fontWeight: '600' }}>$25</span>
-                            </div>
-
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span style={{ color: '#999' }}>Pickom Commission (10%)</span>
-                                <span style={{ color: '#999' }}>$3</span>
-                            </div>
-
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #333', paddingTop: '16px' }}>
-                                <span style={{ fontSize: '18px' }}>To Traveler</span>
-                                <span style={{ fontSize: '18px', fontWeight: '600' }}>$22</span>
+                        <div style={{
+                            background: 'rgba(255, 255, 255, 0.05)',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            borderRadius: '16px',
+                            padding: '20px'
+                        }}>
+                            <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '16px', color: '#fff' }}>
+                                Payment Summary
+                            </h3>
+                            <div className="space-y-3">
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span style={{ fontSize: '16px', color: '#fff' }}>Delivery Fee</span>
+                                    <span style={{ fontSize: '16px', color: '#fff' }}>$22.00</span>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span style={{ color: '#999' }}>Service Fee</span>
+                                    <span style={{ color: '#999' }}>$2.00</span>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span style={{ color: '#999' }}>Pickom Fee (4%)</span>
+                                    <span style={{ color: '#999' }}>$1.00</span>
+                                </div>
+                                <div style={{
+                                    height: '1px',
+                                    background: 'rgba(255, 255, 255, 0.1)',
+                                    margin: '12px 0'
+                                }}></div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span style={{ fontSize: '18px', fontWeight: '600', color: '#fff' }}>Total</span>
+                                    <span style={{ fontSize: '18px', fontWeight: '600', color: '#10b981' }}>$25.00</span>
+                                </div>
                             </div>
                         </div>
 
                         {/* Pay Button */}
-                        <div style={{ paddingTop: '24px' }}>
-                            <Link href="/orders" className="btn-orange">
-                                Pay $25
-                            </Link>
+                        <div style={{ paddingTop: '8px' }}>
+                            <button
+                                onClick={handlePayment}
+                                disabled={isProcessing}
+                                style={{
+                                    width: '100%',
+                                    padding: '16px',
+                                    background: isProcessing ? '#374151' : 'linear-gradient(135deg, #f97316, #ea580c)',
+                                    color: '#fff',
+                                    border: 'none',
+                                    borderRadius: '16px',
+                                    fontSize: '18px',
+                                    fontWeight: '600',
+                                    cursor: isProcessing ? 'not-allowed' : 'pointer',
+                                    transition: 'all 0.2s',
+                                    boxShadow: isProcessing ? 'none' : '0 8px 32px rgba(249, 115, 22, 0.3)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '8px'
+                                }}
+                            >
+                                {isProcessing ? (
+                                    <>
+                                        <div style={{
+                                            width: '20px',
+                                            height: '20px',
+                                            border: '2px solid transparent',
+                                            borderTop: '2px solid #fff',
+                                            borderRadius: '50%',
+                                            animation: 'spin 1s linear infinite'
+                                        }}></div>
+                                        Processing...
+                                    </>
+                                ) : (
+                                    <>
+                                        🔒 Pay $25.00
+                                    </>
+                                )}
+                            </button>
+                        </div>
+
+                        <div style={{
+                            textAlign: 'center',
+                            fontSize: '12px',
+                            color: '#6b7280',
+                            marginTop: '16px'
+                        }}>
+                            🔒 Your payment is secured with 256-bit SSL encryption
                         </div>
                     </div>
                 </div>
+
+                <style jsx>{`
+                    @keyframes spin {
+                        0% { transform: rotate(0deg); }
+                        100% { transform: rotate(360deg); }
+                    }
+                `}</style>
             </div>
         </PhoneWrapper>
     );
