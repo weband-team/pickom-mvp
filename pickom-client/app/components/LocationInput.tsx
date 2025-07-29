@@ -12,65 +12,90 @@ interface LocationInputProps {
 }
 
 export default function LocationInput({ label, value, onChange, placeholder, error }: LocationInputProps) {
-    const [isMapModalOpen, setIsMapModalOpen] = useState(false);
-    const [suggestions, setSuggestions] = useState<google.maps.places.AutocompletePrediction[]>([]);
+    const [suggestions, setSuggestions] = useState<any[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-
-    const mapRef = useRef<HTMLDivElement>(null);
-    const autocompleteService = useRef<google.maps.places.AutocompleteService | null>(null);
-    const placesService = useRef<google.maps.places.PlacesService | null>(null);
-    const map = useRef<google.maps.Map | null>(null);
-    const marker = useRef<google.maps.Marker | null>(null);
+    const [isGoogleMapsLoaded, setIsGoogleMapsLoaded] = useState(false);
 
     // Initialize Google Maps services
     useEffect(() => {
         const initializeGoogleMaps = async () => {
             try {
                 const loader = new Loader({
-                    apiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || 'AIzaSyBHzlPOOQsJhR8XTg7HxVz-mdoOk5o-M4w', // Placeholder key
+                    apiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || 'AIzaSyBHzlPOOQsJhR8XTg7HxVz-mdoOk5o-M4w',
                     version: 'weekly',
-                    libraries: ['places', 'geometry']
+                    libraries: ['places']
                 });
 
                 await loader.load();
-
-                autocompleteService.current = new google.maps.places.AutocompleteService();
-
-                // Create a dummy div for PlacesService
-                const dummyMap = new google.maps.Map(document.createElement('div'));
-                placesService.current = new google.maps.places.PlacesService(dummyMap);
+                setIsGoogleMapsLoaded(true);
+                console.log('✅ Google Maps successfully loaded');
             } catch (error) {
-                console.error('Error loading Google Maps:', error);
+                console.error('❌ Error loading Google Maps:', error);
+                console.log('📝 Check your API key and ensure Places API is enabled');
             }
         };
 
         initializeGoogleMaps();
     }, []);
 
-    // Handle input change and autocomplete
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const newValue = e.target.value;
-        onChange(newValue);
+    // Используем старый API как основной (он работает)
+    const tryLegacyAPI = (input: string) => {
+        try {
+            const autocompleteService = new google.maps.places.AutocompleteService();
 
-        if (newValue.length > 2 && autocompleteService.current) {
-            setIsLoading(true);
-            autocompleteService.current.getPlacePredictions(
+            autocompleteService.getPlacePredictions(
                 {
-                    input: newValue,
-                    componentRestrictions: { country: 'pl' }, // Restrict to Poland
+                    input: input,
+                    componentRestrictions: { country: 'pl' },
                 },
                 (predictions: google.maps.places.AutocompletePrediction[] | null, status: google.maps.places.PlacesServiceStatus) => {
                     setIsLoading(false);
                     if (status === google.maps.places.PlacesServiceStatus.OK && predictions) {
                         setSuggestions(predictions);
                         setShowSuggestions(true);
+                        console.log(`✅ Found ${predictions.length} suggestions`);
+                    } else if (status === google.maps.places.PlacesServiceStatus.REQUEST_DENIED) {
+                        console.error('🚫 Places API (Legacy) access denied. Please:');
+                        console.error('   1. Go to https://console.cloud.google.com/apis/library');
+                        console.error('   2. Enable "Places API" (without "New")');
+                        console.error('   3. Check API key restrictions');
+                        setSuggestions([]);
+                        setShowSuggestions(false);
                     } else {
+                        console.warn('⚠️ Places API returned status:', status);
                         setSuggestions([]);
                         setShowSuggestions(false);
                     }
                 }
             );
+        } catch (error) {
+            console.error('❌ Legacy API error:', error);
+            setIsLoading(false);
+            setSuggestions([]);
+            setShowSuggestions(false);
+        }
+    };
+
+    // Handle input change and autocomplete using legacy API
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newValue = e.target.value;
+        onChange(newValue);
+
+        if (newValue.length > 2 && isGoogleMapsLoaded) {
+            setIsLoading(true);
+
+            const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+
+            if (!apiKey || apiKey.includes('placeholder') || apiKey.includes('your_')) {
+                console.error('❌ Invalid API key. Please set NEXT_PUBLIC_GOOGLE_MAPS_API_KEY in .env.local');
+                setIsLoading(false);
+                return;
+            }
+
+            // Используем старый API (он работает надежнее)
+            console.log('🔄 Using Legacy Places API...');
+            tryLegacyAPI(newValue);
         } else {
             setSuggestions([]);
             setShowSuggestions(false);
@@ -78,171 +103,253 @@ export default function LocationInput({ label, value, onChange, placeholder, err
     };
 
     // Handle suggestion selection
-    const handleSuggestionSelect = (suggestion: google.maps.places.AutocompletePrediction) => {
+    const handleSuggestionSelect = (suggestion: any) => {
         onChange(suggestion.description);
         setShowSuggestions(false);
 
-        // Get place details
-        if (placesService.current) {
-            placesService.current.getDetails(
-                { placeId: suggestion.place_id },
-                (place: google.maps.places.PlaceResult | null, status: google.maps.places.PlacesServiceStatus) => {
-                    if (status === google.maps.places.PlacesServiceStatus.OK && place) {
-                        onChange(suggestion.description, place);
+        if (suggestion.place_id) {
+            try {
+                const placesService = new google.maps.places.PlacesService(document.createElement('div'));
+
+                placesService.getDetails(
+                    { placeId: suggestion.place_id },
+                    (place: google.maps.places.PlaceResult | null, status: google.maps.places.PlacesServiceStatus) => {
+                        if (status === google.maps.places.PlacesServiceStatus.OK && place) {
+                            onChange(suggestion.description, place);
+                            console.log('✅ Place details retrieved');
+                        } else {
+                            console.warn('⚠️ Could not get place details:', status);
+                        }
                     }
-                }
-            );
+                );
+            } catch (error) {
+                console.error('❌ Error getting place details:', error);
+            }
         }
-    };
-
-    // Initialize map in modal
-    const initializeMap = () => {
-        if (!mapRef.current) return;
-
-        map.current = new google.maps.Map(mapRef.current, {
-            center: { lat: 52.237049, lng: 21.017532 }, // Warsaw center
-            zoom: 13,
-            styles: [
-                {
-                    "featureType": "all",
-                    "stylers": [{ "saturation": -100 }]
-                }
-            ]
-        });
-
-        // Add click listener to map
-        map.current.addListener('click', (e: google.maps.MapMouseEvent) => {
-            if (e.latLng) {
-                placeMarker(e.latLng);
-                reverseGeocode(e.latLng);
-            }
-        });
-    };
-
-    // Place marker on map
-    const placeMarker = (location: google.maps.LatLng) => {
-        if (marker.current) {
-            marker.current.setMap(null);
-        }
-
-        marker.current = new google.maps.Marker({
-            position: location,
-            map: map.current,
-            draggable: true
-        });
-
-        // Add drag listener
-        marker.current.addListener('dragend', () => {
-            if (marker.current) {
-                reverseGeocode(marker.current.getPosition()!);
-            }
-        });
-    };
-
-    // Reverse geocode to get address
-    const reverseGeocode = (location: google.maps.LatLng) => {
-        const geocoder = new google.maps.Geocoder();
-        geocoder.geocode({ location }, (results: google.maps.GeocoderResult[] | null, status: google.maps.GeocoderStatus) => {
-            if (status === 'OK' && results && results[0]) {
-                onChange(results[0].formatted_address, results[0] as any);
-            }
-        });
-    };
-
-    // Open map modal
-    const openMapModal = () => {
-        setIsMapModalOpen(true);
-        setTimeout(initializeMap, 100); // Wait for modal to render
     };
 
     return (
         <div className="form-group">
             <label className="form-label">{label}</label>
             <div className="relative">
-                <div className="flex gap-2">
+                <div className="relative">
                     <input
                         type="text"
-                        className={`form-input flex-1 ${error ? 'border-red-500' : ''}`}
+                        style={{
+                            width: '100%',
+                            padding: '16px 20px',
+                            backgroundColor: '#1f2937',
+                            border: '2px solid #374151',
+                            borderRadius: '12px',
+                            color: 'white',
+                            fontSize: '16px',
+                            fontWeight: '400',
+                            outline: 'none',
+                            transition: 'all 0.2s ease',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            cursor: 'text'
+                        }}
+                        className="focus:border-orange-500 focus:shadow-lg"
                         placeholder={placeholder}
                         value={value}
                         onChange={handleInputChange}
-                        onFocus={() => value.length > 2 && setShowSuggestions(true)}
-                        onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                        onFocus={(e) => {
+                            // При фокусе показываем suggestions если есть
+                            if (value.length > 2 && suggestions.length > 0) {
+                                setShowSuggestions(true);
+                            }
+                            // Стили фокуса - оранжевый
+                            const target = e.target as HTMLInputElement;
+                            target.style.borderColor = '#f97316';
+                            target.style.boxShadow = '0 10px 25px -5px rgba(249, 115, 22, 0.25)';
+                            target.style.backgroundColor = '#111827';
+                        }}
+                        onBlur={(e) => {
+                            setTimeout(() => setShowSuggestions(false), 200);
+                            // Убираем стили фокуса
+                            const target = e.target as HTMLInputElement;
+                            target.style.borderColor = '#374151';
+                            target.style.boxShadow = 'none';
+                            target.style.backgroundColor = '#1f2937';
+                        }}
+                        onMouseEnter={(e) => {
+                            const target = e.target as HTMLInputElement;
+                            if (target !== document.activeElement) {
+                                target.style.borderColor = '#ea580c'; // Оранжевый hover
+                            }
+                        }}
+                        onMouseLeave={(e) => {
+                            const target = e.target as HTMLInputElement;
+                            if (target !== document.activeElement) {
+                                target.style.borderColor = '#374151';
+                            }
+                        }}
+                        // Позволяем выделение текста
+                        onDoubleClick={(e) => {
+                            const target = e.target as HTMLInputElement;
+                            target.select();
+                        }}
+                        title={value} // Показываем полный текст в tooltip при hover
                     />
-                    <button
-                        type="button"
-                        onClick={openMapModal}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                    >
-                        📍
-                    </button>
                 </div>
 
                 {error && (
-                    <p className="text-red-500 text-sm mt-1">{error}</p>
+                    <p style={{
+                        color: '#ef4444',
+                        fontSize: '14px',
+                        marginTop: '8px',
+                        marginLeft: '4px'
+                    }}>
+                        {error}
+                    </p>
+                )}
+
+                {/* Loading indicator */}
+                {!isGoogleMapsLoaded && (
+                    <p style={{
+                        color: '#fbbf24',
+                        fontSize: '14px',
+                        marginTop: '8px',
+                        marginLeft: '4px'
+                    }}>
+                        Loading Google Maps...
+                    </p>
+                )}
+
+                {/* Загрузка предложений */}
+                {isLoading && (
+                    <div
+                        style={{
+                            position: 'absolute',
+                            top: '100%',
+                            left: '0',
+                            right: '0',
+                            backgroundColor: 'white',
+                            border: '1px solid #d1d5db',
+                            borderRadius: '12px',
+                            marginTop: '8px',
+                            zIndex: 50,
+                            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+                        }}
+                    >
+                        <div style={{ padding: '16px', textAlign: 'center', color: '#6b7280' }}>
+                            <div className="inline-block animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500 mr-3"></div>
+                            Searching...
+                        </div>
+                    </div>
                 )}
 
                 {/* Suggestions dropdown */}
-                {showSuggestions && suggestions.length > 0 && (
-                    <div className="absolute top-full left-0 right-0 bg-gray-800 border border-gray-600 rounded-lg mt-1 max-h-60 overflow-y-auto z-10">
-                        {isLoading && (
-                            <div className="p-3 text-center text-gray-400">Loading...</div>
-                        )}
-                        {suggestions.map((suggestion) => (
-                            <button
-                                key={suggestion.place_id}
-                                type="button"
-                                className="w-full text-left p-3 hover:bg-gray-700 border-b border-gray-700 last:border-b-0"
-                                onClick={() => handleSuggestionSelect(suggestion)}
-                            >
-                                <div className="text-white font-medium">
-                                    {suggestion.structured_formatting.main_text}
-                                </div>
-                                <div className="text-gray-400 text-sm">
-                                    {suggestion.structured_formatting.secondary_text}
-                                </div>
-                            </button>
-                        ))}
+                {showSuggestions && suggestions.length > 0 && !isLoading && (
+                    <div
+                        className="dropdown-suggestions"
+                        style={{
+                            position: 'absolute',
+                            top: '100%',
+                            left: '0',
+                            right: '0',
+                            backgroundColor: 'white',
+                            border: '1px solid #d1d5db',
+                            borderRadius: '12px',
+                            marginTop: '8px',
+                            maxHeight: '320px',
+                            overflow: 'hidden',
+                            zIndex: 50,
+                            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+                        }}
+                    >
+                        <div style={{ maxHeight: '320px', overflowY: 'auto' }}>
+                            {suggestions.map((suggestion, index) => (
+                                <button
+                                    key={suggestion.place_id || index}
+                                    type="button"
+                                    style={{
+                                        width: '100%',
+                                        textAlign: 'left',
+                                        padding: '16px',
+                                        backgroundColor: 'transparent',
+                                        border: 'none',
+                                        borderBottom: index < suggestions.length - 1 ? '1px solid #f3f4f6' : 'none',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.15s ease'
+                                    }}
+                                    onClick={() => handleSuggestionSelect(suggestion)}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.backgroundColor = '#f9fafb';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.backgroundColor = 'transparent';
+                                    }}
+                                >
+                                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+                                        <div style={{ color: '#6b7280', marginTop: '4px', flexShrink: 0, fontSize: '18px' }}>
+                                            📍
+                                        </div>
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div style={{
+                                                color: '#111827',
+                                                fontWeight: '500',
+                                                fontSize: '16px',
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                                whiteSpace: 'nowrap'
+                                            }}>
+                                                {suggestion.structured_formatting.main_text}
+                                            </div>
+                                            {suggestion.structured_formatting.secondary_text && (
+                                                <div style={{
+                                                    color: '#6b7280',
+                                                    fontSize: '14px',
+                                                    marginTop: '4px',
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                    whiteSpace: 'nowrap'
+                                                }}>
+                                                    {suggestion.structured_formatting.secondary_text}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+                        <div style={{
+                            padding: '12px',
+                            fontSize: '12px',
+                            color: '#9ca3af',
+                            textAlign: 'center',
+                            borderTop: '1px solid #f3f4f6',
+                            backgroundColor: '#f9fafb'
+                        }}>
+                            Powered by Google
+                        </div>
+                    </div>
+                )}
+
+                {/* Нет результатов */}
+                {showSuggestions && suggestions.length === 0 && !isLoading && value.length > 2 && (
+                    <div
+                        style={{
+                            position: 'absolute',
+                            top: '100%',
+                            left: '0',
+                            right: '0',
+                            backgroundColor: 'white',
+                            border: '1px solid #d1d5db',
+                            borderRadius: '12px',
+                            marginTop: '8px',
+                            zIndex: 50,
+                            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+                        }}
+                    >
+                        <div style={{ padding: '16px', textAlign: 'center', color: '#6b7280' }}>
+                            No suggestions found
+                        </div>
                     </div>
                 )}
             </div>
-
-            {/* Map Modal */}
-            {isMapModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-gray-900 rounded-xl p-6 w-full max-w-lg max-h-[80vh] overflow-hidden">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-lg font-semibold text-white">Select Location</h3>
-                            <button
-                                onClick={() => setIsMapModalOpen(false)}
-                                className="text-gray-400 hover:text-white"
-                            >
-                                ✕
-                            </button>
-                        </div>
-
-                        <div
-                            ref={mapRef}
-                            className="w-full h-80 rounded-lg"
-                        />
-
-                        <div className="mt-4 flex gap-2">
-                            <button
-                                onClick={() => setIsMapModalOpen(false)}
-                                className="flex-1 px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={() => setIsMapModalOpen(false)}
-                                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                            >
-                                Confirm
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 } 

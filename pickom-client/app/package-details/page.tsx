@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import BottomNavigation from '../components/BottomNavigation';
+import NavigationWrapper from '../components/NavigationWrapper';
 
 export default function PackageDetailsPage() {
     const [selectedPackageType, setSelectedPackageType] = useState<'small' | 'large' | 'document' | 'other'>('small');
@@ -55,8 +55,8 @@ export default function PackageDetailsPage() {
                                 key={type.id}
                                 onClick={() => setSelectedPackageType(type.id as any)}
                                 className={`p-4 rounded-mobile text-center font-semibold transition-all duration-300 min-h-button flex flex-col items-center justify-center gap-2 tap-highlight-none ${selectedPackageType === type.id
-                                        ? 'bg-accent-orange text-white shadow-mobile-lg'
-                                        : 'bg-card border border-border text-white hover:bg-gray-700'
+                                    ? 'bg-accent-orange text-white shadow-mobile-lg'
+                                    : 'bg-card border border-border text-white hover:bg-gray-700'
                                     }`}
                             >
                                 <span className="text-2xl">{type.icon}</span>
@@ -109,7 +109,7 @@ export default function PackageDetailsPage() {
             </div>
 
             {/* Bottom Navigation */}
-            <BottomNavigation />
+            <NavigationWrapper />
         </div>
     );
 } 

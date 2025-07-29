@@ -1,13 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
 import PhoneWrapper from '../components/PhoneWrapper';
-import BottomNavigation from '../components/BottomNavigation';
-import LocationInput from '../components/LocationInput';
+import NavigationWrapper from '../components/NavigationWrapper';
+import CityLocationInput from '../components/CityLocationInput';
 import Toast from '../components/Toast';
+import { useLoading } from '../context/LoadingContext';
 
 interface FormData {
     pickupLocation: string;
@@ -23,13 +24,25 @@ interface FormErrors {
 
 export default function SendPackagePage() {
     const [selectedType, setSelectedType] = useState('Within City');
+    const [deliveryType, setDeliveryType] = useState<'Intra-City' | 'Inter-City'>('Intra-City');
     const [formData, setFormData] = useState<FormData>({
         pickupLocation: '',
         dropoffLocation: '',
     });
     const [errors, setErrors] = useState<FormErrors>({});
-    const [isLoading, setIsLoading] = useState(false);
+    const [buttonLoading, setButtonLoading] = useState(false);
+    const { showLoading, hideLoading } = useLoading();
     const router = useRouter();
+    const searchParams = useSearchParams();
+
+    // Read delivery type from URL parameters
+    useEffect(() => {
+        const typeParam = searchParams.get('type');
+        if (typeParam) {
+            setSelectedType(typeParam === 'Intra-City' ? 'Within City' : 'Inter-City');
+            setDeliveryType(typeParam as 'Intra-City' | 'Inter-City');
+        }
+    }, [searchParams]);
 
     const validateForm = (): boolean => {
         const newErrors: FormErrors = {};
@@ -63,18 +76,20 @@ export default function SendPackagePage() {
             return;
         }
 
-        setIsLoading(true);
+        setButtonLoading(true);
+        showLoading("Searching for available travelers...");
 
         // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        await new Promise(resolve => setTimeout(resolve, 2000));
 
-        setIsLoading(false);
+        setButtonLoading(false);
+        hideLoading();
         toast.success('Locations validated successfully!');
 
         // Navigate to next page
         setTimeout(() => {
             router.push('/select-traveler');
-        }, 500);
+        }, 300);
     };
 
     const handleLocationChange = (field: 'pickupLocation' | 'dropoffLocation') =>
@@ -99,15 +114,7 @@ export default function SendPackagePage() {
             <div className="page">
                 <Toast />
 
-                {/* Loading overlay */}
-                {isLoading && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                        <div className="bg-gray-900 rounded-xl p-8 flex flex-col items-center">
-                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
-                            <p className="text-white text-lg font-medium">Finding the best routes...</p>
-                        </div>
-                    </div>
-                )}
+
 
                 {/* Status Bar */}
                 <div className="status-bar">
@@ -137,49 +144,68 @@ export default function SendPackagePage() {
                         <p className="subtitle">People-Powered Delivery</p>
                         <h2 className="title-section">Send a Package</h2>
 
-                        <div className="btn-group">
-                            {['Within City', 'Inter-City'].map((type) => (
-                                <button
-                                    key={type}
-                                    className={`btn-tab ${selectedType === type ? 'active' : ''}`}
-                                    onClick={() => setSelectedType(type)}
-                                >
-                                    {type}
-                                </button>
-                            ))}
+                        {/* Display selected delivery type */}
+                        <div style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '12px 20px',
+                            background: 'rgba(249, 115, 22, 0.1)',
+                            border: '1px solid rgba(249, 115, 22, 0.3)',
+                            borderRadius: '25px',
+                            color: '#f97316',
+                            fontSize: '16px',
+                            fontWeight: '600',
+                            marginBottom: '8px'
+                        }}>
+                            {selectedType === 'Within City' ? '🏠' : '🌍'} {selectedType} Delivery
                         </div>
                     </div>
 
                     <div className="space-y-6 pb-safe">
-                        <LocationInput
-                            label="Pickup Location"
-                            value={formData.pickupLocation}
-                            onChange={handleLocationChange('pickupLocation')}
-                            placeholder="Enter pickup address..."
-                            error={errors.pickupLocation}
-                        />
+                        <div>
+                            <CityLocationInput
+                                label="Pickup Location"
+                                value={formData.pickupLocation}
+                                onChange={handleLocationChange('pickupLocation')}
+                                placeholder="Enter pickup address..."
+                                deliveryType={deliveryType}
+                            />
+                            {errors.pickupLocation && (
+                                <p style={{ color: '#ef4444', fontSize: '14px', marginTop: '4px' }}>
+                                    {errors.pickupLocation}
+                                </p>
+                            )}
+                        </div>
 
-                        <LocationInput
-                            label="Drop-off Location"
-                            value={formData.dropoffLocation}
-                            onChange={handleLocationChange('dropoffLocation')}
-                            placeholder="Enter drop-off address..."
-                            error={errors.dropoffLocation}
-                        />
+                        <div>
+                            <CityLocationInput
+                                label="Drop-off Location"
+                                value={formData.dropoffLocation}
+                                onChange={handleLocationChange('dropoffLocation')}
+                                placeholder="Enter drop-off address..."
+                                deliveryType={deliveryType}
+                            />
+                            {errors.dropoffLocation && (
+                                <p style={{ color: '#ef4444', fontSize: '14px', marginTop: '4px' }}>
+                                    {errors.dropoffLocation}
+                                </p>
+                            )}
+                        </div>
 
                         <div style={{ marginTop: '40px' }}>
                             <button
                                 onClick={handleContinue}
                                 className="btn-primary"
-                                disabled={isLoading}
+                                disabled={buttonLoading}
                             >
-                                {isLoading ? 'Processing...' : 'Continue'}
+                                {buttonLoading ? 'Processing...' : 'Continue'}
                             </button>
                         </div>
                     </div>
                 </div>
 
-                <BottomNavigation />
+                <NavigationWrapper />
             </div>
         </PhoneWrapper>
     );

@@ -4,21 +4,47 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from './context/AuthContext';
+import { useLoading } from './context/LoadingContext';
 import PhoneWrapper from './components/PhoneWrapper';
-import BottomNavigation from './components/BottomNavigation';
+import NavigationWrapper from './components/NavigationWrapper';
 
 export default function HomePage() {
     const [selectedType, setSelectedType] = useState('Intra-City');
-    const { isAuthenticated } = useAuth();
+    const [deliveryMode, setDeliveryMode] = useState<'now' | 'scheduled'>('now');
+    const { isAuthenticated, isDriver, user } = useAuth();
+    const { showLoading, hideLoading } = useLoading();
     const router = useRouter();
 
     useEffect(() => {
         if (!isAuthenticated) {
             router.push('/auth/login');
+        } else if (isDriver) {
+            // Redirect drivers to their dashboard
+            router.push('/driver-dashboard');
         }
-    }, [isAuthenticated, router]);
+    }, [isAuthenticated, isDriver, router]);
 
-    if (!isAuthenticated) {
+    const handleContinue = async () => {
+        showLoading("Preparing your delivery request...");
+
+        // Simulate loading
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        hideLoading();
+        router.push(`/send-package?type=${encodeURIComponent(selectedType)}`);
+    };
+
+    const handleScheduleDelivery = async () => {
+        showLoading("Opening delivery scheduler...");
+
+        // Simulate loading
+        await new Promise(resolve => setTimeout(resolve, 800));
+
+        hideLoading();
+        router.push(`/schedule-delivery?type=${encodeURIComponent(selectedType)}`);
+    };
+
+    if (!isAuthenticated || isDriver) {
         return null;
     }
 
@@ -49,8 +75,45 @@ export default function HomePage() {
                 {/* Content */}
                 <div className="content center-content">
                     <div className="mb-32">
-                        <h1 className="title-main">Pickom</h1>
-                        <p className="subtitle">People-Powered Delivery</p>
+                        {/* Header with Profile Button */}
+                        <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            marginBottom: '32px'
+                        }}>
+                            <div>
+                                <h1 className="title-main">Pickom</h1>
+                                <p className="subtitle">People-Powered Delivery</p>
+                            </div>
+                            <button
+                                onClick={() => router.push('/customer-profile')}
+                                style={{
+                                    background: 'rgba(249, 115, 22, 0.2)',
+                                    border: '1px solid #f97316',
+                                    borderRadius: '50%',
+                                    width: '48px',
+                                    height: '48px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: '#f97316',
+                                    fontSize: '20px',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s ease'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.background = 'rgba(249, 115, 22, 0.3)';
+                                    e.currentTarget.style.transform = 'scale(1.05)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.background = 'rgba(249, 115, 22, 0.2)';
+                                    e.currentTarget.style.transform = 'scale(1)';
+                                }}
+                            >
+                                👤
+                            </button>
+                        </div>
 
                         <h2 className="title-section">Send a Package</h2>
 
@@ -66,13 +129,48 @@ export default function HomePage() {
                             ))}
                         </div>
 
-                        <Link href="/send-package" className="btn-primary">
-                            Continue
-                        </Link>
+                        {/* Delivery Mode Selection */}
+                        <div style={{ marginBottom: '24px' }}>
+                            <h3 style={{
+                                fontSize: '18px',
+                                fontWeight: '600',
+                                color: 'white',
+                                textAlign: 'center',
+                                marginBottom: '16px'
+                            }}>
+                                When would you like to send?
+                            </h3>
+
+                            <div className="btn-group">
+                                <button
+                                    className={`btn-tab ${deliveryMode === 'now' ? 'active' : ''}`}
+                                    onClick={() => setDeliveryMode('now')}
+                                >
+                                    🚀 Send Now
+                                </button>
+                                <button
+                                    className={`btn-tab ${deliveryMode === 'scheduled' ? 'active' : ''}`}
+                                    onClick={() => setDeliveryMode('scheduled')}
+                                >
+                                    📅 Schedule
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Action Buttons */}
+                        {deliveryMode === 'now' ? (
+                            <button onClick={handleContinue} className="btn-primary">
+                                Continue with Immediate Delivery
+                            </button>
+                        ) : (
+                            <button onClick={handleScheduleDelivery} className="btn-primary">
+                                Schedule Delivery
+                            </button>
+                        )}
                     </div>
                 </div>
 
-                <BottomNavigation />
+                <NavigationWrapper />
             </div>
         </PhoneWrapper>
     );

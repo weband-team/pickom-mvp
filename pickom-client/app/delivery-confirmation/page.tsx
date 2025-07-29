@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import BottomNavigation from '../components/BottomNavigation';
+import NavigationWrapper from '../components/NavigationWrapper';
 
 export default function DeliveryConfirmationPage() {
     const [rating, setRating] = useState(0);
@@ -143,7 +143,7 @@ export default function DeliveryConfirmationPage() {
             </div>
 
             {/* Bottom Navigation */}
-            <BottomNavigation />
+            <NavigationWrapper />
         </div>
     );
 } 

@@ -9,6 +9,7 @@ import PhoneWrapper from '../../components/PhoneWrapper';
 export default function LoginPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [role, setRole] = useState<'customer' | 'driver'>('customer');
     const [error, setError] = useState('');
     const { login } = useAuth();
     const router = useRouter();
@@ -17,8 +18,13 @@ export default function LoginPage() {
         e.preventDefault();
         setError('');
 
-        if (login(email, password)) {
-            router.push('/');
+        if (login(email, password, role)) {
+            // Redirect based on role
+            if (role === 'driver') {
+                router.push('/driver-dashboard');
+            } else {
+                router.push('/');
+            }
         } else {
             setError('Please enter both email and password');
         }
@@ -53,6 +59,65 @@ export default function LoginPage() {
                     <div style={{ marginBottom: '64px' }}>
                         <h1 className="title-main">Pickom</h1>
                         <p className="subtitle">People-Powered Delivery</p>
+                    </div>
+
+                    {/* Role Selection */}
+                    <div style={{ marginBottom: '32px' }}>
+                        <label style={{
+                            display: 'block',
+                            fontSize: '16px',
+                            fontWeight: '600',
+                            color: '#9CA3AF',
+                            marginBottom: '12px',
+                            textAlign: 'center'
+                        }}>
+                            Login as:
+                        </label>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                            <button
+                                type="button"
+                                onClick={() => setRole('customer')}
+                                style={{
+                                    padding: '16px 20px',
+                                    background: role === 'customer' ?
+                                        'linear-gradient(135deg, #f97316, #ea580c)' :
+                                        'rgba(255, 255, 255, 0.05)',
+                                    border: role === 'customer' ?
+                                        '2px solid #f97316' :
+                                        '2px solid rgba(255, 255, 255, 0.1)',
+                                    borderRadius: '12px',
+                                    color: 'white',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s ease',
+                                    textAlign: 'center'
+                                }}
+                            >
+                                <div style={{ fontSize: '24px', marginBottom: '8px' }}>📦</div>
+                                <div style={{ fontSize: '14px', fontWeight: '600' }}>Customer</div>
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => setRole('driver')}
+                                style={{
+                                    padding: '16px 20px',
+                                    background: role === 'driver' ?
+                                        'linear-gradient(135deg, #f97316, #ea580c)' :
+                                        'rgba(255, 255, 255, 0.05)',
+                                    border: role === 'driver' ?
+                                        '2px solid #f97316' :
+                                        '2px solid rgba(255, 255, 255, 0.1)',
+                                    borderRadius: '12px',
+                                    color: 'white',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s ease',
+                                    textAlign: 'center'
+                                }}
+                            >
+                                <div style={{ fontSize: '24px', marginBottom: '8px' }}>🚗</div>
+                                <div style={{ fontSize: '14px', fontWeight: '600' }}>Driver</div>
+                            </button>
+                        </div>
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-6">

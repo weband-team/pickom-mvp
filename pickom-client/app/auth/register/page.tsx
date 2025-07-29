@@ -11,6 +11,8 @@ export default function RegisterPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [phone, setPhone] = useState('');
+    const [role, setRole] = useState<'customer' | 'driver'>('customer');
     const [error, setError] = useState('');
     const { register } = useAuth();
     const router = useRouter();
@@ -24,8 +26,13 @@ export default function RegisterPage() {
             return;
         }
 
-        if (register(name, email, password)) {
-            router.push('/');
+        if (register(name, email, password, role, phone)) {
+            // Redirect based on role
+            if (role === 'driver') {
+                router.push('/driver-dashboard');
+            } else {
+                router.push('/');
+            }
         } else {
             setError('Please fill in all fields');
         }
@@ -111,6 +118,77 @@ export default function RegisterPage() {
                                 className="form-input"
                                 placeholder="Confirm Password"
                                 required
+                            />
+                        </div>
+
+                        {/* Role Selection */}
+                        <div className="form-group">
+                            <label style={{
+                                display: 'block',
+                                fontSize: '16px',
+                                fontWeight: '600',
+                                color: '#9CA3AF',
+                                marginBottom: '12px'
+                            }}>
+                                I want to:
+                            </label>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                                <button
+                                    type="button"
+                                    onClick={() => setRole('customer')}
+                                    style={{
+                                        padding: '16px 20px',
+                                        background: role === 'customer' ?
+                                            'linear-gradient(135deg, #f97316, #ea580c)' :
+                                            'rgba(255, 255, 255, 0.05)',
+                                        border: role === 'customer' ?
+                                            '2px solid #f97316' :
+                                            '2px solid rgba(255, 255, 255, 0.1)',
+                                        borderRadius: '12px',
+                                        color: 'white',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease',
+                                        textAlign: 'center'
+                                    }}
+                                >
+                                    <div style={{ fontSize: '24px', marginBottom: '8px' }}>📦</div>
+                                    <div style={{ fontSize: '14px', fontWeight: '600' }}>Send Packages</div>
+                                    <div style={{ fontSize: '12px', color: '#9CA3AF', marginTop: '4px' }}>Customer</div>
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={() => setRole('driver')}
+                                    style={{
+                                        padding: '16px 20px',
+                                        background: role === 'driver' ?
+                                            'linear-gradient(135deg, #f97316, #ea580c)' :
+                                            'rgba(255, 255, 255, 0.05)',
+                                        border: role === 'driver' ?
+                                            '2px solid #f97316' :
+                                            '2px solid rgba(255, 255, 255, 0.1)',
+                                        borderRadius: '12px',
+                                        color: 'white',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease',
+                                        textAlign: 'center'
+                                    }}
+                                >
+                                    <div style={{ fontSize: '24px', marginBottom: '8px' }}>🚗</div>
+                                    <div style={{ fontSize: '14px', fontWeight: '600' }}>Deliver Packages</div>
+                                    <div style={{ fontSize: '12px', color: '#9CA3AF', marginTop: '4px' }}>Driver</div>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Phone Number */}
+                        <div className="form-group">
+                            <input
+                                type="tel"
+                                value={phone}
+                                onChange={(e) => setPhone(e.target.value)}
+                                className="form-input"
+                                placeholder="Phone Number (recommended)"
                             />
                         </div>
 

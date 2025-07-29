@@ -1,12 +1,12 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import BottomNavigation from '../components/BottomNavigation';
+import NavigationWrapper from '../components/NavigationWrapper';
 import PhoneWrapper from '../components/PhoneWrapper';
 import { useAuth } from '../context/AuthContext';
 
 export default function ProfilePage() {
-    const { user, logout, isAuthenticated } = useAuth();
+    const { user, logout, isAuthenticated, isCustomer, isDriver } = useAuth();
     const router = useRouter();
 
     const handleLogout = () => {
@@ -14,8 +14,19 @@ export default function ProfilePage() {
         router.push('/auth/login');
     };
 
+    // Redirect based on user role
     if (!isAuthenticated) {
         router.push('/auth/login');
+        return null;
+    }
+
+    if (isDriver) {
+        router.push('/driver-profile');
+        return null;
+    }
+
+    if (isCustomer) {
+        router.push('/customer-profile');
         return null;
     }
 
@@ -130,7 +141,7 @@ export default function ProfilePage() {
                     </div>
                 </div>
 
-                <BottomNavigation />
+                <NavigationWrapper />
             </div>
         </PhoneWrapper>
     );

@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import PhoneWrapper from '../components/PhoneWrapper';
+import { useLoading } from '../context/LoadingContext';
 
 interface Traveler {
     id: number;
@@ -20,17 +22,25 @@ interface Traveler {
 const generateTravelers = (): Traveler[] => {
     const firstNames = ['Michael', 'Anna', 'John', 'Ewa', 'David', 'Maria', 'Robert', 'Katarzyna', 'James', 'Agnieszka', 'Thomas', 'Magdalena', 'Daniel', 'Joanna', 'Matthew', 'Barbara', 'Christopher', 'Monika', 'Andrew', 'Paulina'];
     const lastNames = ['K.', 'S.', 'A.', 'W.', 'B.', 'M.', 'L.', 'N.', 'P.', 'T.', 'R.', 'G.', 'H.', 'C.', 'D.', 'F.', 'J.', 'Z.', 'O.', 'V.'];
-    const routes = ['Pickup to Drop-off', 'Direct Route', 'Via City Center', 'Express Route', 'Scenic Route'];
+
+    // Different time formats like on the screenshot
+    const generateTime = (index: number) => {
+        const times = [
+            '50 min', '55 min', '1 hr 5 min', '42 min', '1 hr 15 min',
+            '38 min', '1 hr 2 min', '47 min', '52 min', '1 hr 8 min'
+        ];
+        return times[index % times.length];
+    };
 
     return Array.from({ length: 50 }, (_, i) => ({
         id: i + 1,
         name: `${firstNames[i % firstNames.length]} ${lastNames[i % lastNames.length]}`,
-        time: `${30 + Math.floor(Math.random() * 90)} min`,
+        time: generateTime(i),
         price: `${20 + Math.floor(Math.random() * 30)} zł`,
         trust: `${85 + Math.floor(Math.random() * 15)}%`,
         rating: 3.5 + Math.random() * 1.5,
         deliveries: 10 + Math.floor(Math.random() * 500),
-        route: routes[i % routes.length],
+        route: 'Pickup to Drop-off', // Как на скриншоте
         avatar: firstNames[i % firstNames.length].charAt(0) + lastNames[i % lastNames.length].charAt(0)
     }));
 };
@@ -39,6 +49,8 @@ export default function SelectTravelerPage() {
     const [currentPage, setCurrentPage] = useState(1);
     const [travelers] = useState<Traveler[]>(generateTravelers());
     const itemsPerPage = 10;
+    const router = useRouter();
+    const { showLoading, hideLoading } = useLoading();
 
     const totalPages = Math.ceil(travelers.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -59,6 +71,16 @@ export default function SelectTravelerPage() {
         if (currentPage > 1) {
             setCurrentPage(currentPage - 1);
         }
+    };
+
+    const handleSelectPicker = async (traveler: Traveler) => {
+        showLoading("Confirming your selection...");
+
+        // Simulate API call
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
+        hideLoading();
+        router.push('/confirm-payment');
     };
 
     return (
@@ -113,23 +135,22 @@ export default function SelectTravelerPage() {
                                     <div className="picker-name">{traveler.name}</div>
                                     <div className="picker-route">{traveler.route}</div>
                                     <div className="picker-trust">
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <div style={{ width: '8px', height: '8px', background: '#4ade80', borderRadius: '50%' }}></div>
-                                            <span>Trust: {traveler.trust}</span>
-                                            <span>•</span>
-                                            <span>★ {traveler.rating.toFixed(1)}</span>
-                                            <span>•</span>
-                                            <span>{traveler.deliveries} deliveries</span>
+                                        <div className="picker-trust-icon">
+                                            ✓
                                         </div>
+                                        <span>Trust: {traveler.trust}</span>
                                     </div>
                                 </div>
 
                                 <div className="picker-details">
                                     <div className="picker-time">{traveler.time}</div>
                                     <div className="picker-price">{traveler.price}</div>
-                                    <Link href="/confirm-payment">
-                                        <button className="btn-select">Select Picker</button>
-                                    </Link>
+                                    <button
+                                        className="btn-select"
+                                        onClick={() => handleSelectPicker(traveler)}
+                                    >
+                                        Select Picker
+                                    </button>
                                 </div>
                             </div>
                         ))}
@@ -148,12 +169,13 @@ export default function SelectTravelerPage() {
                                 disabled={currentPage === 1}
                                 style={{
                                     padding: '8px 16px',
-                                    background: currentPage === 1 ? '#374151' : '#4f46e5',
+                                    background: currentPage === 1 ? '#374151' : '#f97316',
                                     color: currentPage === 1 ? '#6b7280' : 'white',
                                     border: 'none',
                                     borderRadius: '8px',
                                     fontSize: '14px',
-                                    cursor: currentPage === 1 ? 'not-allowed' : 'pointer'
+                                    cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                                    transition: 'all 0.2s ease'
                                 }}
                             >
                                 Previous
@@ -178,13 +200,14 @@ export default function SelectTravelerPage() {
                                             onClick={() => goToPage(pageNum)}
                                             style={{
                                                 padding: '8px 12px',
-                                                background: currentPage === pageNum ? '#4f46e5' : '#374151',
+                                                background: currentPage === pageNum ? '#f97316' : '#374151',
                                                 color: 'white',
                                                 border: 'none',
                                                 borderRadius: '6px',
                                                 fontSize: '14px',
                                                 cursor: 'pointer',
-                                                minWidth: '36px'
+                                                minWidth: '36px',
+                                                transition: 'all 0.2s ease'
                                             }}
                                         >
                                             {pageNum}
@@ -198,12 +221,13 @@ export default function SelectTravelerPage() {
                                 disabled={currentPage === totalPages}
                                 style={{
                                     padding: '8px 16px',
-                                    background: currentPage === totalPages ? '#374151' : '#4f46e5',
+                                    background: currentPage === totalPages ? '#374151' : '#f97316',
                                     color: currentPage === totalPages ? '#6b7280' : 'white',
                                     border: 'none',
                                     borderRadius: '8px',
                                     fontSize: '14px',
-                                    cursor: currentPage === totalPages ? 'not-allowed' : 'pointer'
+                                    cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                                    transition: 'all 0.2s ease'
                                 }}
                             >
                                 Next

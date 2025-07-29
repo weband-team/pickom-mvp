@@ -32,8 +32,31 @@ html, body {
   background: #000;
   border-radius: 40px;
   position: relative;
-  overflow: hidden;
+  overflow-y: auto; /* Изменено с hidden на auto для вертикального скролла */
+  overflow-x: hidden; /* Сохраняем блокировку горизонтального скролла */
   box-shadow: 0 0 30px rgba(255, 255, 255, 0.1);
+  
+  /* Кастомные стили для скроллбара */
+  scrollbar-width: thin;
+  scrollbar-color: #333 transparent;
+}
+
+/* Кастомные стили скроллбара для WebKit браузеров */
+.phone-frame::-webkit-scrollbar {
+  width: 6px;
+}
+
+.phone-frame::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.phone-frame::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 3px;
+}
+
+.phone-frame::-webkit-scrollbar-thumb:hover {
+  background: #555;
 }
 
 /* iPhone Physical Elements */
@@ -98,6 +121,8 @@ html, body {
     height: 100vh;
     border-radius: 0;
     box-shadow: none;
+    overflow-y: auto; /* Добавляем поддержку скролла на мобильных */
+    overflow-x: hidden;
   }
   
   .phone-frame::before,
@@ -129,7 +154,7 @@ html, body {
 
 /* Page container */
 .page {
-  height: 100%;
+  min-height: 100%; /* Изменено с height на min-height для возможности роста */
   display: flex;
   flex-direction: column;
   background: #000;
@@ -141,6 +166,39 @@ html, body {
   padding: 0 20px;
   display: flex;
   flex-direction: column;
+}
+
+/* Модальные окна и dropdown должны быть поверх всего */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 16px;
+}
+
+/* Скролл для dropdown - оставляем только это */
+.dropdown-suggestions::-webkit-scrollbar {
+  width: 6px;
+}
+
+.dropdown-suggestions::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dropdown-suggestions::-webkit-scrollbar-thumb {
+  background: #9CA3AF;
+  border-radius: 3px;
+}
+
+.dropdown-suggestions::-webkit-scrollbar-thumb:hover {
+  background: #6B7280;
 }
 
 /* Typography */
@@ -194,14 +252,14 @@ html, body {
 .btn-primary {
   width: 100%;
   padding: 16px;
-  background: #e5e5e5;
-  color: #000;
+  background: #f97316;
+  color: white;
   border: none;
   border-radius: 24px;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
   text-decoration: none;
   display: flex;
   align-items: center;
@@ -209,20 +267,22 @@ html, body {
 }
 
 .btn-primary:hover {
-  background: #d0d0d0;
+  background: #ea580c;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
 }
 
 .btn-orange {
   width: 100%;
   padding: 16px;
-  background: #ff8c00;
-  color: #fff;
+  background: #f97316;
+  color: white;
   border: none;
   border-radius: 24px;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
   text-decoration: none;
   display: flex;
   align-items: center;
@@ -230,7 +290,9 @@ html, body {
 }
 
 .btn-orange:hover {
-  background: #e67c00;
+  background: #ea580c;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
 }
 
 /* Forms */
@@ -247,17 +309,45 @@ html, body {
 
 .form-input {
   width: 100%;
-  padding: 16px 0;
-  background: transparent;
-  border: none;
-  border-bottom: 1px solid #333;
-  color: #fff;
+  padding: 16px 20px;
+  background: #1f2937;
+  border: 2px solid #374151;
+  border-radius: 12px;
+  color: white;
   font-size: 16px;
+  font-weight: 400;
   outline: none;
+  transition: all 0.2s ease;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .form-input::placeholder {
-  color: #666;
+  color: #9ca3af;
+}
+
+.form-input:focus {
+  border-color: #f97316;
+  box-shadow: 0 10px 25px -5px rgba(249, 115, 22, 0.25);
+  background-color: #111827;
+}
+
+.form-input:hover:not(:focus) {
+  border-color: #ea580c;
+}
+
+/* Специальные стили для textarea */
+.form-input.h-24 {
+  white-space: normal;
+  overflow: auto;
+  resize: vertical;
+}
+
+/* Loading Spinner Animation */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 /* Cards */
@@ -270,76 +360,108 @@ html, body {
 
 /* Lists */
 .picker-item {
-  background: #1a1a1a;
-  border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 12px;
+  background: #1f2937;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 16px;
   display: flex;
   align-items: center;
-  justify-content: between;
+  justify-content: space-between;
+  border: 1px solid #374151;
 }
 
 .picker-avatar {
-  width: 48px;
-  height: 48px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
-  background: #333;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 600;
-  margin-right: 12px;
+  font-weight: 700;
+  font-size: 18px;
+  color: white;
+  margin-right: 16px;
+  flex-shrink: 0;
 }
 
 .picker-info {
   flex: 1;
+  min-width: 0;
 }
 
 .picker-name {
-  font-size: 16px;
-  font-weight: 600;
-  margin-bottom: 4px;
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: white;
 }
 
 .picker-route {
   font-size: 14px;
-  color: #999;
-  margin-bottom: 4px;
+  color: #9ca3af;
+  margin-bottom: 8px;
 }
 
 .picker-trust {
-  font-size: 12px;
-  color: #4ade80;
+  font-size: 14px;
+  color: white;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
+}
+
+.picker-trust-icon {
+  width: 16px;
+  height: 16px;
+  background: #10b981;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
 }
 
 .picker-details {
   text-align: right;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
 }
 
 .picker-time {
   font-size: 16px;
   font-weight: 600;
-  margin-bottom: 4px;
+  color: white;
 }
 
 .picker-price {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 700;
-  margin-bottom: 8px;
+  color: white;
+  margin-bottom: 4px;
 }
 
 .btn-select {
-  background: #ff8c00;
-  color: #fff;
+  background: #f97316;
+  color: white;
   border: none;
-  border-radius: 16px;
-  padding: 8px 16px;
-  font-size: 12px;
+  border-radius: 20px;
+  padding: 10px 20px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-select:hover {
+  background: #ea580c;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
 }
 
 /* Bottom navigation */

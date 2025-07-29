@@ -1,20 +1,46 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import PhoneWrapper from '../components/PhoneWrapper';
+import { useLoading } from '../context/LoadingContext';
+import { useOrders } from '../context/OrderContext';
+import { useAuth } from '../context/AuthContext';
 
 export default function ConfirmPaymentPage() {
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('card');
     const [isProcessing, setIsProcessing] = useState(false);
+    const router = useRouter();
+    const { showLoading, hideLoading } = useLoading();
+    const { createOrder } = useOrders();
+    const { user } = useAuth();
 
     const handlePayment = async () => {
         setIsProcessing(true);
+        showLoading("Processing your payment...");
+
+        // Create order through OrderContext
+        const orderId = createOrder({
+            customerId: user?.id || 'customer_1',
+            pickupLocation: 'Warsaw, ul. Marszałkowska 100', // This should come from previous pages
+            dropoffLocation: 'Kraków, ul. Główny Rynek 1', // This should come from previous pages
+            packageType: 'Medium Package', // This should come from previous pages
+            price: 85,
+            customerName: user?.name || 'Customer',
+            customerPhone: user?.phone || '+48 123 456 789',
+            specialInstructions: 'Handle with care',
+            urgent: false
+        });
+
         // Simulate payment processing
         await new Promise(resolve => setTimeout(resolve, 2000));
+
         setIsProcessing(false);
-        // Redirect to orders page
-        window.location.href = '/orders';
+        hideLoading();
+
+        // Redirect to package tracking page with order ID
+        router.push(`/track-package?orderId=${orderId}`);
     };
 
     return (

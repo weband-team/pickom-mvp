@@ -6,14 +6,19 @@ interface User {
     id: string;
     name: string;
     email: string;
+    role: 'customer' | 'driver';
+    phone?: string;
+    profileComplete?: boolean;
 }
 
 interface AuthContextType {
     user: User | null;
-    login: (email: string, password: string) => boolean;
-    register: (name: string, email: string, password: string) => boolean;
+    login: (email: string, password: string, role?: 'customer' | 'driver') => boolean;
+    register: (name: string, email: string, password: string, role: 'customer' | 'driver', phone?: string) => boolean;
     logout: () => void;
     isAuthenticated: boolean;
+    isCustomer: boolean;
+    isDriver: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -21,26 +26,31 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
 
-    const login = (email: string, password: string): boolean => {
+    const login = (email: string, password: string, role: 'customer' | 'driver' = 'customer'): boolean => {
         // Мокаповая авторизация - любые данные проходят
         if (email && password) {
             setUser({
                 id: '1',
                 name: 'John A.',
-                email: email
+                email: email,
+                role: role,
+                profileComplete: true
             });
             return true;
         }
         return false;
     };
 
-    const register = (name: string, email: string, password: string): boolean => {
+    const register = (name: string, email: string, password: string, role: 'customer' | 'driver', phone?: string): boolean => {
         // Мокаповая регистрация
-        if (name && email && password) {
+        if (name && email && password && role) {
             setUser({
                 id: '1',
                 name: name,
-                email: email
+                email: email,
+                role: role,
+                phone: phone,
+                profileComplete: !!phone
             });
             return true;
         }
@@ -52,6 +62,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     const isAuthenticated = !!user;
+    const isCustomer = user?.role === 'customer';
+    const isDriver = user?.role === 'driver';
 
     return (
         <AuthContext.Provider value={{
@@ -59,7 +71,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             login,
             register,
             logout,
-            isAuthenticated
+            isAuthenticated,
+            isCustomer,
+            isDriver
         }}>
             {children}
         </AuthContext.Provider>
