@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { useLoading } from './context/LoadingContext';
 import PhoneWrapper from './components/PhoneWrapper';
 import NavigationWrapper from './components/NavigationWrapper';

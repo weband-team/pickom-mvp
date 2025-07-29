@@ -33,6 +33,7 @@ export function useSession(): UseSessionReturn {
       });
       //createSocket(dispatch, user, set);
     } catch (error) {
+      console.log('Fetch user error:', error);
       authStore.set({
         status: 'unauthenticated',
       });

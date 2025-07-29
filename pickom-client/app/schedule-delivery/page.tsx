@@ -328,7 +328,7 @@ export default function ScheduleDeliveryPage() {
                             {packageTypes.map((type) => (
                                 <button
                                     key={type.id}
-                                    onClick={() => setFormData(prev => ({ ...prev, packageType: type.id as any }))}
+                                    onClick={() => setFormData(prev => ({ ...prev, packageType: type.id as 'small' | 'medium' | 'large' | 'document' }))}
                                     style={{
                                         padding: '16px 12px',
                                         background: formData.packageType === type.id ?

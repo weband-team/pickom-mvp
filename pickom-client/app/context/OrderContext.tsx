@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, ReactNode } from 'react';
 
-interface Order {
+export interface Order {
     id: string;
     customerId: string;
     driverId?: string;

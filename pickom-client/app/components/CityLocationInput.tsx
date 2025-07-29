@@ -101,7 +101,7 @@ export default function CityLocationInput({
                 onChange(newValue);
             }
         }
-    }, [selectedCity, streetAddress, step]);
+    }, [selectedCity, streetAddress, step, onChange]);
 
     const handleCitySelect = (city: string) => {
         setSelectedCity(city);

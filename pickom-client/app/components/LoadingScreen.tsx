@@ -159,7 +159,7 @@ export default function LoadingScreen({
                                 maxWidth: '280px',
                                 margin: '0 auto'
                             }}>
-                                We're matching you with the most trusted and available pickers in your area.
+                                We&apos;re matching you with the most trusted and available pickers in your area.
                             </p>
                         </div>
                     </div>

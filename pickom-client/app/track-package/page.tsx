@@ -4,9 +4,10 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import PhoneWrapper from '../components/PhoneWrapper';
 import { useOrders } from '../context/OrderContext';
+import { Order } from '../context/OrderContext';
 
 export default function TrackPackagePage() {
-    const [order, setOrder] = useState<any>(null);
+    const [order, setOrder] = useState<Order | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -129,7 +130,7 @@ export default function TrackPackagePage() {
                             Order Not Found
                         </h2>
                         <p style={{ fontSize: '16px', color: '#9CA3AF', marginBottom: '24px' }}>
-                            We couldn't find your order. Please check the order ID.
+                            We couldn&apos;t find your order. Please check the order ID.
                         </p>
                         <button
                             onClick={() => router.push('/')}

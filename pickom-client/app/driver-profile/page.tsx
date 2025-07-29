@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import PhoneWrapper from '../components/PhoneWrapper';
-import { useAuthLogic } from '../auth/useAuthLogic';
 import { useSession } from '../hooks/use-session';
 
 interface ScheduleEntry {
@@ -72,7 +71,7 @@ export default function DriverProfilePage() {
         if (status !== 'loading' && user && user?.role !== 'picker') {
             router.push('/auth/login');
         }
-    }, [user, router]);
+    }, [user, router, status]);
 
     const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -209,7 +208,7 @@ export default function DriverProfilePage() {
                         ].map((tab) => (
                             <button
                                 key={tab.key}
-                                onClick={() => setActiveTab(tab.key as any)}
+                                onClick={() => setActiveTab(tab.key as 'profile' | 'schedule' | 'settings')}
                                 style={{
                                     flex: 1,
                                     padding: '12px 16px',

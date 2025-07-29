@@ -25,7 +25,7 @@ export default function OrdersPage() {
     }, [status, user, router]);
 
     const getOrderStatusInfo = (status: string) => {
-        const statusMap: Record<string, any> = {
+        const statusMap: Record<string, { label: string, icon: string, color: string }> = {
             'pending': { label: 'Pending', icon: '⏳', color: '#f59e0b' },
             'accepted': { label: 'Accepted', icon: '✅', color: '#10b981' },
             'heading_to_pickup': { label: 'Driver En Route', icon: '🚗', color: '#3b82f6' },

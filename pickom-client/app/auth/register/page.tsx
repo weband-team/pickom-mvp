@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import PhoneWrapper from '../../components/PhoneWrapper';
 import { useAuthLogic } from '../useAuthLogic';
@@ -15,7 +14,6 @@ export default function RegisterPage() {
     const [role, setRole] = useState<'sender' | 'picker'>('sender');
     const [error, setError] = useState('');
     const { handleSignUp } = useAuthLogic();
-    const router = useRouter();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

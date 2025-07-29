@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import PhoneWrapper from '../../components/PhoneWrapper';
 import { useAuthLogic } from '../useAuthLogic';
@@ -12,7 +11,6 @@ export default function LoginPage() {
     const [role, setRole] = useState<'sender' | 'picker'>('sender');
     const [error, setError] = useState('');
     const { handleSignIn } = useAuthLogic();
-    const router = useRouter();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -152,7 +150,7 @@ export default function LoginPage() {
 
                         <div style={{ textAlign: 'center', paddingTop: '16px' }}>
                             <Link href="/auth/register" style={{ color: '#999', textDecoration: 'underline' }}>
-                                Don't have an account? Sign up
+                                Don&apos;t have an account? Sign up
                             </Link>
                         </div>
                     </form>

@@ -12,7 +12,6 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   user: null,
   status: 'loading',
   clear: () => {
-    const { user } = get();
     //if (user) socketService.leaveRoom(user.uid);
     set({ user: null, status: 'unauthenticated' });
   },

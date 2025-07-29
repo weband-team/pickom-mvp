@@ -18,7 +18,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (status === 'loading') {
       fetchUser();
     }
-  }, [refresh, status]);
+  }, [refresh, status, isFetching]);
 
   // Показываем загрузку пока проверяем аутентификацию
   if (status === 'loading') {

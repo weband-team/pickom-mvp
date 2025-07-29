@@ -1,7 +1,7 @@
 import { useRouter } from "next/navigation";
 import { handleRegister } from "../api/auth";
 import { useAuthStore } from "../hooks/use-auth-store";
-import { createUserWithEmailAndPassword, getAuth, signInWithCustomToken, signInWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from "../config/firebase-config";
 
 export function useAuthLogic() {

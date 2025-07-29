@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import PhoneWrapper from '../components/PhoneWrapper';
 import { useLoading } from '../context/LoadingContext';
@@ -73,7 +72,7 @@ export default function SelectTravelerPage() {
         }
     };
 
-    const handleSelectPicker = async (traveler: Traveler) => {
+    const handleSelectPicker = async () => {
         showLoading("Confirming your selection...");
 
         // Simulate API call
@@ -147,7 +146,7 @@ export default function SelectTravelerPage() {
                                     <div className="picker-price">{traveler.price}</div>
                                     <button
                                         className="btn-select"
-                                        onClick={() => handleSelectPicker(traveler)}
+                                        onClick={() => handleSelectPicker()}
                                     >
                                         Select Picker
                                     </button>

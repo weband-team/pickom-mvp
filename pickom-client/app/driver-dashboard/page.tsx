@@ -5,35 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useOrders } from '../context/OrderContext';
 import PhoneWrapper from '../components/PhoneWrapper';
 import NavigationWrapper from '../components/NavigationWrapper';
-import { useAuthLogic } from '../auth/useAuthLogic';
 import { useSession } from '../hooks/use-session';
 
-interface DeliveryRequest {
-    id: string;
-    pickupLocation: string;
-    dropoffLocation: string;
-    packageType: string;
-    price: number;
-    distance: string;
-    estimatedTime: string;
-    customerName: string;
-    urgent: boolean;
-}
-
-interface ActiveDelivery {
-    id: string;
-    orderId: string;
-    pickupLocation: string;
-    dropoffLocation: string;
-    packageType: string;
-    price: number;
-    customerName: string;
-    customerPhone: string;
-    status: 'accepted' | 'heading_to_pickup' | 'package_collected' | 'in_transit' | 'delivered';
-    acceptedAt: string;
-    estimatedDelivery: string;
-    specialInstructions?: string;
-}
 
 export default function DriverDashboardPage() {
     const { user, signOut } = useSession();
@@ -72,6 +45,7 @@ export default function DriverDashboardPage() {
         }
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleUpdateDeliveryStatus = (orderId: string, newStatus: any) => {
         updateOrderStatus(orderId, newStatus);
 
@@ -84,6 +58,7 @@ export default function DriverDashboardPage() {
     };
 
     const getStatusInfo = (status: string) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const statusMap: Record<string, any> = {
             'accepted': { label: 'Accepted', icon: '✅', color: '#10b981', nextStatus: 'heading_to_pickup' as const },
             'heading_to_pickup': { label: 'Heading to Pickup', icon: '🚗', color: '#f59e0b', nextStatus: 'package_collected' as const },
@@ -176,7 +151,7 @@ export default function DriverDashboardPage() {
                                 350 PLN
                             </div>
                             <div style={{ fontSize: '14px', color: 'rgba(255, 255, 255, 0.8)' }}>
-                                Today's Earnings
+                                Today&apos;s Earnings
                             </div>
                         </div>
 
@@ -206,6 +181,7 @@ export default function DriverDashboardPage() {
                         ].map((tab) => (
                             <button
                                 key={tab.key}
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                 onClick={() => setActiveTab(tab.key as any)}
                                 style={{
                                     flex: 1,

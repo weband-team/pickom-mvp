@@ -34,7 +34,7 @@ export default function CustomerProfilePage() {
             console.log('user profile');
             router.push('/auth/login');
         }
-    }, [user, router]);
+    }, [user, router, status]);
 
     const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -48,7 +48,7 @@ export default function CustomerProfilePage() {
     };
 
     const getOrderStatusInfo = (status: string) => {
-        const statusMap: Record<string, any> = {
+        const statusMap: Record<string, { label: string, icon: string, color: string }> = {
             'pending': { label: 'Pending', icon: '⏳', color: '#f59e0b' },
             'accepted': { label: 'Accepted', icon: '✅', color: '#10b981' },
             'heading_to_pickup': { label: 'Driver En Route', icon: '🚗', color: '#3b82f6' },
@@ -116,7 +116,7 @@ export default function CustomerProfilePage() {
                         ].map((tab) => (
                             <button
                                 key={tab.key}
-                                onClick={() => setActiveTab(tab.key as any)}
+                                onClick={() => setActiveTab(tab.key as 'profile' | 'orders' | 'settings')}
                                 style={{
                                     flex: 1,
                                     padding: '12px 16px',

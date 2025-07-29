@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Loader } from '@googlemaps/js-api-loader';
 
 interface LocationInputProps {
@@ -12,6 +12,7 @@ interface LocationInputProps {
 }
 
 export default function LocationInput({ label, value, onChange, placeholder, error }: LocationInputProps) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [suggestions, setSuggestions] = useState<any[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -103,6 +104,7 @@ export default function LocationInput({ label, value, onChange, placeholder, err
     };
 
     // Handle suggestion selection
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleSuggestionSelect = (suggestion: any) => {
         onChange(suggestion.description);
         setShowSuggestions(false);

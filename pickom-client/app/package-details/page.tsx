@@ -53,7 +53,7 @@ export default function PackageDetailsPage() {
                         {packageTypes.map((type) => (
                             <button
                                 key={type.id}
-                                onClick={() => setSelectedPackageType(type.id as any)}
+                                onClick={() => setSelectedPackageType(type.id as 'small' | 'large' | 'document' | 'other')}
                                 className={`p-4 rounded-mobile text-center font-semibold transition-all duration-300 min-h-button flex flex-col items-center justify-center gap-2 tap-highlight-none ${selectedPackageType === type.id
                                     ? 'bg-accent-orange text-white shadow-mobile-lg'
                                     : 'bg-card border border-border text-white hover:bg-gray-700'
