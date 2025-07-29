@@ -15,6 +15,8 @@ export class AuthService {
   public async verifyAndUpsertUser(
     accessToken: string,
     role?: string,
+    name?: string,
+    phone?: string,
   ): Promise<{
     decodedToken: DecodedIdToken;
     userInfo: User;
@@ -26,9 +28,10 @@ export class AuthService {
       userInfo = await this.userService.create({
         uid: decodedToken.uid,
         email: decodedToken.email || '',
-        name: decodedToken.name || (decodedToken.email ? decodedToken.email.split('@')[0] : 'Unknown'),
+        name: name || (decodedToken.email ? decodedToken.email.split('@')[0] : 'Unknown'),
         prevLoginAt: new Date(),
         avatarUrl: avatar,
+        phone: phone,
         createdAt: new Date(),
         role: role ?? 'sender',
       });

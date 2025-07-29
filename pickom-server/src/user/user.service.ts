@@ -49,6 +49,7 @@ export class UserService {
       name: userData.name || '',
       avatarUrl: userData.avatarUrl || '',
       prevLoginAt: userData.prevLoginAt || new Date(),
+      phone: userData.phone || '',
       createdAt: new Date(),
       updatedAt: new Date(),
       role: userData.role || 'picker'

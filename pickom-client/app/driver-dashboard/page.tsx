@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useAuth } from '../context/AuthContext';
 import { useOrders } from '../context/OrderContext';
 import PhoneWrapper from '../components/PhoneWrapper';
 import NavigationWrapper from '../components/NavigationWrapper';
+import { useAuthLogic } from '../auth/useAuthLogic';
+import { useSession } from '../hooks/use-session';
 
 interface DeliveryRequest {
     id: string;
@@ -35,7 +36,7 @@ interface ActiveDelivery {
 }
 
 export default function DriverDashboardPage() {
-    const { user, isDriver, logout } = useAuth();
+    const { user, signOut } = useSession();
     const { getAvailableOrders, getOrdersByDriver, acceptOrder, updateOrderStatus } = useOrders();
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -44,7 +45,7 @@ export default function DriverDashboardPage() {
     const tabFromUrl = searchParams.get('tab') as 'available' | 'active' | 'history' | null;
     const [activeTab, setActiveTab] = useState<'available' | 'active' | 'history'>(tabFromUrl || 'available');
 
-    const currentDriverId = user?.id || 'driver_1'; // Mock driver ID
+    const currentDriverId = user?.uid || 'driver_1'; // Mock driver ID
 
     // Get data from OrderContext
     const availableOrders = getAvailableOrders();
@@ -52,10 +53,10 @@ export default function DriverDashboardPage() {
     const activeDeliveries = driverOrders.filter(order => order.status !== 'delivered');
 
     useEffect(() => {
-        if (!isDriver) {
+        if (user && user.role !== 'picker') {
             router.push('/auth/login');
         }
-    }, [isDriver, router]);
+    }, [user, router]);
 
     // Update active tab when URL changes
     useEffect(() => {
@@ -94,11 +95,11 @@ export default function DriverDashboardPage() {
     };
 
     const handleLogout = () => {
-        logout();
+        signOut();
         router.push('/auth/login');
     };
 
-    if (!isDriver) {
+    if (user && user.role !== 'picker') {
         return null;
     }
 

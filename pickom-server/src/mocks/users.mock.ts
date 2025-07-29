@@ -10,6 +10,7 @@ export const MOCK_USERS: User[] = [
     createdAt: new Date(),
     updatedAt: new Date(),
     role: 'sender',
+    phone: '+79999999999',
   },
   {
     uid: '2',
@@ -20,6 +21,7 @@ export const MOCK_USERS: User[] = [
     createdAt: new Date(),
     updatedAt: new Date(),
     role: 'picker',
+    phone: '+79999999999',
   },
   {
     uid: '3',
@@ -30,5 +32,6 @@ export const MOCK_USERS: User[] = [
     createdAt: new Date(),
     updatedAt: new Date(),
     role: 'picker',
+    phone: '+79999999999',
   },
 ];

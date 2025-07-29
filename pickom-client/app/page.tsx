@@ -3,26 +3,26 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useAuth } from './context/AuthContext';
 import { useLoading } from './context/LoadingContext';
 import PhoneWrapper from './components/PhoneWrapper';
 import NavigationWrapper from './components/NavigationWrapper';
+import { useSession } from './hooks/use-session';
 
 export default function HomePage() {
     const [selectedType, setSelectedType] = useState('Intra-City');
     const [deliveryMode, setDeliveryMode] = useState<'now' | 'scheduled'>('now');
-    const { isAuthenticated, isDriver, user } = useAuth();
+    const { status, user } = useSession();
     const { showLoading, hideLoading } = useLoading();
     const router = useRouter();
 
     useEffect(() => {
-        if (!isAuthenticated) {
+        if (status === 'unauthenticated') {
             router.push('/auth/login');
-        } else if (isDriver) {
+        } else if (status === 'authenticated' && user && user.role === 'picker') {
             // Redirect drivers to their dashboard
             router.push('/driver-dashboard');
         }
-    }, [isAuthenticated, isDriver, router]);
+    }, [status, user, router]);
 
     const handleContinue = async () => {
         showLoading("Preparing your delivery request...");
@@ -44,7 +44,7 @@ export default function HomePage() {
         router.push(`/schedule-delivery?type=${encodeURIComponent(selectedType)}`);
     };
 
-    if (!isAuthenticated || isDriver) {
+    if (status !== 'authenticated' || user && user.role === 'picker') {
         return null;
     }
 

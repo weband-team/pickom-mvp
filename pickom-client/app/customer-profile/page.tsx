@@ -2,16 +2,17 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../context/AuthContext';
 import { useOrders } from '../context/OrderContext';
 import PhoneWrapper from '../components/PhoneWrapper';
+import { useSession } from '../hooks/use-session';
 
 export default function CustomerProfilePage() {
-    const { user, isCustomer, logout } = useAuth();
+    const { user, status, signOut } = useSession();
     const { getOrdersByCustomer } = useOrders();
     const router = useRouter();
     const [activeTab, setActiveTab] = useState<'profile' | 'orders' | 'settings'>('profile');
     const [profilePhoto, setProfilePhoto] = useState('/placeholder-avatar.jpg');
+    console.log('user', user);
 
     // Profile data
     const [profileData, setProfileData] = useState({
@@ -25,14 +26,15 @@ export default function CustomerProfilePage() {
     });
 
     // Get customer orders
-    const currentCustomerId = user?.id || 'customer_1';
+    const currentCustomerId = user?.uid || 'customer_1';
     const customerOrders = getOrdersByCustomer(currentCustomerId);
 
     useEffect(() => {
-        if (!isCustomer) {
+        if (status !== 'loading' && user && user?.role !== 'sender') {
+            console.log('user profile');
             router.push('/auth/login');
         }
-    }, [isCustomer, router]);
+    }, [user, router]);
 
     const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -58,11 +60,11 @@ export default function CustomerProfilePage() {
     };
 
     const handleLogout = () => {
-        logout();
+        signOut();
         router.push('/auth/login');
     };
 
-    if (!isCustomer) {
+    if (user && user.role !== 'sender') {
         return null;
     }
 

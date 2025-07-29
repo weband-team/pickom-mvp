@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { AuthProvider } from "./context/AuthContext";
 import { LoadingProvider } from "./context/LoadingContext";
 import { OrderProvider } from "./context/OrderContext";
 import LoadingWrapper from "./components/LoadingWrapper";
+import { ClientProviders } from "./ClientProviders";
 
 export const metadata: Metadata = {
     title: "Pickom",
@@ -18,14 +18,14 @@ export default function RootLayout({
     return (
         <html lang="en">
             <body>
-                <LoadingProvider>
-                    <AuthProvider>
+                <ClientProviders>
+                    <LoadingProvider>
                         <OrderProvider>
                             {children}
                             <LoadingWrapper />
                         </OrderProvider>
-                    </AuthProvider>
-                </LoadingProvider>
+                    </LoadingProvider>
+                </ClientProviders>
             </body>
         </html>
     );

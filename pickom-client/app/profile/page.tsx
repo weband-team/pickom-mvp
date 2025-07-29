@@ -3,29 +3,29 @@
 import { useRouter } from 'next/navigation';
 import NavigationWrapper from '../components/NavigationWrapper';
 import PhoneWrapper from '../components/PhoneWrapper';
-import { useAuth } from '../context/AuthContext';
+import { useSession } from '../hooks/use-session';
 
 export default function ProfilePage() {
-    const { user, logout, isAuthenticated, isCustomer, isDriver } = useAuth();
+    const { user, signOut, status } = useSession();
     const router = useRouter();
 
     const handleLogout = () => {
-        logout();
+        signOut();
         router.push('/auth/login');
     };
 
     // Redirect based on user role
-    if (!isAuthenticated) {
+    if (status !== 'authenticated') {
         router.push('/auth/login');
         return null;
     }
 
-    if (isDriver) {
+    if (user && user.role === 'picker') {
         router.push('/driver-profile');
         return null;
     }
 
-    if (isCustomer) {
+    if (user && user.role === 'sender') {
         router.push('/customer-profile');
         return null;
     }

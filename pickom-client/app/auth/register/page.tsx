@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useAuth } from '../../context/AuthContext';
 import PhoneWrapper from '../../components/PhoneWrapper';
+import { useAuthLogic } from '../useAuthLogic';
 
 export default function RegisterPage() {
     const [name, setName] = useState('');
@@ -12,12 +12,12 @@ export default function RegisterPage() {
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [phone, setPhone] = useState('');
-    const [role, setRole] = useState<'customer' | 'driver'>('customer');
+    const [role, setRole] = useState<'sender' | 'picker'>('sender');
     const [error, setError] = useState('');
-    const { register } = useAuth();
+    const { handleSignUp } = useAuthLogic();
     const router = useRouter();
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
 
@@ -25,16 +25,11 @@ export default function RegisterPage() {
             setError('Passwords do not match');
             return;
         }
-
-        if (register(name, email, password, role, phone)) {
-            // Redirect based on role
-            if (role === 'driver') {
-                router.push('/driver-dashboard');
-            } else {
-                router.push('/');
-            }
-        } else {
-            setError('Please fill in all fields');
+        try {
+            console.log(name);
+            await handleSignUp(role, email, password, phone, name);
+        } catch (error) {
+            setError(error as string);
         }
     };
 
@@ -135,13 +130,13 @@ export default function RegisterPage() {
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                                 <button
                                     type="button"
-                                    onClick={() => setRole('customer')}
+                                    onClick={() => setRole('sender')}
                                     style={{
                                         padding: '16px 20px',
-                                        background: role === 'customer' ?
+                                        background: role === 'sender' ?
                                             'linear-gradient(135deg, #f97316, #ea580c)' :
                                             'rgba(255, 255, 255, 0.05)',
-                                        border: role === 'customer' ?
+                                        border: role === 'sender' ?
                                             '2px solid #f97316' :
                                             '2px solid rgba(255, 255, 255, 0.1)',
                                         borderRadius: '12px',
@@ -158,13 +153,13 @@ export default function RegisterPage() {
 
                                 <button
                                     type="button"
-                                    onClick={() => setRole('driver')}
+                                    onClick={() => setRole('picker')}
                                     style={{
                                         padding: '16px 20px',
-                                        background: role === 'driver' ?
+                                        background: role === 'picker' ?
                                             'linear-gradient(135deg, #f97316, #ea580c)' :
                                             'rgba(255, 255, 255, 0.05)',
-                                        border: role === 'driver' ?
+                                        border: role === 'picker' ?
                                             '2px solid #f97316' :
                                             '2px solid rgba(255, 255, 255, 0.1)',
                                         borderRadius: '12px',

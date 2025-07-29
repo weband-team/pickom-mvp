@@ -4,25 +4,25 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import NavigationWrapper from '../components/NavigationWrapper';
 import PhoneWrapper from '../components/PhoneWrapper';
-import { useAuth } from '../context/AuthContext';
 import { useOrders } from '../context/OrderContext';
+import { useSession } from '../hooks/use-session';
 
 export default function OrdersPage() {
-    const { user, isAuthenticated, isCustomer } = useAuth();
+    const { user, status } = useSession();
     const { getOrdersByCustomer } = useOrders();
     const router = useRouter();
 
-    const currentCustomerId = user?.id || 'customer_1';
+    const currentCustomerId = user?.uid || 'customer_1';
     const customerOrders = getOrdersByCustomer(currentCustomerId);
 
     useEffect(() => {
-        if (!isAuthenticated) {
+        if (status !== 'authenticated') {
             router.push('/auth/login');
-        } else if (!isCustomer) {
+        } else if (user && user.role !== 'sender') {
             // If not a customer, redirect to dashboard
             router.push('/driver-dashboard');
         }
-    }, [isAuthenticated, isCustomer, router]);
+    }, [status, user, router]);
 
     const getOrderStatusInfo = (status: string) => {
         const statusMap: Record<string, any> = {
@@ -36,7 +36,7 @@ export default function OrdersPage() {
         return statusMap[status] || statusMap['pending'];
     };
 
-    if (!isAuthenticated || !isCustomer) {
+    if (status !== 'authenticated' || user && user.role !== 'sender') {
         return null;
     }
 

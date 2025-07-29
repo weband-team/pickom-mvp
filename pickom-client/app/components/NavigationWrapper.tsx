@@ -1,21 +1,21 @@
 'use client';
 
-import { useAuth } from '../context/AuthContext';
+import { useSession } from '../hooks/use-session';
 import BottomNavigation from './BottomNavigation';
 import DriverBottomNavigation from './DriverBottomNavigation';
 
 export default function NavigationWrapper() {
-    const { isAuthenticated, isDriver, isCustomer } = useAuth();
+    const { status, user } = useSession();
 
-    if (!isAuthenticated) {
+    if (status !== 'authenticated') {
         return null; // No navigation for unauthenticated users
     }
 
-    if (isDriver) {
+    if (user && user.role === 'picker') {
         return <DriverBottomNavigation />;
     }
 
-    if (isCustomer) {
+    if (user && user.role === 'sender') {
         return <BottomNavigation />;
     }
 

@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../context/AuthContext';
 import PhoneWrapper from '../components/PhoneWrapper';
+import { useAuthLogic } from '../auth/useAuthLogic';
+import { useSession } from '../hooks/use-session';
 
 interface ScheduleEntry {
     id: string;
@@ -15,7 +16,7 @@ interface ScheduleEntry {
 }
 
 export default function DriverProfilePage() {
-    const { user, isDriver, logout } = useAuth();
+    const { user, signOut, status } = useSession();
     const router = useRouter();
     const [activeTab, setActiveTab] = useState<'profile' | 'schedule' | 'settings'>('profile');
     const [profilePhoto, setProfilePhoto] = useState('/placeholder-avatar.jpg');
@@ -68,10 +69,10 @@ export default function DriverProfilePage() {
     ];
 
     useEffect(() => {
-        if (!isDriver) {
+        if (status !== 'loading' && user && user?.role !== 'picker') {
             router.push('/auth/login');
         }
-    }, [isDriver, router]);
+    }, [user, router]);
 
     const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -152,11 +153,11 @@ export default function DriverProfilePage() {
     };
 
     const handleLogout = () => {
-        logout();
+        signOut();
         router.push('/auth/login');
     };
 
-    if (!isDriver) {
+    if (user && user.role !== 'picker') {
         return null;
     }
 

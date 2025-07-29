@@ -3,30 +3,25 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useAuth } from '../../context/AuthContext';
 import PhoneWrapper from '../../components/PhoneWrapper';
+import { useAuthLogic } from '../useAuthLogic';
 
 export default function LoginPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [role, setRole] = useState<'customer' | 'driver'>('customer');
+    const [role, setRole] = useState<'sender' | 'picker'>('sender');
     const [error, setError] = useState('');
-    const { login } = useAuth();
+    const { handleSignIn } = useAuthLogic();
     const router = useRouter();
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
 
-        if (login(email, password, role)) {
-            // Redirect based on role
-            if (role === 'driver') {
-                router.push('/driver-dashboard');
-            } else {
-                router.push('/');
-            }
-        } else {
-            setError('Please enter both email and password');
+        try {
+            await handleSignIn(role, email, password);
+        } catch (error) {
+            setError(error as string);
         }
     };
 
@@ -76,13 +71,13 @@ export default function LoginPage() {
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                             <button
                                 type="button"
-                                onClick={() => setRole('customer')}
+                                onClick={() => setRole('sender')}
                                 style={{
                                     padding: '16px 20px',
-                                    background: role === 'customer' ?
+                                    background: role === 'sender' ?
                                         'linear-gradient(135deg, #f97316, #ea580c)' :
                                         'rgba(255, 255, 255, 0.05)',
-                                    border: role === 'customer' ?
+                                    border: role === 'sender' ?
                                         '2px solid #f97316' :
                                         '2px solid rgba(255, 255, 255, 0.1)',
                                     borderRadius: '12px',
@@ -98,13 +93,13 @@ export default function LoginPage() {
 
                             <button
                                 type="button"
-                                onClick={() => setRole('driver')}
+                                onClick={() => setRole('picker')}
                                 style={{
                                     padding: '16px 20px',
-                                    background: role === 'driver' ?
+                                    background: role === 'picker' ?
                                         'linear-gradient(135deg, #f97316, #ea580c)' :
                                         'rgba(255, 255, 255, 0.05)',
-                                    border: role === 'driver' ?
+                                    border: role === 'picker' ?
                                         '2px solid #f97316' :
                                         '2px solid rgba(255, 255, 255, 0.1)',
                                     borderRadius: '12px',

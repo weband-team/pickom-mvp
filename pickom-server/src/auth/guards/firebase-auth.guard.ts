@@ -1,6 +1,7 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { type Request, type Response } from 'express';
 import { admin } from '../firebase-admin.module';
+import 'dotenv/config';
 
 export type ReqWithUser = Request & {
   user?: {
@@ -66,7 +67,6 @@ export class FirebaseAuthGuardMe implements CanActivate {
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
           sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-          domain: process.env.NODE_ENV === 'production' ? '.hypecash.com' : undefined,
         });
         return false;
       }

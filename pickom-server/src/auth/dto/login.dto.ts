@@ -10,6 +10,8 @@ export class LoginDto {
 
 export class LoginBodyDto {
     role?: string;
+    phone?: string;
+    name: string;
 }
 
 export class LoginResponseDto {

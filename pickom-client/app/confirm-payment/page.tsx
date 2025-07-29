@@ -6,7 +6,7 @@ import Link from 'next/link';
 import PhoneWrapper from '../components/PhoneWrapper';
 import { useLoading } from '../context/LoadingContext';
 import { useOrders } from '../context/OrderContext';
-import { useAuth } from '../context/AuthContext';
+import { useSession } from '../hooks/use-session';
 
 export default function ConfirmPaymentPage() {
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('card');
@@ -14,7 +14,7 @@ export default function ConfirmPaymentPage() {
     const router = useRouter();
     const { showLoading, hideLoading } = useLoading();
     const { createOrder } = useOrders();
-    const { user } = useAuth();
+    const { user } = useSession();
 
     const handlePayment = async () => {
         setIsProcessing(true);
@@ -22,7 +22,7 @@ export default function ConfirmPaymentPage() {
 
         // Create order through OrderContext
         const orderId = createOrder({
-            customerId: user?.id || 'customer_1',
+            customerId: user?.uid || 'customer_1',
             pickupLocation: 'Warsaw, ul. Marszałkowska 100', // This should come from previous pages
             dropoffLocation: 'Kraków, ul. Główny Rynek 1', // This should come from previous pages
             packageType: 'Medium Package', // This should come from previous pages

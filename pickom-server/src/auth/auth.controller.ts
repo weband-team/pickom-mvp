@@ -68,9 +68,8 @@ export class AuthController {
         throw new BadRequestException('Authorization token is missing');
       }
 
-      const { userInfo } = await this.authService.verifyAndUpsertUser(accessToken, body?.role);
+      const { userInfo } = await this.authService.verifyAndUpsertUser(accessToken, body?.role, body?.name, body?.phone);
       const { sessionCookie, expiresIn } = await this.authService.createSessionCookie(accessToken);
-      const { emailVerified } = await admin.auth().getUser(userInfo.uid);
 
       res.cookie('session', sessionCookie, {
         maxAge: expiresIn,
@@ -81,7 +80,6 @@ export class AuthController {
 
       return {
         ...userInfo,
-        emailVerified,
       };
     } catch (error) {
       this.logger.error(error);
@@ -90,7 +88,7 @@ export class AuthController {
   }
 
   @Get('me')
-  @UseGuards(FirebaseAuthGuardMe)
+  @UseGuards(FirebaseAuthGuard)
   @ApiOperation({
     summary: 'Получение информации о текущем пользователе',
     description: 'Возвращает информацию о текущем авторизованном пользователе или null если не авторизован'
@@ -114,12 +112,9 @@ export class AuthController {
         };
       }
 
-      const { emailVerified } = await admin.auth().getUser(req.user.uid);
-
       return {
         user: {
           ...(await this.authService.getUserInfo(req.user.uid)),
-          emailVerified,
         },
         message: 'User data retrieved successfully',
       };
