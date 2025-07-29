@@ -21,6 +21,10 @@ export class UserService {
     return [...this.users]; // Возвращаем копию массива
   }
 
+  async findAllPickers(): Promise<User[]> {
+    return this.users.filter((user) => user.role === 'picker');
+  }
+
   async create(userData: Partial<User>): Promise<User> {
     // Генерируем uid если его нет
     const uid = userData.uid || this.generateUid();

@@ -1,46 +1,97 @@
-import { Body, Controller, Get, Param, Post, Put } from '@nestjs/common';
+import { Body, Controller, ForbiddenException, Get, NotFoundException, Param, Post, Put, Req, UseGuards } from '@nestjs/common';
 import { DeliveryService } from './delivery.service';
+import { FirebaseAuthGuard, ReqWithUser } from 'src/auth/guards/firebase-auth.guard';
+import { UserService } from 'src/user/user.service';
+import { OfferService } from 'src/offer/offer.service';
+import { TrakingService } from 'src/traking/traking.service';
 
 @Controller('delivery')
 export class DeliveryController {
-  constructor(private readonly deliveryService: DeliveryService) {}
+  constructor(
+    private readonly deliveryService: DeliveryService,
+    private readonly userService: UserService,
+    private readonly offerService: OfferService,
+    private readonly trakingService: TrakingService,
+  ) { }
 
   // Получить всех курьеров (GET /pickers)
+  // получение осуществляется из замоканыых данных по users где role === 'picker'
   @Get('pickers')
-  getAvailablePickers() {
-    return this.deliveryService.getAvailablePickers();
+  async getAvailablePickers() {
+    const pickers = await this.deliveryService.getAvailablePickers();
+    return pickers.map(picker => ({
+      ...picker,
+      price: Math.random() * 100, // строка вида "$42.38"
+    }));
   }
 
   // Создать запрос на доставку (POST /delivery/requests)
+  // Выполяняет это пользователь с role === 'sender'
   @Post('requests')
-  createDeliveryRequest(
-    @Body('senderId') senderId: string,
+  @UseGuards(FirebaseAuthGuard)
+  async createDeliveryRequest(
+    @Req() req: ReqWithUser,
     @Body('pickerId') pickerId: string,
     @Body('from') from: string,
     @Body('to') to: string,
+    @Body('price') price: number,
   ) {
-    return this.deliveryService.createDeliveryRequest(senderId, pickerId, from, to);
+    const { uid } = req.user as { uid: string };
+    return await this.deliveryService.createDeliveryRequest(uid, pickerId, from, to, price);
   }
 
   // Получить список запросов (GET /delivery/requests)
+  // Выполяняет это пользователь с role === 'sender' или 'picker'
   @Get('requests')
-  getAllDeliveryRequests() {
-    return this.deliveryService.getAllDeliveryRequests();
+  @UseGuards(FirebaseAuthGuard)
+  async getAllDeliveryRequests(
+    @Req() req: ReqWithUser,
+  ) {
+    const { uid } = req.user as { uid: string };
+    const user = await this.userService.findOne(uid);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    return await this.deliveryService.getAllDeliveryRequests(uid, user.role);
   }
 
   // Получить детали запроса (GET /delivery/requests/:id)
+  // Выполяняет это пользователь с role === 'sender' или 'picker'
   @Get('requests/:id')
-  getDeliveryRequestById(@Param('id') id: string) {
-    return this.deliveryService.getDeliveryRequestById(id);
+  @UseGuards(FirebaseAuthGuard)
+  async getDeliveryRequestById(
+    @Param('id') id: number,
+    @Req() req: ReqWithUser,
+  ) {
+    const { uid } = req.user as { uid: string };
+    const user = await this.userService.findOne(uid);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    return await this.deliveryService.getDeliveryRequestById(id, uid, user.role);
   }
 
   // Курьер принимает/отклоняет запрос (PUT /delivery/requests/:id)
+  // Выполяняет это пользователь с role === 'picker'
   @Put('requests/:id')
-  updateDeliveryRequestStatus(
-    @Param('id') id: string,
-    @Body('pickerId') pickerId: string,
+  @UseGuards(FirebaseAuthGuard)
+  async updateDeliveryRequestStatus(
+    @Param('id') id: number,
     @Body('status') status: 'accepted' | 'declined',
+    @Req() req: ReqWithUser,
   ) {
-    return this.deliveryService.updateDeliveryRequestStatus(id, pickerId, status);
+    const { uid } = req.user as { uid: string };
+    const user = await this.userService.findOne(uid);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    if (user.role !== 'picker') {
+      throw new ForbiddenException('User is not a picker');
+    }
+    await this.deliveryService.updateDeliveryRequestStatus(id, status, uid);
+    if (status === 'accepted') {
+      const offer = await this.offerService.createOffer(id);
+      await this.trakingService.updateTrakingStatus(offer.id, 'pending');
+    }
   }
 }
