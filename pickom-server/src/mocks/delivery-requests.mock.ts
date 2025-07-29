@@ -1,11 +1,14 @@
-export const MOCK_DELIVERY_REQUESTS = [
+import { Delivery } from "src/delivery/entities/delivery.entity";
+
+export const MOCK_DELIVERY_REQUESTS: Delivery[] = [
   {
-    id: '101',
-    senderId: '1', // Alice (sender)
-    pickerId: null, // пока не назначен
-    status: 'pending', // pending | accepted | declined
-    from: 'Москва',
-    to: 'Санкт-Петербург',
+    id: 1,
+    senderId: '1',
+    pickerId: '2',
+    status: 'accepted',
+    from: 'Минск',
+    to: 'Гродно',
+    price: 100,
     createdAt: new Date(),
   },
 ];

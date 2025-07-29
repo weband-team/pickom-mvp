@@ -1,51 +1,86 @@
 import { Injectable } from '@nestjs/common';
 import { MOCK_DELIVERY_REQUESTS } from 'src/mocks/delivery-requests.mock';
 import { MOCK_USERS } from 'src/mocks/users.mock';
+import { Delivery } from './entities/delivery.entity';
+import { UserService } from 'src/user/user.service';
+import { User } from 'src/user/types/user.type';
 
 @Injectable()
 export class DeliveryService {
   private deliveryRequests = MOCK_DELIVERY_REQUESTS;
   private users = MOCK_USERS;
 
-  // Получить всех курьеров (role: 'picker')
-  getAvailablePickers() {
-    return this.users.filter((user) => user.role === 'picker');
+  constructor(
+    private readonly userService: UserService,
+  ){
+
   }
 
-  // Создать запрос на доставку (отправитель → курьеру)
-  createDeliveryRequest(senderId: string, pickerId: string, from: string, to: string) {
-    const newRequest = {
-      id: Date.now().toString(),
+  // Получить всех курьеров (role: 'picker')
+  async getAvailablePickers(): Promise<User[]> {
+    return await this.userService.findAllPickers();
+  }
+
+  // Создать запрос на доставку
+  async createDeliveryRequest(
+    senderId: string,
+    pickerId: string,
+    from: string,
+    to: string,
+    price: number,
+  ): Promise<Delivery> {
+    const newRequest: Delivery = {
+      id: this.deliveryRequests.length + 1,
       senderId,
       pickerId,
       status: 'pending',
       from,
       to,
+      price,
       createdAt: new Date(),
     };
+
     this.deliveryRequests.push(newRequest);
     return newRequest;
   }
 
   // Получить список всех запросов
-  getAllDeliveryRequests() {
-    return this.deliveryRequests;
+  async getAllDeliveryRequests(uid: string, role: string): Promise<Delivery[]> {
+    return this.deliveryRequests.filter((request) => role === 'sender' ? request.senderId === uid : request.pickerId === uid);
   }
 
-  // Получить детали запроса по ID
-  getDeliveryRequestById(id: string) {
-    return this.deliveryRequests.find((req) => req.id === id);
-  }
-
-  // Курьер принимает/отклоняет запрос
-  updateDeliveryRequestStatus(id: string, pickerId: string, status: 'accepted' | 'declined') {
-    const request = this.deliveryRequests.find((req) => req.id === id);
-    if (!request) throw new Error('Request not found');
-    if (request.pickerId && request.pickerId !== pickerId) {
-      throw new Error('This request is assigned to another picker');
+  // Получить запрос по ID
+  async getDeliveryRequestById(id: number, uid: string, role: string): Promise<Delivery | null> {
+    const delivery = this.deliveryRequests.find(request => request.id === id) || null;
+    if (!delivery) {
+      return null;
     }
-    request.pickerId = pickerId;
-    request.status = status;
-    return request;
+    if (role === 'sender' && delivery.senderId !== uid) {
+      return null;
+    }
+    if (role === 'picker' && delivery.pickerId !== uid) {
+      return null;
+    }
+    return delivery;
+  }
+
+  // Обновить статус запроса
+  async updateDeliveryRequestStatus(
+    id: number,
+    status: 'accepted' | 'declined',
+    uid: string,
+  ): Promise<Delivery | null> {
+    const requestIndex = this.deliveryRequests.findIndex(request => request.id === id);
+
+    if (requestIndex === -1) {
+      return null;
+    }
+
+    if (this.deliveryRequests[requestIndex].pickerId !== uid) {
+      return null;
+    }
+
+    this.deliveryRequests[requestIndex].status = status;
+    return this.deliveryRequests[requestIndex];
   }
 }

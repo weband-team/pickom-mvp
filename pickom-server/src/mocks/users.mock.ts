@@ -1,20 +1,34 @@
-export const MOCK_USERS = [
+import { User } from "src/user/types/user.type";
+
+export const MOCK_USERS: User[] = [
   {
-    id: '1',
+    uid: '1',
     name: 'Alice',
     email: 'alice@example.com',
+    avatarUrl: 'https://example.com/avatar.jpg',
+    prevLoginAt: new Date(),
+    createdAt: new Date(),
+    updatedAt: new Date(),
     role: 'sender',
   },
   {
-    id: '2',
+    uid: '2',
     name: 'Bob',
     email: 'bob@example.com',
+    avatarUrl: 'https://example.com/avatar.jpg',
+    prevLoginAt: new Date(),
+    createdAt: new Date(),
+    updatedAt: new Date(),
     role: 'picker',
   },
   {
-    id: '3',
+    uid: '3',
     name: 'Charlie',
     email: 'charlie@example.com',
+    avatarUrl: 'https://example.com/avatar.jpg',
+    prevLoginAt: new Date(),
+    createdAt: new Date(),
+    updatedAt: new Date(),
     role: 'picker',
   },
 ];
