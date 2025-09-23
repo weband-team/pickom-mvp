@@ -1,0 +1,1 @@
+{"version":3,"file":"delivery-requests.mock.js","sourceRoot":"","sources":["../../src/mocks/delivery-requests.mock.ts"],"names":[],"mappings":";;;AAEa,QAAA,sBAAsB,GAAe;IAChD;QACE,EAAE,EAAE,CAAC;QACL,QAAQ,EAAE,GAAG;QACb,QAAQ,EAAE,GAAG;QACb,MAAM,EAAE,UAAU;QAClB,IAAI,EAAE,OAAO;QACb,EAAE,EAAE,QAAQ;QACZ,KAAK,EAAE,GAAG;QACV,SAAS,EAAE,IAAI,IAAI,EAAE;KACtB;CACF,CAAC"}
