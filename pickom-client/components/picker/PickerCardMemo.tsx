@@ -7,9 +7,9 @@ import {
   TrustBadge,
   StarRating,
   Button
-} from './ui';
-import { Picker } from '../types/picker';
-import { theme, cardStyles } from '../styles/theme';
+} from '../ui';
+import { Picker } from '../../types/picker';
+import { theme, cardStyles } from '../../styles/theme';
 
 interface PickerCardMemoProps {
   picker: Picker;
@@ -27,14 +27,14 @@ export const PickerCardMemo = memo(function PickerCardMemo({
       <Stack direction="row" spacing={2} alignItems="flex-start">
         <UserAvatar
           type="picker"
-          name={picker.name}
-          src={picker.avatar}
+          name={picker.fullName}
+          src={picker.avatarUrl}
           online={picker.isOnline}
         />
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
-              {picker.name}
+              {picker.fullName}
             </Typography>
             {picker.isVerified && (
               <TrustBadge type="verified" verified size="small" showLabel={false} />

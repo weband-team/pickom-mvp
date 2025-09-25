@@ -11,12 +11,11 @@ import {
   StarRating,
   Button,
   TextInput
-} from '../../components/ui';
-import { ChatRoll, ChatMessage } from '../../components/ui/ChatRoll';
-import { ConfirmPriceModal } from '../../components/ConfirmPriceModal';
-import { mockChatSession } from '../../data/mockChat';
-import { Message } from '../../types/chat';
-import { Picker } from '../../types/picker';
+} from '../../../components/ui';
+import { ChatRoll, ChatMessage, ConfirmPriceModal } from '../../../components';
+import { mockChatSession } from '../../../data/mockChat';
+import { Message } from '../../../types/chat';
+import { Picker } from '../../../types/picker';
 
 interface ChatPageClientProps {
   picker: Picker;
@@ -61,7 +60,7 @@ export function ChatPageClient({ picker, pickerId }: ChatPageClientProps) {
         const pickerResponse: Message = {
           id: `msg-${Date.now()}-picker`,
           senderId: pickerId,
-          senderName: picker.name,
+          senderName: picker.fullName,
           content: "Got it! Thanks for the message.",
           timestamp: new Date(),
           isFromPicker: true
@@ -69,7 +68,7 @@ export function ChatPageClient({ picker, pickerId }: ChatPageClientProps) {
         setMessages(prev => [...prev, pickerResponse]);
       }, 1000 + Math.random() * 2000);
     }
-  }, [newMessage, pickerId, picker.name]);
+  }, [newMessage, pickerId, picker.fullName]);
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -133,7 +132,7 @@ export function ChatPageClient({ picker, pickerId }: ChatPageClientProps) {
               </IconButton>
               <Box sx={{ flex: 1 }}>
                 <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                  Chat with {picker.name}
+                  Chat with {picker.fullName}
                 </Typography>
               </Box>
               <PickomLogo variant="icon" size="small" />
@@ -145,14 +144,14 @@ export function ChatPageClient({ picker, pickerId }: ChatPageClientProps) {
             <Stack direction="row" spacing={2} alignItems="center">
               <UserAvatar
                 type="picker"
-                name={picker.name}
-                src={picker.avatar}
+                name={picker.fullName}
+                src={picker.avatarUrl}
                 online={picker.isOnline}
               />
               <Box sx={{ flex: 1 }}>
                 <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 0.5 }}>
                   <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
-                    {picker.name}
+                    {picker.fullName}
                   </Typography>
                   {picker.isVerified && (
                     <TrustBadge type="verified" verified size="small" showLabel={false} />

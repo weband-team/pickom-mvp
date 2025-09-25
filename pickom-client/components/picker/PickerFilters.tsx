@@ -2,8 +2,8 @@
 
 import { useState, useCallback, memo } from 'react';
 import { Box, Typography, Button, Stack } from '@mui/material';
-import { PriceSlider } from './ui/PriceSlider';
-import { theme, buttonStyles } from '../styles/theme';
+import { PriceSlider } from '../ui';
+import { theme, buttonStyles } from '../../styles/theme';
 
 interface PickerFiltersProps {
   onFiltersChange: (filters: {

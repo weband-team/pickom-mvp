@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef } from 'react';
 import { Box, Paper, Typography } from '@mui/material';
-import { UserAvatar } from './UserAvatar';
+import { UserAvatar } from '../ui';
 
 export interface ChatMessage {
   id: string;

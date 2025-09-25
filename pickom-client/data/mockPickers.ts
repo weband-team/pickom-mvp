@@ -1,4 +1,5 @@
 import { Picker } from '../types/picker';
+import { UserType } from '../types/auth';
 
 const firstNames = [
   'Adam', 'Bartosz', 'Dawid', 'Filip', 'Grzegorz', 'Jakub', 'Jan', 'Kamil', 'Krzysztof', 'Łukasz',
@@ -40,12 +41,19 @@ function generateRandomPicker(id: number): Picker {
 
   return {
     id: `picker-${id}`,
-    name: `${firstName} ${lastName}`,
+    fullName: `${firstName} ${lastName}`,
+    email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@example.com`,
+    age: Math.floor(Math.random() * 30) + 20, // 20-50 years
+    country: 'Poland',
+    city: 'Warsaw',
+    phoneNumber: `+48${Math.floor(Math.random() * 900000000) + 100000000}`,
+    userType: UserType.PICKER,
+    avatarUrl: undefined,
     description: getRandomElement(descriptions),
+    rating: Math.round((Math.random() * 2 + 3) * 10) / 10, // 3.0-5.0
     trustLevel,
     price: basePrice,
     duration,
-    rating: Math.round((Math.random() * 2 + 3) * 10) / 10, // 3.0-5.0
     reviewCount: Math.floor(Math.random() * 200) + 5,
     isOnline: Math.random() > 0.2, // 80% online
     isVerified: trustLevel > 60, // Verify high trust users

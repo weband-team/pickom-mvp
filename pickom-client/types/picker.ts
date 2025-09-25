@@ -1,18 +1,14 @@
-export interface Picker {
-  id: string;
-  name: string;
-  avatar?: string;
-  description?: string;
-  trustLevel: number; // 0-100
-  price: number; // in rubles
-  duration: number; // in minutes
-  rating: number; // 1-5
+import { BaseUserData } from './auth'
+
+export interface Picker extends BaseUserData{
+  trustLevel: number; 
+  price: number; 
+  duration: number; 
   reviewCount: number;
   isOnline: boolean;
-  isVerified: boolean;
   isPhoneVerified: boolean;
   isEmailVerified: boolean;
-  distance: number; // in km
+  distance: number; 
   vehicle?: 'car' | 'bike' | 'scooter' | 'walking';
   completedDeliveries: number;
   deliveryCount: number; // alias for completedDeliveries for backwards compatibility

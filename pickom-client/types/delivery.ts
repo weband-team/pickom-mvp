@@ -45,3 +45,4 @@ export const DEFAULT_DELIVERY_CONFIG: DeliveryMethodConfig = {
   methods: Object.values(DELIVERY_METHODS),
   defaultSelected: null
 };
+

@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { MobileContainer } from './MobileContainer';
-import { Button } from './Button';
-import { TextInput } from './TextInput';
+import { Button } from '../base/Button';
+import { TextInput } from '../forms/TextInput';
 import { Box, Typography } from '@mui/material';
 
 const meta: Meta<typeof MobileContainer> = {

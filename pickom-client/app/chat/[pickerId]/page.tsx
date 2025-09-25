@@ -1,4 +1,4 @@
-import { mockPickers } from '../../data/mockPickers';
+import { mockPickers } from '../../../data/mockPickers';
 import { ChatPageClient } from './ChatPageClient';
 
 interface ChatPageProps {

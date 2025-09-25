@@ -12,7 +12,7 @@ import {
   DateTimePicker,
   PickomLogo,
   PriceSlider,
-} from './index';
+} from '../index';
 
 const meta: Meta = {
   title: 'UI/Overview',

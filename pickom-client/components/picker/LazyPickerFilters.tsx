@@ -4,7 +4,7 @@ import { lazy, Suspense } from 'react';
 import { Box, Skeleton } from '@mui/material';
 
 const PickerFilters = lazy(() =>
-  import('../PickerFilters').then(module => ({ default: module.PickerFilters }))
+  import('./PickerFilters').then(module => ({ default: module.PickerFilters }))
 );
 
 interface LazyPickerFiltersProps {

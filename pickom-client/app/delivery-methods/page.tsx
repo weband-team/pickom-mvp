@@ -10,10 +10,9 @@ import {
   DateTimePicker,
   MobileContainer,
   PickomLogo
-} from '../components/ui';
-import { useDeliveryActions, useIsSearchingPickers } from '../hooks/use-delivery-store';
-import { PickerSearchLoader } from '../components/PickerSearchLoader';
-import { DeliveryMethodType } from '../types/delivery';
+} from '../../components/ui';
+import { DeliveryMethodType } from '../../types/delivery';
+import { UserAvatar } from '@/components/profile/UserAvatar';
 
 interface DeliveryFormState {
   selectedMethod: DeliveryMethodType | '';
@@ -101,8 +100,6 @@ function deliveryFormReducer(state: DeliveryFormState, action: DeliveryFormActio
 export default function SendPackagePage() {
   const router = useRouter();
   const [state, dispatch] = useReducer(deliveryFormReducer, initialState);
-  const isSearchingPickers = useIsSearchingPickers();
-  const { startPickerSearch, stopPickerSearch } = useDeliveryActions();
 
   const deliveryMethods = [
     { id: 'within-city' as const, name: 'Within-City', description: 'Same city delivery' },
@@ -147,15 +144,10 @@ export default function SendPackagePage() {
     }
   })();
 
-  const handleRequestPicker = () => {
+  const handleNext = () => {
     if (canRequestPicker) {
-      startPickerSearch();
+      router.push('/package-type');
     }
-  };
-
-  const handleSearchComplete = () => {
-    stopPickerSearch();
-    router.push('/picker-results');
   };
 
   return (
@@ -168,8 +160,12 @@ export default function SendPackagePage() {
         backgroundColor: '#ffffff',
         p: 2,
       }}
-    >
+    > 
       <MobileContainer showFrame={false}>
+        <UserAvatar
+          name="Vadim"
+          sx={{position: 'absolute', top: 16, right: 16, zIndex: 10}}
+        />
         <Box sx={{ p: 3, pb: 6 }}>
           {/* Header */}
           <Box sx={{ textAlign: 'center', mb: 4 }}>
@@ -409,13 +405,11 @@ export default function SendPackagePage() {
           <Box sx={{ mt: 4 }}>
             {canRequestPicker ? (
               <Button
-                onClick={handleRequestPicker}
-                disabled={isSearchingPickers}
-                loading={isSearchingPickers}
+                onClick={handleNext}
                 fullWidth
                 size="large"
               >
-                {isSearchingPickers ? 'Searching...' : 'Request Picker'}
+                Next
               </Button>
             ) : state.selectedMethod ? (
               <Box
@@ -457,11 +451,6 @@ export default function SendPackagePage() {
             )}
           </Box>
         </Box>
-
-        {/* Loading screen overlay */}
-        {isSearchingPickers && (
-          <PickerSearchLoader onSearchComplete={handleSearchComplete} />
-        )}
       </MobileContainer>
     </Box>
   );

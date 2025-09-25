@@ -2,7 +2,7 @@
 
 import React, { memo, useCallback } from 'react';
 import { Box, Slider, Typography, SliderProps } from '@mui/material';
-import { theme } from '../../styles/theme';
+import { theme } from '../../../styles/theme';
 
 export interface PriceSliderProps extends Omit<SliderProps, 'value' | 'onChange'> {
   value?: number | number[];

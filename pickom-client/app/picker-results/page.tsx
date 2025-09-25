@@ -8,12 +8,12 @@ import {
   PickomLogo,
   LoadingIndicator,
   Button
-} from '../components/ui';
-import { LazyPickerFilters } from '../components/ui/LazyPickerFilters';
-import { PickerCardMemo } from '../components/PickerCardMemo';
-import { Picker } from '../types/picker';
-import { theme } from '../styles/theme';
-import { mockPickers, filterPickers } from '../data/mockPickers';
+} from '../../components/ui';
+import { LazyPickerFilters, PickerCardMemo } from '../../components';
+import { UserAvatar } from '@/components/profile/UserAvatar';
+import { Picker } from '../../types/picker';
+import { theme } from '../../styles/theme';
+import { mockPickers, filterPickers } from '../../data/mockPickers';
 
 export default function PickerResultsPage() {
   const [displayedPickers, setDisplayedPickers] = useState<Picker[]>([]);
@@ -153,6 +153,12 @@ export default function PickerResultsPage() {
       }}
     >
       <MobileContainer showFrame={false}>
+        {/* User Avatar */}
+        <UserAvatar
+          name="Vadim"
+          sx={{ position: 'absolute', top: 16, right: 16, zIndex: 10 }}
+        />
+
         {/* Header */}
         <Box
           sx={{

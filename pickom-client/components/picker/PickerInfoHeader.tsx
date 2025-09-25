@@ -1,7 +1,7 @@
 'use client';
 
-import { Picker } from '../types/picker';
-import { DeliveryInfo } from '../types/chat';
+import { Picker } from '../../types/picker';
+import { DeliveryInfo } from '../../types/chat';
 
 interface PickerInfoHeaderProps {
   picker: Picker;
@@ -15,14 +15,14 @@ export function PickerInfoHeader({ picker, deliveryInfo }: PickerInfoHeaderProps
         {/* Avatar */}
         <div className="flex-shrink-0">
           <div className="w-16 h-16 bg-gray-300 rounded-full flex items-center justify-center text-xl font-semibold text-gray-600">
-            {picker.name.split(' ').map(n => n[0]).join('')}
+            {picker.fullName.split(' ').map(n => n[0]).join('')}
           </div>
         </div>
 
         {/* Picker Info & Delivery Details */}
         <div className="flex-1 min-w-0">
           <h2 className="text-lg font-semibold text-gray-900 mb-2">
-            {picker.name}
+            {picker.fullName}
           </h2>
 
           <div className="space-y-1 text-sm text-gray-600">

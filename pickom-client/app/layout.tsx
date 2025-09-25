@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import ThemeWrapper from './components/ThemeWrapper';
+import { ThemeWrapper } from '../components';
 
 export const metadata: Metadata = {
     title: "Pickom",
