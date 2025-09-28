@@ -1,5 +1,8 @@
+'use client';
+
 import React from 'react';
 import { Box, Paper } from '@mui/material';
+import { usePathname } from 'next/navigation';
 
 export interface MobileContainerProps {
   children: React.ReactNode;
@@ -7,6 +10,7 @@ export interface MobileContainerProps {
   height?: number | string;
   showFrame?: boolean;
   backgroundColor?: string;
+  showBottomNav?: boolean;
 }
 
 export const MobileContainer: React.FC<MobileContainerProps> = ({
@@ -15,7 +19,12 @@ export const MobileContainer: React.FC<MobileContainerProps> = ({
   height = 812,
   showFrame = true,
   backgroundColor = '#ffffff',
+  showBottomNav = true,
 }) => {
+  const pathname = usePathname();
+  const isAuthPage = pathname?.includes('/login') || pathname?.includes('/register');
+  const shouldShowBottomNav = showBottomNav && !isAuthPage;
+
   if (!showFrame) {
     return (
       <Box
@@ -23,8 +32,8 @@ export const MobileContainer: React.FC<MobileContainerProps> = ({
         sx={{
           width: '100%',
           maxWidth: width,
-          height: '100vh',
-          maxHeight: height,
+          height: shouldShowBottomNav ? 'calc(100vh - 70px)' : '100vh',
+          maxHeight: shouldShowBottomNav ? `calc(${height}px - 70px)` : height,
           backgroundColor,
           overflow: 'auto',
           position: 'relative',
@@ -34,7 +43,9 @@ export const MobileContainer: React.FC<MobileContainerProps> = ({
           scrollbarWidth: 'none',
         }}
       >
-        {children}
+        <Box sx={{ paddingBottom: 0, minHeight: '100%' }}>
+          {children}
+        </Box>
       </Box>
     );
   }
@@ -53,7 +64,7 @@ export const MobileContainer: React.FC<MobileContainerProps> = ({
         elevation={3}
         sx={{
           width,
-          height,
+          height: shouldShowBottomNav ? `calc(${height}px - 70px)` : height,
           borderRadius: 6,
           overflow: 'hidden',
           position: 'relative',
@@ -91,15 +102,17 @@ export const MobileContainer: React.FC<MobileContainerProps> = ({
             width: '100%',
             height: '100%',
             paddingTop: 6,
-            paddingBottom: 4,
             overflow: 'auto',
+            position: 'relative',
             '&::-webkit-scrollbar': {
               display: 'none',
             },
             scrollbarWidth: 'none',
           }}
         >
-          {children}
+          <Box sx={{ paddingBottom: 4, minHeight: '100%' }}>
+            {children}
+          </Box>
         </Box>
       </Paper>
     </Box>
