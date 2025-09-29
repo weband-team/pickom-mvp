@@ -20,7 +20,7 @@ import {
   ApiBadRequestResponse,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { FirebaseAuthGuard, FirebaseAuthGuardMe, ReqWithUser } from './guards/firebase-auth.guard';
+import { FirebaseAuthGuard, ReqWithUser } from './guards/firebase-auth.guard';
 import { admin } from './firebase-admin.module';
 import { AuthService } from './auth.service';
 import { LoginBodyDto, LoginResponseDto } from './dto/login.dto';
@@ -79,7 +79,7 @@ export class AuthController {
       });
 
       return {
-        ...userInfo,
+        ...userInfo, //Переписать на возврат userInfo через объект res
       };
     } catch (error) {
       this.logger.error(error);
@@ -105,12 +105,12 @@ export class AuthController {
   })
   public async me(@Req() req: ReqWithUser) {
     try {
-      if (!req.user) {
-        return {
-          user: null,
-          message: 'Authorization is required',
-        };
-      }
+      // if (!req.user) {
+      //   return {
+      //     user: null,
+      //     message: 'Authorization is required',
+      //   };
+      // }
 
       return {
         user: {

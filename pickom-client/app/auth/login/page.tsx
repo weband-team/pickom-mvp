@@ -19,7 +19,7 @@ export default function LoginPage() {
         try {
             await handleSignIn(role, email, password);
         } catch (error) {
-            setError(error as string);
+            setError(error instanceof Error ? error.message : String(error));
         }
     };
 

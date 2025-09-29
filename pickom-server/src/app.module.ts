@@ -4,9 +4,11 @@ import { AppController } from './app.controller';
 import { DeliveryModule } from './delivery/delivery.module';
 import { OfferModule } from './offer/offer.module';
 import { TrakingModule } from './traking/traking.module';
+import { DatabaseModule } from './config/database.module';
+import { UserModule } from './user/user.module';
 
 @Module({
-  imports: [AuthModule, DeliveryModule, OfferModule, TrakingModule],
+  imports: [AuthModule, DeliveryModule, OfferModule, TrakingModule, DatabaseModule, UserModule],
   controllers: [AppController],
   providers: [],
 })

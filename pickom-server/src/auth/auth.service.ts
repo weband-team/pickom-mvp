@@ -3,6 +3,7 @@ import { DecodedIdToken } from 'firebase-admin/lib/auth';
 import { admin } from './firebase-admin.module';
 import { UserService } from '../user/user.service';
 import { User } from '../user/types/user.type';
+import { UserDto } from 'src/user/dto/user.dto';
 
 @Injectable()
 export class AuthService {
@@ -19,7 +20,7 @@ export class AuthService {
     phone?: string,
   ): Promise<{
     decodedToken: DecodedIdToken;
-    userInfo: User;
+    userInfo: UserDto;
   }> {
     const decodedToken = await admin.auth().verifyIdToken(accessToken);
     const avatar = this.getAvatarSize(decodedToken.picture || '', decodedToken.firebase.sign_in_provider);
@@ -60,7 +61,7 @@ export class AuthService {
     return { sessionCookie, expiresIn };
   }
 
-  public async getUserInfo(uid: string): Promise<User> {
+  public async getUserInfo(uid: string): Promise<UserDto> {
     const userInfo = await this.userService.findOne(uid);
     if (!userInfo) {
       throw new Error('User not found');

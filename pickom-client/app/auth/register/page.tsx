@@ -27,7 +27,7 @@ export default function RegisterPage() {
             console.log(name);
             await handleSignUp(role, email, password, phone, name);
         } catch (error) {
-            setError(error as string);
+            setError(error instanceof Error ? error.message : String(error));
         }
     };
 

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useOrders } from '../context/OrderContext';
 import PhoneWrapper from '../components/PhoneWrapper';
 import { useSession } from '../hooks/use-session';
+import { deleteUser, updateUser } from '../api/user';
 
 export default function CustomerProfilePage() {
     const { user, status, signOut } = useSession();
@@ -12,6 +13,7 @@ export default function CustomerProfilePage() {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState<'profile' | 'orders' | 'settings'>('profile');
     const [profilePhoto, setProfilePhoto] = useState('/placeholder-avatar.jpg');
+    const [isLoading, setIsLoading] = useState(false);
     console.log('user', user);
 
     // Profile data
@@ -58,6 +60,52 @@ export default function CustomerProfilePage() {
         };
         return statusMap[status] || statusMap['pending'];
     };
+
+    const handleSaveProfile = async () => {
+        if (!user?.uid) {
+            alert('User not found');
+            return;
+        }
+
+        setIsLoading(true);
+        try {
+            await updateUser(user.uid, {
+                name: profileData.name,
+                email: profileData.email,
+                phone: profileData.phone,
+            });
+            alert('Profile updated successfully!');
+        } catch (error) {
+            console.error('Error updating profile:', error);
+            alert('Failed to update profile. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleDeleteUser = async () => {
+        if (!user?.uid) {
+            alert('User not found');
+            return;
+        }
+
+        const confirmDelete = window.confirm('Are you sure you want to delete your account? This action cannot be undone.');
+        if (!confirmDelete) {
+            return;
+        }
+
+        setIsLoading(true);
+        try {
+            await deleteUser(user.uid);
+            alert('User deleted successfully!');
+            router.push('/auth/login');
+        } catch (error) {
+            console.error('Error deleting user:', error);
+            alert('Failed to delete user. Please try again');
+        } finally {
+            setIsLoading(false);
+        }
+    } 
 
     const handleLogout = () => {
         signOut();
@@ -284,9 +332,10 @@ export default function CustomerProfilePage() {
                                 <button
                                     className="btn-primary"
                                     style={{ width: '100%' }}
-                                    onClick={() => alert('Profile updated!')}
+                                    onClick={handleSaveProfile}
+                                    disabled={isLoading}
                                 >
-                                    Save Profile
+                                    {isLoading ? 'Saving...' : 'Save Profile'}
                                 </button>
                             </div>
                         </div>
@@ -510,7 +559,7 @@ export default function CustomerProfilePage() {
                                         padding: '8px 16px',
                                         fontSize: '14px',
                                         cursor: 'pointer'
-                                    }}>
+                                    }} onClick={handleDeleteUser}>
                                         Delete Account
                                     </button>
                                 </div>
