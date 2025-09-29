@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import NotificationBadge from './NotificationBadge';
 
 export default function BottomNavigation() {
     const pathname = usePathname();
@@ -26,12 +27,15 @@ export default function BottomNavigation() {
             )
         },
         {
-            name: 'Orders',
-            href: '/orders',
+            name: 'Notifications',
+            href: '/notifications',
             icon: (active: boolean) => (
-                <svg className="nav-icon" viewBox="0 0 24 24" fill={active ? '#fff' : '#666'}>
-                    <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z" />
-                </svg>
+                <div className="relative">
+                    <svg className="nav-icon" viewBox="0 0 24 24" fill={active ? '#fff' : '#666'}>
+                        <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" />
+                    </svg>
+                    <NotificationBadge />
+                </div>
             )
         },
         {

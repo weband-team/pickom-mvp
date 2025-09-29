@@ -1,6 +1,6 @@
 export interface Traking {
   id: number;
-  offerId: number;
-  status: 'pending' | 'in_transit' | 'completed' | 'cancelled';
+  deliveryId: number;
+  status: 'pending' | 'accepted' | 'picked_up' | 'delivered' | 'cancelled';
   createdAt: Date;
 }

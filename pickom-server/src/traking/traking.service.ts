@@ -24,33 +24,17 @@ export class TrakingService {
   }
 
   async updateTrakingStatus(
-    offerId: number,
-    status: 'pending' | 'in_transit' | 'completed' | 'cancelled',
+    deliveryId: number,
+    status: 'pending' | 'accepted' | 'picked_up' | 'delivered' | 'cancelled',
   ): Promise<Traking> {
-    // Получаем текущий статус оффера
-    const currentOffer = await this.offerService.getOfferById(offerId);
-    if (!currentOffer) {
-      throw new Error('Offer not found');
-    }
-
-    const currentStatus = currentOffer.status;
-    
-    if (currentStatus === 'in_transit' && status === 'pending') {
-      throw new Error('Cannot set status to pending when already in transit');
-    }
-    if (currentStatus === 'completed' || currentStatus === 'cancelled') {
-      throw new Error(`Cannot change status when offer is already ${currentStatus}`);
-    }
-
     const newTraking: Traking = {
       id: this.traking.length + 1,
-      offerId,
+      deliveryId,
       status,
       createdAt: new Date(),
     };
 
     this.traking.push(newTraking);
-    await this.offerService.updateOfferStatus(offerId, status);
     return newTraking;
   }
 }

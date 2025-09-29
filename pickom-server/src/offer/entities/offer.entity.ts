@@ -1,6 +1,9 @@
 export interface Offer {
   id: number;
-  deliveryId: number;
-  createdAt: Date;
-  status: 'pending' | 'in_transit' | 'completed' | 'cancelled';
+  delivery_id: number;
+  picker_id: number;
+  price: number;
+  message?: string;
+  status: 'pending' | 'accepted' | 'rejected';
+  created_at: Date;
 }

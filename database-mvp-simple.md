@@ -39,10 +39,6 @@ erDiagram
         text description
         varchar from_address
         varchar to_address
-        decimal from_lat
-        decimal from_lng
-        decimal to_lat
-        decimal to_lng
         decimal price
         varchar size "small|medium|large"
         decimal weight
@@ -51,6 +47,7 @@ erDiagram
         text notes
         timestamp created_at
         timestamp updated_at
+        text deliveriesUrl
     }
 
     OFFERS {

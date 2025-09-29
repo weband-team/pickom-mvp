@@ -5,8 +5,8 @@ import { Traking } from "src/traking/entities/traking.entity";
 export const MOCK_TRAKINGS: Traking[] = [
   {
     id: 1,
-    offerId: 1,
-    status: 'in_transit',
+    deliveryId: 1,
+    status: 'picked_up',
     createdAt: new Date(),
   },
 ];

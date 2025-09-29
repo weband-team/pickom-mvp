@@ -12,9 +12,9 @@ export class TrakingController {
     private readonly trakingService: TrakingService,
   ) { }
 
-  @Get('/:offerId')
+  @Get('/:deliveryId')
   @UseGuards(FirebaseAuthGuard)
-  async getTraking(@Param('offerId') offerId: number, @Req() req: ReqWithUser) {
+  async getTraking(@Param('deliveryId') deliveryId: number, @Req() req: ReqWithUser) {
     const { uid } = req.user as { uid: string };
     const user = await this.userService.findOne(uid);
     if (!user) {
@@ -23,14 +23,14 @@ export class TrakingController {
     if (user.role !== 'sender' && user.role !== 'picker') {
       throw new ForbiddenException('User is not a sender or picker');
     }
-    return await this.trakingService.getTraking(offerId);
+    return await this.trakingService.getTraking(deliveryId);
   }
 
-  @Put('/:offerId')
+  @Put('/:deliveryId')
   @UseGuards(FirebaseAuthGuard)
   async updateTrakingStatus(
-    @Param('offerId') offerId: number,
-    @Body('status') status: 'pending' | 'in_transit' | 'completed' | 'cancelled',
+    @Param('deliveryId') deliveryId: number,
+    @Body('status') status: 'pending' | 'accepted' | 'picked_up' | 'delivered' | 'cancelled',
     @Req() req: ReqWithUser,
   ) {
     const { uid } = req.user as { uid: string };
@@ -41,9 +41,9 @@ export class TrakingController {
     if (user.role !== 'picker') {
       throw new ForbiddenException('Only pickers can update tracking status');
     }
-    
+
     try {
-      return await this.trakingService.updateTrakingStatus(offerId, status);
+      return await this.trakingService.updateTrakingStatus(deliveryId, status);
     } catch (error) {
       throw new BadRequestException(error.message);
     }

@@ -77,7 +77,7 @@ export class DeliveryController {
   @UseGuards(FirebaseAuthGuard)
   async updateDeliveryRequestStatus(
     @Param('id') id: number,
-    @Body('status') status: 'accepted' | 'declined',
+    @Body('status') status: 'accepted' | 'picked_up' | 'delivered' | 'cancelled',
     @Req() req: ReqWithUser,
   ) {
     const { uid } = req.user as { uid: string };
@@ -88,10 +88,6 @@ export class DeliveryController {
     if (user.role !== 'picker') {
       throw new ForbiddenException('User is not a picker');
     }
-    await this.deliveryService.updateDeliveryRequestStatus(id, status, uid);
-    if (status === 'accepted') {
-      const offer = await this.offerService.createOffer(id);
-      await this.trakingService.updateTrakingStatus(offer.id, 'pending');
-    }
+    return await this.deliveryService.updateDeliveryRequestStatus(id, status, uid);
   }
 }

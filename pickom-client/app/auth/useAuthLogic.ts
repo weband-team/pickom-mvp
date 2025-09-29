@@ -46,6 +46,7 @@ export function useAuthLogic() {
     try {
       const userCredentials = await signInWithEmailAndPassword(auth, email, password);
       const accessToken = await userCredentials.user.getIdToken();
+      console.log(accessToken);
 
       await handleLogin(role, accessToken);
       if (role === 'picker') {
