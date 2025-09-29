@@ -1,10 +1,52 @@
-export interface Notification {
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  ManyToOne,
+  CreateDateColumn,
+  JoinColumn,
+} from 'typeorm';
+import { User } from '../../user/entities/user.entity';
+
+@Entity('notifications')
+export class Notification {
+  @PrimaryGeneratedColumn('increment')
   id: number;
-  user_id: string; // Firebase UID
+
+  @Column({ name: 'user_id' })
+  userId: number;
+
+  @Column()
   title: string;
+
+  @Column({ type: 'text' })
   message: string;
-  type: 'offer_received' | 'offer_accepted' | 'status_update' | 'incoming_delivery';
+
+  @Column({
+    type: 'enum',
+    enum: [
+      'new_delivery',
+      'offer_received',
+      'status_update',
+      'offer_accepted',
+      'incoming_delivery',
+    ],
+  })
+  type:
+    | 'new_delivery'
+    | 'offer_received'
+    | 'status_update'
+    | 'offer_accepted'
+    | 'incoming_delivery';
+
+  @Column({ type: 'boolean', default: false })
   read: boolean;
-  created_at: Date;
-  related_delivery_id?: number;
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
+
+  // Relations
+  @ManyToOne(() => User, (user) => user.notifications)
+  @JoinColumn({ name: 'user_id' })
+  user: User;
 }

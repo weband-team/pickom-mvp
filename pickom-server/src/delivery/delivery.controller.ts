@@ -1,6 +1,20 @@
-import { Body, Controller, ForbiddenException, Get, NotFoundException, Param, Post, Put, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  ForbiddenException,
+  Get,
+  NotFoundException,
+  Param,
+  Post,
+  Put,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { DeliveryService } from './delivery.service';
-import { FirebaseAuthGuard, ReqWithUser } from 'src/auth/guards/firebase-auth.guard';
+import {
+  FirebaseAuthGuard,
+  ReqWithUser,
+} from 'src/auth/guards/firebase-auth.guard';
 import { UserService } from 'src/user/user.service';
 import { OfferService } from 'src/offer/offer.service';
 import { TrakingService } from 'src/traking/traking.service';
@@ -12,14 +26,14 @@ export class DeliveryController {
     private readonly userService: UserService,
     private readonly offerService: OfferService,
     private readonly trakingService: TrakingService,
-  ) { }
+  ) {}
 
   // Получить всех курьеров (GET /pickers)
   // получение осуществляется из замоканыых данных по users где role === 'picker'
   @Get('pickers')
   async getAvailablePickers() {
     const pickers = await this.deliveryService.getAvailablePickers();
-    return pickers.map(picker => ({
+    return pickers.map((picker) => ({
       ...picker,
       price: Math.random() * 100, // строка вида "$42.38"
     }));
@@ -37,16 +51,20 @@ export class DeliveryController {
     @Body('price') price: number,
   ) {
     const { uid } = req.user as { uid: string };
-    return await this.deliveryService.createDeliveryRequest(uid, pickerId, from, to, price);
+    return await this.deliveryService.createDeliveryRequest(
+      uid,
+      pickerId,
+      from,
+      to,
+      price,
+    );
   }
 
   // Получить список запросов (GET /delivery/requests)
   // Выполяняет это пользователь с role === 'sender' или 'picker'
   @Get('requests')
   @UseGuards(FirebaseAuthGuard)
-  async getAllDeliveryRequests(
-    @Req() req: ReqWithUser,
-  ) {
+  async getAllDeliveryRequests(@Req() req: ReqWithUser) {
     const { uid } = req.user as { uid: string };
     const user = await this.userService.findOne(uid);
     if (!user) {
@@ -68,7 +86,11 @@ export class DeliveryController {
     if (!user) {
       throw new NotFoundException('User not found');
     }
-    return await this.deliveryService.getDeliveryRequestById(id, uid, user.role);
+    return await this.deliveryService.getDeliveryRequestById(
+      id,
+      uid,
+      user.role,
+    );
   }
 
   // Курьер принимает/отклоняет запрос (PUT /delivery/requests/:id)
@@ -77,7 +99,8 @@ export class DeliveryController {
   @UseGuards(FirebaseAuthGuard)
   async updateDeliveryRequestStatus(
     @Param('id') id: number,
-    @Body('status') status: 'accepted' | 'picked_up' | 'delivered' | 'cancelled',
+    @Body('status')
+    status: 'accepted' | 'picked_up' | 'delivered' | 'cancelled',
     @Req() req: ReqWithUser,
   ) {
     const { uid } = req.user as { uid: string };
@@ -88,6 +111,10 @@ export class DeliveryController {
     if (user.role !== 'picker') {
       throw new ForbiddenException('User is not a picker');
     }
-    return await this.deliveryService.updateDeliveryRequestStatus(id, status, uid);
+    return await this.deliveryService.updateDeliveryRequestStatus(
+      id,
+      status,
+      uid,
+    );
   }
 }

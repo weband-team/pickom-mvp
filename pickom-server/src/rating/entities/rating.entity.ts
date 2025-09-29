@@ -9,39 +9,39 @@ import {
 import { Delivery } from '../../delivery/entities/delivery.entity';
 import { User } from '../../user/entities/user.entity';
 
-@Entity('offers')
-export class Offer {
+@Entity('ratings')
+export class Rating {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
   @Column({ name: 'delivery_id' })
   deliveryId: number;
 
-  @Column({ name: 'picker_id' })
-  pickerId: number;
+  @Column({ name: 'from_user_id' })
+  fromUserId: number;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2 })
-  price: number;
+  @Column({ name: 'to_user_id' })
+  toUserId: number;
+
+  @Column({ type: 'int' })
+  rating: number; // 1-5
 
   @Column({ type: 'text', nullable: true })
-  message: string;
-
-  @Column({
-    type: 'enum',
-    enum: ['pending', 'accepted', 'rejected'],
-    default: 'pending',
-  })
-  status: 'pending' | 'accepted' | 'rejected';
+  comment: string;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
   // Relations
-  @ManyToOne(() => Delivery, (delivery) => delivery.offers)
+  @ManyToOne(() => Delivery, (delivery) => delivery.ratings)
   @JoinColumn({ name: 'delivery_id' })
   delivery: Delivery;
 
-  @ManyToOne(() => User, (user) => user.offers)
-  @JoinColumn({ name: 'picker_id' })
-  picker: User;
+  @ManyToOne(() => User, (user) => user.ratingsGiven)
+  @JoinColumn({ name: 'from_user_id' })
+  fromUser: User;
+
+  @ManyToOne(() => User, (user) => user.ratingsReceived)
+  @JoinColumn({ name: 'to_user_id' })
+  toUser: User;
 }

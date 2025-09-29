@@ -1,6 +1,6 @@
-import { Delivery } from "src/delivery/entities/delivery.entity";
+import { DeliveryDto } from 'src/delivery/dto/delivery.dto';
 
-export const MOCK_DELIVERY_REQUESTS: Delivery[] = [
+export const MOCK_DELIVERY_REQUESTS: DeliveryDto[] = [
   {
     id: 1,
     senderId: '1',

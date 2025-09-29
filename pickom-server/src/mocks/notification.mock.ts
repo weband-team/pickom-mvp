@@ -1,6 +1,6 @@
-import { Notification } from 'src/notification/entities/notification.entity';
+import { NotificationDto } from 'src/notification/dto/notification.dto';
 
-export const MOCK_NOTIFICATIONS: Notification[] = [
+export const MOCK_NOTIFICATIONS: NotificationDto[] = [
   {
     id: 1,
     user_id: 'm9VpYOgStCgV6b3JaI4ZhwZO5Wy2',
@@ -9,7 +9,7 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     type: 'offer_received',
     read: false,
     created_at: new Date('2024-01-15T10:00:00'),
-    related_delivery_id: 1
+    related_delivery_id: 1,
   },
   {
     id: 2,
@@ -19,7 +19,7 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     type: 'offer_accepted',
     read: false,
     created_at: new Date('2024-01-15T11:00:00'),
-    related_delivery_id: 1
+    related_delivery_id: 1,
   },
   {
     id: 3,
@@ -29,7 +29,7 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     type: 'incoming_delivery',
     read: false,
     created_at: new Date('2024-01-15T12:00:00'),
-    related_delivery_id: 1
+    related_delivery_id: 1,
   },
   {
     id: 4,
@@ -39,7 +39,7 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     type: 'status_update',
     read: true,
     created_at: new Date('2024-01-15T13:00:00'),
-    related_delivery_id: 1
+    related_delivery_id: 1,
   },
   {
     id: 5,
@@ -49,7 +49,7 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     type: 'status_update',
     read: false,
     created_at: new Date('2024-01-15T13:05:00'),
-    related_delivery_id: 1
+    related_delivery_id: 1,
   },
   {
     id: 6,
@@ -59,7 +59,7 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     type: 'offer_received',
     read: false,
     created_at: new Date('2024-01-15T10:00:00'),
-    related_delivery_id: 1
+    related_delivery_id: 1,
   },
   {
     id: 7,
@@ -69,6 +69,6 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     type: 'offer_received',
     read: false,
     created_at: new Date('2024-01-15T10:00:00'),
-    related_delivery_id: 1
+    related_delivery_id: 1,
   },
 ];

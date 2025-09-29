@@ -1,4 +1,12 @@
-import { Body, Controller, Delete, Get, Param, Put, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Put,
+  UseGuards,
+} from '@nestjs/common';
 import { UserService } from './user.service';
 import { FirebaseAuthGuard } from '../auth/guards/firebase-auth.guard';
 import { UserDto } from './dto/user.dto';
@@ -15,7 +23,10 @@ export class UserController {
   }
 
   @Put(':uid')
-  async updateUser(@Param('uid') uid: string, @Body() updateData: Partial<UserDto>) {
+  async updateUser(
+    @Param('uid') uid: string,
+    @Body() updateData: Partial<UserDto>,
+  ) {
     const user = await this.userService.update(uid, updateData);
     return { user, message: 'Profile updated successfully' };
   }

@@ -21,7 +21,9 @@ export class FirebaseAuthGuard implements CanActivate {
     if (!sessionCookie) return false;
 
     try {
-      const decodedClaims = await admin.auth().verifySessionCookie(sessionCookie, true);
+      const decodedClaims = await admin
+        .auth()
+        .verifySessionCookie(sessionCookie, true);
       if (!decodedClaims.email) {
         response.clearCookie('session', {
           httpOnly: true,

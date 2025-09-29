@@ -9,8 +9,16 @@ import { UserModule } from './user/user.module';
 import { NotificationModule } from './notification/notification.module';
 
 @Module({
-  imports: [AuthModule, DeliveryModule, OfferModule, TrakingModule, DatabaseModule, UserModule, NotificationModule],
+  imports: [
+    AuthModule,
+    DeliveryModule,
+    OfferModule,
+    TrakingModule,
+    DatabaseModule,
+    UserModule,
+    NotificationModule,
+  ],
   controllers: [AppController],
   providers: [],
 })
-export class AppModule { }
+export class AppModule {}

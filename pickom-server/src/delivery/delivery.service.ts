@@ -1,22 +1,20 @@
 import { Injectable } from '@nestjs/common';
 import { MOCK_DELIVERY_REQUESTS } from 'src/mocks/delivery-requests.mock';
 import { MOCK_USERS } from 'src/mocks/users.mock';
-import { Delivery } from './entities/delivery.entity';
+import { DeliveryDto } from './dto/delivery.dto';
 import { UserService } from 'src/user/user.service';
 import { User } from 'src/user/types/user.type';
 import { NotificationService } from 'src/notification/notification.service';
 
 @Injectable()
 export class DeliveryService {
-  private deliveryRequests = [...MOCK_DELIVERY_REQUESTS];
+  private deliveryRequests: DeliveryDto[] = [...MOCK_DELIVERY_REQUESTS];
   private users = MOCK_USERS;
 
   constructor(
     private readonly userService: UserService,
     private readonly notificationService: NotificationService,
-  ){
-
-  }
+  ) {}
 
   // Получить всех курьеров (role: 'picker')
   async getAvailablePickers(): Promise<User[]> {
@@ -31,8 +29,8 @@ export class DeliveryService {
     to: string,
     price: number,
     recipientId?: string,
-  ): Promise<Delivery> {
-    const newRequest: Delivery = {
+  ): Promise<DeliveryDto> {
+    const newRequest: DeliveryDto = {
       id: this.deliveryRequests.length + 1,
       senderId,
       pickerId,
@@ -48,12 +46,12 @@ export class DeliveryService {
 
     // Если указан получатель, создаем уведомление о входящей доставке
     if (recipientId) {
-      const sender = this.users.find(u => u.uid === senderId);
+      const sender = this.users.find((u) => u.uid === senderId);
       if (sender) {
         await this.notificationService.notifyIncomingDelivery(
           recipientId,
           newRequest.id,
-          sender.name
+          sender.name,
         );
       }
     }
@@ -62,13 +60,23 @@ export class DeliveryService {
   }
 
   // Получить список всех запросов
-  async getAllDeliveryRequests(uid: string, role: string): Promise<Delivery[]> {
-    return this.deliveryRequests.filter((request) => role === 'sender' ? request.senderId === uid : request.pickerId === uid);
+  async getAllDeliveryRequests(
+    uid: string,
+    role: string,
+  ): Promise<DeliveryDto[]> {
+    return this.deliveryRequests.filter((request) =>
+      role === 'sender' ? request.senderId === uid : request.pickerId === uid,
+    );
   }
 
   // Получить запрос по ID
-  async getDeliveryRequestById(id: number, uid: string, role: string): Promise<Delivery | null> {
-    const delivery = this.deliveryRequests.find(request => request.id === id) || null;
+  async getDeliveryRequestById(
+    id: number,
+    uid: string,
+    role: string,
+  ): Promise<DeliveryDto | null> {
+    const delivery =
+      this.deliveryRequests.find((request) => request.id === id) || null;
     if (!delivery) {
       return null;
     }
@@ -86,8 +94,10 @@ export class DeliveryService {
     id: number,
     status: 'accepted' | 'picked_up' | 'delivered' | 'cancelled',
     uid: string,
-  ): Promise<Delivery | null> {
-    const requestIndex = this.deliveryRequests.findIndex(request => request.id === id);
+  ): Promise<DeliveryDto | null> {
+    const requestIndex = this.deliveryRequests.findIndex(
+      (request) => request.id === id,
+    );
 
     if (requestIndex === -1) {
       return null;
@@ -102,9 +112,9 @@ export class DeliveryService {
 
     // Создаем уведомления при изменении статуса
     const statusMessages: Record<string, string> = {
-      'picked_up': 'Курьер забрал вашу посылку и направляется к получателю.',
-      'delivered': 'Ваша посылка успешно доставлена!',
-      'cancelled': 'Доставка была отменена.'
+      picked_up: 'Курьер забрал вашу посылку и направляется к получателю.',
+      delivered: 'Ваша посылка успешно доставлена!',
+      cancelled: 'Доставка была отменена.',
     };
 
     const message = statusMessages[status];
@@ -114,15 +124,15 @@ export class DeliveryService {
         delivery.senderId,
         id,
         status,
-        message
+        message,
       );
 
       // Уведомление для получателя (если указан)
       if (delivery.recipientId) {
         const recipientMessages: Record<string, string> = {
-          'picked_up': 'Курьер забрал посылку и направляется к вам.',
-          'delivered': 'Посылка доставлена к вам!',
-          'cancelled': 'Доставка посылки была отменена.'
+          picked_up: 'Курьер забрал посылку и направляется к вам.',
+          delivered: 'Посылка доставлена к вам!',
+          cancelled: 'Доставка посылки была отменена.',
         };
 
         const recipientMessage = recipientMessages[status];
@@ -131,7 +141,7 @@ export class DeliveryService {
             delivery.recipientId,
             id,
             status,
-            recipientMessage
+            recipientMessage,
           );
         }
       }

@@ -1,4 +1,9 @@
-import { BadRequestException, HttpStatus, Injectable, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  HttpStatus,
+  Injectable,
+  Logger,
+} from '@nestjs/common';
 import { DecodedIdToken } from 'firebase-admin/lib/auth';
 import { admin } from './firebase-admin.module';
 import { UserService } from '../user/user.service';
@@ -9,9 +14,7 @@ import { UserDto } from 'src/user/dto/user.dto';
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
 
-  constructor(
-    private readonly userService: UserService,
-  ) { }
+  constructor(private readonly userService: UserService) {}
 
   public async verifyAndUpsertUser(
     accessToken: string,
@@ -23,18 +26,23 @@ export class AuthService {
     userInfo: UserDto;
   }> {
     const decodedToken = await admin.auth().verifyIdToken(accessToken);
-    const avatar = this.getAvatarSize(decodedToken.picture || '', decodedToken.firebase.sign_in_provider);
+    const avatar = this.getAvatarSize(
+      decodedToken.picture || '',
+      decodedToken.firebase.sign_in_provider,
+    );
     let userInfo = await this.userService.findOne(decodedToken.uid);
     if (!userInfo) {
       userInfo = await this.userService.create({
         uid: decodedToken.uid,
         email: decodedToken.email || '',
-        name: name || (decodedToken.email ? decodedToken.email.split('@')[0] : 'Unknown'),
+        name:
+          name ||
+          (decodedToken.email ? decodedToken.email.split('@')[0] : 'Unknown'),
         prevLoginAt: new Date(),
         avatarUrl: avatar,
         phone: phone,
         createdAt: new Date(),
-        role: role ?? 'sender',
+        role: (role as 'sender' | 'picker') ?? 'sender',
       });
     } else {
       userInfo = await this.userService.update(userInfo.uid, {
@@ -77,11 +85,15 @@ export class AuthService {
 
   public async revokeToken(sessionCookie: string): Promise<void> {
     try {
-      const decodedClaims = await admin.auth().verifySessionCookie(sessionCookie, true);
+      const decodedClaims = await admin
+        .auth()
+        .verifySessionCookie(sessionCookie, true);
       await admin.auth().revokeRefreshTokens(decodedClaims.sub);
     } catch (error) {
       if (error instanceof Error) {
-        throw new BadRequestException('You\'re not authorized to access this resource');
+        throw new BadRequestException(
+          "You're not authorized to access this resource",
+        );
       }
       this.logger.error(`Error revoking token: ${error}`);
       throw new BadRequestException('Error revoking token');
@@ -92,14 +104,18 @@ export class AuthService {
     const actionCodeSettings = {
       url: `${process.env.CLIENT_URI || 'http://localhost:3000'}/profile?emailverified=true`,
     };
-    return await admin.auth().generateEmailVerificationLink(email, actionCodeSettings);
+    return await admin
+      .auth()
+      .generateEmailVerificationLink(email, actionCodeSettings);
   }
 
   async generatePasswordResetLink(email: string): Promise<string> {
     const actionCodeSettings = {
       url: process.env.CLIENT_URI || 'http://localhost:3000',
     };
-    return await admin.auth().generatePasswordResetLink(email, actionCodeSettings);
+    return await admin
+      .auth()
+      .generatePasswordResetLink(email, actionCodeSettings);
   }
 
   public getAvatarSize(url: string, provider: string) {

@@ -7,5 +7,5 @@ export class UserDto {
   phone?: string;
   createdAt?: Date;
   updatedAt?: Date;
-  role: string;
+  role: 'sender' | 'picker';
 }

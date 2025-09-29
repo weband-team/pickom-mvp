@@ -24,27 +24,30 @@ import { FirebaseAuthGuard, ReqWithUser } from './guards/firebase-auth.guard';
 import { admin } from './firebase-admin.module';
 import { AuthService } from './auth.service';
 import { LoginBodyDto, LoginResponseDto } from './dto/login.dto';
-import { MeResponseDto, LogoutResponseDto, ErrorResponseDto } from './dto/auth-response.dto';
+import {
+  MeResponseDto,
+  LogoutResponseDto,
+  ErrorResponseDto,
+} from './dto/auth-response.dto';
 
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   private readonly logger = new Logger(AuthController.name);
 
-  constructor(
-    private readonly authService: AuthService,
-  ) { }
+  constructor(private readonly authService: AuthService) {}
 
   @Post('login')
   @ApiOperation({
     summary: 'Авторизация пользователя',
-    description: 'Авторизует пользователя с помощью Firebase ID токена и создает сессионную куку'
+    description:
+      'Авторизует пользователя с помощью Firebase ID токена и создает сессионную куку',
   })
   @ApiHeader({
     name: 'Authorization',
     description: 'Bearer токен от Firebase Auth',
     required: true,
-    example: 'Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...'
+    example: 'Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...',
   })
   @ApiResponse({
     status: 200,
@@ -68,8 +71,14 @@ export class AuthController {
         throw new BadRequestException('Authorization token is missing');
       }
 
-      const { userInfo } = await this.authService.verifyAndUpsertUser(accessToken, body?.role, body?.name, body?.phone);
-      const { sessionCookie, expiresIn } = await this.authService.createSessionCookie(accessToken);
+      const { userInfo } = await this.authService.verifyAndUpsertUser(
+        accessToken,
+        body?.role,
+        body?.name,
+        body?.phone,
+      );
+      const { sessionCookie, expiresIn } =
+        await this.authService.createSessionCookie(accessToken);
 
       res.cookie('session', sessionCookie, {
         maxAge: expiresIn,
@@ -83,7 +92,9 @@ export class AuthController {
       };
     } catch (error) {
       this.logger.error(error);
-      throw new BadRequestException('You\'re not authorized to access this resource');
+      throw new BadRequestException(
+        "You're not authorized to access this resource",
+      );
     }
   }
 
@@ -91,7 +102,8 @@ export class AuthController {
   @UseGuards(FirebaseAuthGuard)
   @ApiOperation({
     summary: 'Получение информации о текущем пользователе',
-    description: 'Возвращает информацию о текущем авторизованном пользователе или null если не авторизован'
+    description:
+      'Возвращает информацию о текущем авторизованном пользователе или null если не авторизован',
   })
   @ApiCookieAuth('session')
   @ApiResponse({
@@ -128,7 +140,7 @@ export class AuthController {
   @UseGuards(FirebaseAuthGuard)
   @ApiOperation({
     summary: 'Выход из системы',
-    description: 'Отзывает сессионную куку и токены пользователя'
+    description: 'Отзывает сессионную куку и токены пользователя',
   })
   @ApiCookieAuth('session')
   @ApiResponse({
@@ -144,7 +156,10 @@ export class AuthController {
     description: 'Внутренняя ошибка сервера',
     type: ErrorResponseDto,
   })
-  public async logout(@Req() req: ReqWithUser, @Res({ passthrough: true }) res: Response) {
+  public async logout(
+    @Req() req: ReqWithUser,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     try {
       await this.authService.revokeToken(req.cookies.session);
       res.clearCookie('session', {

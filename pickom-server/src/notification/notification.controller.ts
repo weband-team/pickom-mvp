@@ -1,7 +1,14 @@
-import { Controller, Get, Patch, Param, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Patch,
+  Param,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { NotificationService } from './notification.service';
 import { FirebaseAuthGuard } from 'src/auth/guards/firebase-auth.guard';
-import { Notification } from './entities/notification.entity';
+import { NotificationDto } from './dto/notification.dto';
 
 @Controller('notifications')
 @UseGuards(FirebaseAuthGuard)
@@ -9,7 +16,7 @@ export class NotificationController {
   constructor(private readonly notificationService: NotificationService) {}
 
   @Get()
-  async getUserNotifications(@Request() req): Promise<Notification[]> {
+  async getUserNotifications(@Request() req): Promise<NotificationDto[]> {
     const userId = req.user.uid; // Получаем UID пользователя из Firebase token
     return await this.notificationService.getUserNotifications(userId);
   }
@@ -22,7 +29,7 @@ export class NotificationController {
   }
 
   @Patch(':id/read')
-  async markAsRead(@Param('id') id: string): Promise<Notification | null> {
+  async markAsRead(@Param('id') id: string): Promise<NotificationDto | null> {
     return await this.notificationService.markAsRead(parseInt(id));
   }
 

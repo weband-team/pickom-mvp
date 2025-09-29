@@ -12,14 +12,10 @@ import { OfferService } from 'src/offer/offer.service';
 export class TrakingService {
   private traking = MOCK_TRAKINGS;
 
-  constructor(
-    private readonly offerService: OfferService,
-  ){
-
-  }
+  constructor(private readonly offerService: OfferService) {}
 
   async getTraking(id: number): Promise<Traking | null> {
-    const traking = this.traking.find(traking => traking.id === id);
+    const traking = this.traking.find((traking) => traking.id === id);
     return traking || null;
   }
 

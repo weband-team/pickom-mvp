@@ -1,10 +1,10 @@
-import { Offer } from "src/offer/entities/offer.entity";
+import { OfferDto } from 'src/offer/dto/offer.dto';
 
-export const MOCK_OFFERS: Offer[] = [
+export const MOCK_OFFERS: OfferDto[] = [
   {
     id: 1,
     delivery_id: 1,
-    picker_id: 2,
+    picker_id: 'picker-uid-1',
     price: 50,
     message: 'Могу забрать через 30 минут и доставить в течение 2 часов',
     status: 'pending',
@@ -13,7 +13,7 @@ export const MOCK_OFFERS: Offer[] = [
   {
     id: 2,
     delivery_id: 1,
-    picker_id: 3,
+    picker_id: 'picker-uid-2',
     price: 45,
     message: 'Быстрая доставка за час!',
     status: 'pending',
