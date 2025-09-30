@@ -41,7 +41,7 @@ export default function DriverDashboardPage() {
     const handleAcceptRequest = (orderId: string) => {
         if (acceptOrder(orderId, currentDriverId)) {
             setActiveTab('active');
-            alert('Request accepted! Customer will be notified.');
+            alert('Request accepted! Customer will be notified.');      
         }
     };
 
