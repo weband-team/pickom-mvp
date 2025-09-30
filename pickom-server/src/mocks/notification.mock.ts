@@ -3,7 +3,7 @@ import { NotificationDto } from 'src/notification/dto/notification.dto';
 export const MOCK_NOTIFICATIONS: NotificationDto[] = [
   {
     id: 1,
-    user_id: 'm9VpYOgStCgV6b3JaI4ZhwZO5Wy2',
+    user_id: 'X43wZP2lAdNA9GyhMxxRjd4rQPg1',
     title: 'Новое предложение',
     message: 'Курьер предложил доставить вашу посылку за 50 BYN',
     type: 'offer_received',
@@ -13,7 +13,7 @@ export const MOCK_NOTIFICATIONS: NotificationDto[] = [
   },
   {
     id: 2,
-    user_id: 'm9VpYOgStCgV6b3JaI4ZhwZO5Wy2',
+    user_id: 'X43wZP2lAdNA9GyhMxxRjd4rQPg1',
     title: 'Предложение принято',
     message: 'Ваше предложение принято. Курьер забирает посылку.',
     type: 'offer_accepted',
@@ -23,7 +23,7 @@ export const MOCK_NOTIFICATIONS: NotificationDto[] = [
   },
   {
     id: 3,
-    user_id: 'other-user-uid', // получатель посылки
+    user_id: 'nRmL5AjVMmbUZPSFMH5NdKAATNC3', // получатель посылки
     title: 'Вам отправили посылку',
     message: 'Анна Коваль отправила вам посылку. Курьер уже в пути.',
     type: 'incoming_delivery',
@@ -33,7 +33,7 @@ export const MOCK_NOTIFICATIONS: NotificationDto[] = [
   },
   {
     id: 4,
-    user_id: 'm9VpYOgStCgV6b3JaI4ZhwZO5Wy2',
+    user_id: 'nRmL5AjVMmbUZPSFMH5NdKAATNC3',
     title: 'Посылка забрана',
     message: 'Курьер забрал вашу посылку и направляется к получателю.',
     type: 'status_update',
