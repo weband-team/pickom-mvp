@@ -1,157 +1,162 @@
-import { createTheme } from '@mui/material/styles';
+import { createTheme, Theme } from '@mui/material/styles';
+import { colors, ThemeMode } from './colors';
 
-export const theme = createTheme({
-  palette: {
-    mode: 'light',
-    primary: {
-      main: '#000000',
-      contrastText: '#ffffff',
+export const createPickomTheme = (mode: ThemeMode): Theme => {
+  const isDark = mode === 'dark';
+  const themeColors = isDark ? colors.dark : colors.light;
+
+  return createTheme({
+    palette: {
+      mode,
+      primary: {
+        main: colors.primary.main,
+        light: colors.primary.light,
+        dark: colors.primary.dark,
+        contrastText: isDark ? '#000000' : '#ffffff',
+      },
+      secondary: {
+        main: isDark ? themeColors.background.paper : '#000000',
+        contrastText: isDark ? '#ffffff' : '#ffffff',
+      },
+      background: {
+        default: themeColors.background.default,
+        paper: themeColors.background.paper,
+      },
+      text: {
+        primary: themeColors.text.primary,
+        secondary: themeColors.text.secondary,
+        disabled: themeColors.text.disabled,
+      },
+      divider: themeColors.border.main,
+      action: {
+        hover: themeColors.action.hover,
+        selected: themeColors.action.selected,
+        disabled: themeColors.action.disabled,
+      },
     },
-    secondary: {
-      main: '#ffffff',
-      contrastText: '#000000',
+    typography: {
+      fontFamily: [
+        '-apple-system',
+        'BlinkMacSystemFont',
+        '"Segoe UI"',
+        'Roboto',
+        '"Helvetica Neue"',
+        'Arial',
+        'sans-serif',
+      ].join(','),
     },
-    background: {
-      default: '#ffffff',
-      paper: '#ffffff',
+    shape: {
+      borderRadius: 8,
     },
-    text: {
-      primary: '#000000',
-      secondary: '#666666',
-    },
-    grey: {
-      50: '#fafafa',
-      100: '#f5f5f5',
-      200: '#eeeeee',
-      300: '#e0e0e0',
-      400: '#bdbdbd',
-      500: '#9e9e9e',
-      600: '#757575',
-      700: '#616161',
-      800: '#424242',
-      900: '#212121',
-    },
-  },
-  typography: {
-    fontFamily: [
-      '-apple-system',
-      'BlinkMacSystemFont',
-      '"Segoe UI"',
-      'Roboto',
-      '"Helvetica Neue"',
-      'Arial',
-      'sans-serif',
-    ].join(','),
-  },
-  shape: {
-    borderRadius: 8,
-  },
-  components: {
-    MuiButton: {
-      styleOverrides: {
-        root: {
-          textTransform: 'none',
-          fontWeight: 500,
-          borderRadius: 24,
-          padding: '12px 24px',
-          minHeight: 44,
-          '&:hover': {
-            backgroundColor: '#f5f5f5',
+    components: {
+      MuiButton: {
+        styleOverrides: {
+          root: {
+            textTransform: 'none',
+            fontWeight: 500,
+            borderRadius: 24,
+            padding: '12px 24px',
+            minHeight: 44,
           },
-        },
-        contained: {
-          backgroundColor: '#000000',
-          color: '#ffffff',
-          '&:hover': {
-            backgroundColor: '#333333',
-          },
-          '&.Mui-selected, &[aria-pressed="true"]': {
-            backgroundColor: '#ffffff',
+          contained: {
+            backgroundColor: colors.primary.main,
             color: '#000000',
-            border: '1px solid #000000',
             '&:hover': {
-              backgroundColor: '#f5f5f5',
+              backgroundColor: colors.primary.dark,
+            },
+            '&.Mui-selected, &[aria-pressed="true"]': {
+              backgroundColor: isDark ? themeColors.background.elevated : '#ffffff',
+              color: themeColors.text.primary,
+              border: `1px solid ${themeColors.border.dark}`,
+              '&:hover': {
+                backgroundColor: themeColors.background.hover,
+              },
             },
           },
-        },
-        outlined: {
-          border: '1px solid #000000',
-          color: '#000000',
-          '&:hover': {
-            backgroundColor: '#f5f5f5',
-            border: '1px solid #000000',
+          outlined: {
+            border: `1px solid ${themeColors.border.main}`,
+            color: themeColors.text.primary,
+            '&:hover': {
+              backgroundColor: themeColors.action.hover,
+              border: `1px solid ${themeColors.border.dark}`,
+            },
           },
         },
       },
-    },
-    MuiTextField: {
-      styleOverrides: {
-        root: {
-          '& .MuiOutlinedInput-root': {
-            borderRadius: 8,
-            '& fieldset': {
-              borderColor: '#e0e0e0',
+      MuiTextField: {
+        styleOverrides: {
+          root: {
+            '& .MuiOutlinedInput-root': {
+              borderRadius: 8,
+              backgroundColor: isDark ? themeColors.background.elevated : 'transparent',
+              '& fieldset': {
+                borderColor: themeColors.border.main,
+              },
+              '&:hover fieldset': {
+                borderColor: themeColors.border.dark,
+              },
+              '&.Mui-focused fieldset': {
+                borderColor: colors.primary.main,
+                borderWidth: 2,
+              },
             },
-            '&:hover fieldset': {
-              borderColor: '#000000',
+          },
+        },
+      },
+      MuiAvatar: {
+        styleOverrides: {
+          root: {
+            backgroundColor: colors.avatar.main,
+            color: '#ffffff',
+            fontWeight: 600,
+          },
+        },
+      },
+      MuiRating: {
+        styleOverrides: {
+          root: {
+            color: colors.primary.main,
+            '& .MuiRating-iconEmpty': {
+              color: themeColors.border.main,
             },
-            '&.Mui-focused fieldset': {
-              borderColor: '#000000',
+          },
+        },
+      },
+      MuiSlider: {
+        styleOverrides: {
+          root: {
+            color: colors.primary.main,
+            '& .MuiSlider-track': {
+              backgroundColor: colors.primary.main,
+            },
+            '& .MuiSlider-thumb': {
+              backgroundColor: colors.primary.main,
+              '&:hover': {
+                boxShadow: `0px 0px 0px 8px ${colors.primary.main}26`,
+              },
+            },
+          },
+        },
+      },
+      MuiSelect: {
+        styleOverrides: {
+          root: {
+            '& .MuiOutlinedInput-notchedOutline': {
+              borderColor: themeColors.border.main,
+            },
+            '&:hover .MuiOutlinedInput-notchedOutline': {
+              borderColor: themeColors.border.dark,
+            },
+            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+              borderColor: colors.primary.main,
               borderWidth: 2,
             },
           },
         },
       },
     },
-    MuiAvatar: {
-      styleOverrides: {
-        root: {
-          backgroundColor: '#f5f5f5',
-          color: '#000000',
-        },
-      },
-    },
-    MuiRating: {
-      styleOverrides: {
-        root: {
-          color: '#000000',
-          '& .MuiRating-iconEmpty': {
-            color: '#e0e0e0',
-          },
-        },
-      },
-    },
-    MuiSlider: {
-      styleOverrides: {
-        root: {
-          color: '#000000',
-          '& .MuiSlider-track': {
-            backgroundColor: '#000000',
-          },
-          '& .MuiSlider-thumb': {
-            backgroundColor: '#000000',
-            '&:hover': {
-              boxShadow: '0px 0px 0px 8px rgba(0, 0, 0, 0.16)',
-            },
-          },
-        },
-      },
-    },
-    MuiSelect: {
-      styleOverrides: {
-        root: {
-          '& .MuiOutlinedInput-notchedOutline': {
-            borderColor: '#e0e0e0',
-          },
-          '&:hover .MuiOutlinedInput-notchedOutline': {
-            borderColor: '#000000',
-          },
-          '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-            borderColor: '#000000',
-            borderWidth: 2,
-          },
-        },
-      },
-    },
-  },
-});
+  });
+};
+
+// Export default light theme for backward compatibility
+export const theme = createPickomTheme('light');

@@ -11,6 +11,7 @@ import {
 } from '../../components/ui';
 import { LazyPickerFilters, PickerCardMemo } from '../../components';
 import { UserAvatar } from '@/components/profile/UserAvatar';
+import BottomNavigation from '../../components/common/BottomNavigation';
 import { Picker } from '../../types/picker';
 import { theme } from '../../styles/theme';
 import { mockPickers, filterPickers } from '../../data/mockPickers';
@@ -133,11 +134,13 @@ export default function PickerResultsPage() {
 
   const handleChat = useCallback((pickerId: string) => {
     console.log('Chat with picker:', pickerId);
+    localStorage.setItem('selectedPickerId', pickerId);
     window.location.href = `/chat/${pickerId}`;
   }, []);
 
   const handleSelectPicker = useCallback((pickerId: string) => {
     console.log('Selected picker:', pickerId);
+    localStorage.setItem('selectedPickerId', pickerId);
     // Add logic for picker selection
   }, []);
 
@@ -152,140 +155,143 @@ export default function PickerResultsPage() {
         p: 2,
       }}
     >
-      <MobileContainer showFrame={false}>
-        {/* User Avatar */}
-        <UserAvatar
-          name="Vadim"
-          sx={{ position: 'absolute', top: 16, right: 16, zIndex: 10 }}
-        />
+      <Box sx={{ position: 'relative', width: '100%', maxWidth: 375, height: 812 }}>
+        <MobileContainer showFrame={false}>
+          {/* User Avatar */}
+          <UserAvatar
+            name="Vadim"
+            sx={{ position: 'absolute', top: 16, right: 16, zIndex: 10 }}
+          />
 
-        {/* Header */}
-        <Box
-          sx={{
-            p: 2,
-            borderBottom: `1px solid ${theme.colors.border}`,
-            backgroundColor: theme.colors.white,
-            position: 'sticky',
-            top: 0,
-            zIndex: 100,
-          }}
-        >
-          <Stack direction="row" alignItems="center" spacing={2}>
-            <IconButton
-              onClick={() => window.history.back()}
-              size="small"
-              sx={{ p: 1 }}
-            >
-              <ArrowBack />
-            </IconButton>
-            <Box sx={{ flex: 1 }}>
-              <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                Available Pickers
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Found {filteredPickers.length} pickers in your area
-              </Typography>
-            </Box>
-            <PickomLogo variant="icon" size="small" />
-          </Stack>
-        </Box>
-
-        {/* Filters */}
-        <Box sx={{ borderBottom: `1px solid ${theme.colors.border}` }}>
-          <Box sx={{ p: 2 }}>
-            <Stack direction="row" spacing={2}>
-              <Button
-                variant={showFilters ? 'contained' : 'outlined'}
-                onClick={() => setShowFilters(!showFilters)}
+          {/* Header */}
+          <Box
+            sx={{
+              p: 2,
+              borderBottom: `1px solid ${theme.colors.border}`,
+              backgroundColor: theme.colors.white,
+              position: 'sticky',
+              top: 0,
+              zIndex: 100,
+            }}
+          >
+            <Stack direction="row" alignItems="center" spacing={2}>
+              <IconButton
+                onClick={() => window.history.back()}
                 size="small"
-                sx={{ flex: 1 }}
+                sx={{ p: 1 }}
               >
-                Filters
-              </Button>
-              <Button
-                variant={sortBy === 'price' ? 'contained' : 'outlined'}
-                size="small"
-                sx={{ flex: 1 }}
-                onClick={handleSortByPrice}
-              >
-                Price {sortBy === 'price' && (sortOrder === 'asc' ? '↑' : '↓')}
-              </Button>
+                <ArrowBack />
+              </IconButton>
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                  Available Pickers
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Found {filteredPickers.length} pickers in your area
+                </Typography>
+              </Box>
+              <PickomLogo variant="icon" size="small" />
             </Stack>
           </Box>
 
-          {/* Full Filters */}
-          {showFilters && (
-            <Box sx={{ p: 2, borderTop: `1px solid ${theme.colors.border}` }}>
-              <LazyPickerFilters onFiltersChange={handleFiltersChange} />
-            </Box>
-          )}
-        </Box>
-
-        {/* Results */}
-        <Box sx={{ flex: 1, overflow: 'auto' }}>
-          {loading && displayedPickers.length === 0 ? (
-            <Box sx={{ py: 8 }}>
-              <LoadingIndicator
-                type="dots"
-                text="Loading pickers..."
-              />
-            </Box>
-          ) : displayedPickers.length === 0 ? (
-            <Box sx={{ textAlign: 'center', py: 8 }}>
-              <Typography variant="h1" sx={{ fontSize: '4rem', mb: 2 }}>
-                📦
-              </Typography>
-              <Typography variant="h6" sx={{ mb: 1, fontWeight: 'bold' }}>
-                No pickers found
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Try adjusting your search filters
-              </Typography>
-            </Box>
-          ) : (
+          {/* Filters */}
+          <Box sx={{ borderBottom: `1px solid ${theme.colors.border}` }}>
             <Box sx={{ p: 2 }}>
-              <Stack spacing={2}>
-                {displayedPickers.map((picker) => (
-                  <PickerCardMemo
-                    key={picker.id}
-                    picker={picker}
-                    onChat={handleChat}
-                    onSelect={handleSelectPicker}
-                  />
-                ))}
+              <Stack direction="row" spacing={2}>
+                <Button
+                  variant={showFilters ? 'contained' : 'outlined'}
+                  onClick={() => setShowFilters(!showFilters)}
+                  size="small"
+                  sx={{ flex: 1 }}
+                >
+                  Filters
+                </Button>
+                <Button
+                  variant={sortBy === 'price' ? 'contained' : 'outlined'}
+                  size="small"
+                  sx={{ flex: 1 }}
+                  onClick={handleSortByPrice}
+                >
+                  Price {sortBy === 'price' && (sortOrder === 'asc' ? '↑' : '↓')}
+                </Button>
               </Stack>
-
-              {/* Loading indicator for load more */}
-              {loading && displayedPickers.length > 0 && (
-                <Box sx={{ py: 4 }}>
-                  <LoadingIndicator
-                    type="dots"
-                    text="Loading more pickers..."
-                  />
-                </Box>
-              )}
-
-              {/* Load more button */}
-              {hasMore && !loading && (
-                <Box sx={{ py: 2, textAlign: 'center' }}>
-                  <Button variant="outlined" onClick={loadMore}>
-                    Load More
-                  </Button>
-                </Box>
-              )}
-
-              {/* End of results */}
-              {!hasMore && displayedPickers.length > 0 && (
-                <Box sx={{ textAlign: 'center', py: 4 }}>
-                  <Typography variant="body2" color="text.secondary">
-                    All pickers loaded ({displayedPickers.length} of {filteredPickers.length})
-                  </Typography>
-                </Box>
-              )}
             </Box>
-          )}
-        </Box>
-      </MobileContainer>
+
+            {/* Full Filters */}
+            {showFilters && (
+              <Box sx={{ p: 2, borderTop: `1px solid ${theme.colors.border}` }}>
+                <LazyPickerFilters onFiltersChange={handleFiltersChange} />
+              </Box>
+            )}
+          </Box>
+
+          {/* Results */}
+          <Box sx={{ flex: 1, overflow: 'auto' }}>
+            {loading && displayedPickers.length === 0 ? (
+              <Box sx={{ py: 8 }}>
+                <LoadingIndicator
+                  type="dots"
+                  text="Loading pickers..."
+                />
+              </Box>
+            ) : displayedPickers.length === 0 ? (
+              <Box sx={{ textAlign: 'center', py: 8 }}>
+                <Typography variant="h1" sx={{ fontSize: '4rem', mb: 2 }}>
+                  📦
+                </Typography>
+                <Typography variant="h6" sx={{ mb: 1, fontWeight: 'bold' }}>
+                  No pickers found
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Try adjusting your search filters
+                </Typography>
+              </Box>
+            ) : (
+              <Box sx={{ p: 2 }}>
+                <Stack spacing={2}>
+                  {displayedPickers.map((picker) => (
+                    <PickerCardMemo
+                      key={picker.id}
+                      picker={picker}
+                      onChat={handleChat}
+                      onSelect={handleSelectPicker}
+                    />
+                  ))}
+                </Stack>
+
+                {/* Loading indicator for load more */}
+                {loading && displayedPickers.length > 0 && (
+                  <Box sx={{ py: 4 }}>
+                    <LoadingIndicator
+                      type="dots"
+                      text="Loading more pickers..."
+                    />
+                  </Box>
+                )}
+
+                {/* Load more button */}
+                {hasMore && !loading && (
+                  <Box sx={{ py: 2, textAlign: 'center' }}>
+                    <Button variant="outlined" onClick={loadMore}>
+                      Load More
+                    </Button>
+                  </Box>
+                )}
+
+                {/* End of results */}
+                {!hasMore && displayedPickers.length > 0 && (
+                  <Box sx={{ textAlign: 'center', py: 4 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      All pickers loaded ({displayedPickers.length} of {filteredPickers.length})
+                    </Typography>
+                  </Box>
+                )}
+              </Box>
+            )}
+          </Box>
+        </MobileContainer>
+        <BottomNavigation />
+      </Box>
     </Box>
   );
 }

@@ -44,10 +44,17 @@ export const Select: React.FC<SelectProps> = ({
     }
   };
 
+  const labelId = label ? `select-label-${label.replace(/\s+/g, '-').toLowerCase()}` : undefined;
+
   return (
     <FormControl fullWidth error={error} disabled={disabled}>
-      {label && <InputLabel>{label}</InputLabel>}
+      {label && (
+        <InputLabel id={labelId} shrink={!!value || !!placeholder}>
+          {label}
+        </InputLabel>
+      )}
       <MuiSelect
+        labelId={labelId}
         value={value || ''}
         // @ts-expect-error - MUI Select type mismatch, but functionally correct
         onChange={handleChange}

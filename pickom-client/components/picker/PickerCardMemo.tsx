@@ -52,15 +52,28 @@ export const PickerCardMemo = memo(function PickerCardMemo({
             {picker.description}
           </Typography>
 
-          <Stack direction="row" spacing={0.5} sx={{ mb: 2, flexWrap: 'wrap' }}>
+          <Box
+            sx={{
+              display: 'flex',
+              gap: 0.5,
+              mb: 2,
+              alignItems: 'center',
+            }}
+          >
             {picker.isPhoneVerified && (
-              <TrustBadge type="phone" verified size="small" showLabel={false} />
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <TrustBadge type="phone" verified size="small" showLabel={false} />
+              </Box>
             )}
             {picker.isEmailVerified && (
-              <TrustBadge type="email" verified size="small" showLabel={false} />
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <TrustBadge type="email" verified size="small" showLabel={false} />
+              </Box>
             )}
-            <TrustBadge type="delivery" verified value={picker.deliveryCount} size="small" showLabel={false} />
-          </Stack>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <TrustBadge type="delivery" verified value={picker.deliveryCount} size="small" showLabel={false} />
+            </Box>
+          </Box>
 
           <Stack direction="row" justifyContent="space-between" alignItems="center">
             <Box>

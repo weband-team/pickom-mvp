@@ -6,17 +6,17 @@ import { Box, Stack, Typography } from '@mui/material';
 import {
     Button,
     TextInput,
-    Select,
     MobileContainer,
     PickomLogo
 } from '../../components/ui'
-import { PackageType, PackageTypeEnum } from '@/types/package';
+import { PackageTypeEnum } from '@/types/package';
 
 export default function PackageTypePage(){
     const router = useRouter();
     const [notes, setNotes] = useState('');
     const [otherDescription, setOtherDescription] = useState('')
     const [selectedType, setSelectedType] = useState<PackageTypeEnum | null>(null);
+    const [isSearching, setIsSearching] = useState(false);
     return (
         <Box sx={{
             minHeight: '100vh', 
@@ -159,7 +159,7 @@ export default function PackageTypePage(){
                                         Other
                                     </Typography>
                                     <Typography variant="body2" color="text.secondary">
-                                        Tell us what you're sending
+                                        Tell us what you&apos;re sending
                                     </Typography>
                                 </Box>
                             </Stack>
@@ -175,7 +175,7 @@ export default function PackageTypePage(){
                             multiline
                             rows={3}
                             value={notes}
-                            onChange={(e) => setNotes(e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNotes(e.target.value)}
                             fullWidth
                             placeholder="Any special instructions, fragile items, etc..."
                         />
@@ -187,7 +187,7 @@ export default function PackageTypePage(){
                             <TextInput
                                 label="Please describe what you're sending"
                                 value={otherDescription}
-                                onChange={(e) => setOtherDescription(e.target.value)}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setOtherDescription(e.target.value)}
                                 fullWidth
                                 required
                             />
@@ -200,8 +200,13 @@ export default function PackageTypePage(){
                             Back
                         </Button>
                         <Button
-                            onClick={() => router.push('/picker-results')}
-                            disabled={!selectedType}
+                            onClick={async () => {
+                                setIsSearching(true);
+                                await new Promise(resolve => setTimeout(resolve, 300));
+                                router.push('/searching-pickers');
+                            }}
+                            disabled={!selectedType || isSearching}
+                            loading={isSearching}
                             variant={selectedType ? "contained" : "outlined"}
                             sx={{
                                 backgroundColor: selectedType ? '#1976d2' : 'transparent',

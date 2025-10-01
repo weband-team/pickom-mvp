@@ -2,16 +2,18 @@
 
 import { useState, useMemo, useCallback, memo } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { BottomNavigation as MuiBottomNavigation, BottomNavigationAction, Paper } from '@mui/material';
+import { BottomNavigation as MuiBottomNavigation, BottomNavigationAction, Paper, Badge } from '@mui/material';
 import { LocalShipping, Chat, Person } from '@mui/icons-material';
 
 type NavigationValue = 0 | 1 | 2;
 
 interface BottomNavigationProps {
     className?: string;
+    unreadCount?: number;
+    activeOrdersCount?: number;
 }
 
-function BottomNavigation({ className }: BottomNavigationProps = {}) {
+function BottomNavigation({ className, unreadCount = 0, activeOrdersCount = 0 }: BottomNavigationProps = {}) {
     const router = useRouter();
     const pathname = usePathname();
 
@@ -32,14 +34,7 @@ function BottomNavigation({ className }: BottomNavigationProps = {}) {
                 router.push('/delivery-methods');
                 break;
             case 1:
-                const selectedPickerId = typeof window !== 'undefined'
-                    ? localStorage.getItem('selectedPickerId')
-                    : null;
-                if (selectedPickerId) {
-                    router.push(`/chat/${selectedPickerId}`);
-                } else {
-                    router.push('/picker-results');
-                }
+                router.push('/chats');
                 break;
             case 2:
                 router.push('/profile');
@@ -58,17 +53,58 @@ function BottomNavigation({ className }: BottomNavigationProps = {}) {
                 right: 0,
                 zIndex: 1200,
                 paddingBottom: 'env(safe-area-inset-bottom)',
-                backgroundColor: 'transparent',
-                borderTop: '1px solid #e0e0e0',
+                backgroundColor: 'background.paper',
+                borderTop: 1,
+                borderColor: 'divider',
                 borderRadius: 0,
                 boxShadow: 'none',
             }}
             elevation={0}
         >
-            <MuiBottomNavigation value={value} onChange={handleChange}>
+            <MuiBottomNavigation
+                value={value}
+                onChange={handleChange}
+                sx={{
+                    backgroundColor: 'background.paper',
+                }}
+            >
                 <BottomNavigationAction label="Delivery" icon={<LocalShipping />} />
-                <BottomNavigationAction label="Chat" icon={<Chat />} />
-                <BottomNavigationAction label="Profile" icon={<Person />} />
+                <BottomNavigationAction
+                    label="Chat"
+                    icon={
+                        <Badge
+                            badgeContent={unreadCount}
+                            color="error"
+                            sx={{
+                                '& .MuiBadge-badge': {
+                                    backgroundColor: '#FF9500',
+                                    color: '#000000',
+                                    fontWeight: 600,
+                                }
+                            }}
+                        >
+                            <Chat />
+                        </Badge>
+                    }
+                />
+                <BottomNavigationAction
+                    label="Profile"
+                    icon={
+                        <Badge
+                            badgeContent={activeOrdersCount}
+                            color="error"
+                            sx={{
+                                '& .MuiBadge-badge': {
+                                    backgroundColor: '#FF9500',
+                                    color: '#000000',
+                                    fontWeight: 600,
+                                }
+                            }}
+                        >
+                            <Person />
+                        </Badge>
+                    }
+                />
             </MuiBottomNavigation>
         </Paper>
     )

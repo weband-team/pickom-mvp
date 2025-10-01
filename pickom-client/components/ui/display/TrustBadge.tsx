@@ -109,39 +109,37 @@ export const TrustBadge: React.FC<TrustBadgeProps> = ({
   };
 
   const badge = (
-    <Chip
-      icon={<IconComponent sx={{ fontSize: iconSize }} />}
-      label={
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-          {showLabel && (
-            <Typography variant="caption" sx={{ fontSize }}>
-              {config.label}
-            </Typography>
-          )}
-          {value !== undefined && (
-            <Typography variant="caption" sx={{ fontSize, fontWeight: 'bold' }}>
-              {getDisplayValue()}
-            </Typography>
-          )}
-        </Box>
-      }
-      size={size}
-      variant={verified ? 'filled' : 'outlined'}
+    <Box
       sx={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 0.5,
+        px: 1,
+        py: 0.5,
+        borderRadius: '16px',
         backgroundColor: verified ? config.color : 'transparent',
         color: verified ? '#ffffff' : config.color,
         border: verified ? 'none' : `1px solid ${config.color}`,
-        '& .MuiChip-icon': {
-          color: verified ? '#ffffff' : config.color,
-        },
         ...(size === 'small' && {
           height: 24,
-          '& .MuiChip-label': {
-            px: 1,
-          },
+          px: 1,
+          py: 0,
         }),
       }}
-    />
+    >
+      <IconComponent sx={{ fontSize: iconSize }} />
+      {showLabel && (
+        <Typography variant="caption" sx={{ fontSize, lineHeight: 1 }}>
+          {config.label}
+        </Typography>
+      )}
+      {value !== undefined && (
+        <Typography variant="caption" sx={{ fontSize, fontWeight: 'bold', lineHeight: 1 }}>
+          {getDisplayValue()}
+        </Typography>
+      )}
+    </Box>
   );
 
   if (tooltip || config.tooltip) {

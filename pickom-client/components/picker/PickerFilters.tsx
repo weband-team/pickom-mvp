@@ -127,7 +127,7 @@ export const PickerFilters = memo(function PickerFilters({ onFiltersChange }: Pi
         {/* Expanded Filters */}
         {isExpanded && (
           <Box sx={{ pt: 2, borderTop: `1px solid ${theme.colors.border}` }}>
-            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 3 }}>
+            <Stack spacing={3}>
               {/* Price Filter */}
               <Box sx={{ px: 1 }}>
                 <PriceSlider
@@ -181,7 +181,7 @@ export const PickerFilters = memo(function PickerFilters({ onFiltersChange }: Pi
                   showValue
                 />
               </Box>
-            </Box>
+            </Stack>
           </Box>
         )}
       </Box>
