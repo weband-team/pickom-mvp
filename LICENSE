@@ -19,3 +19,138 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+API Contract: Authentication & Registration
+  Типы пользователей
+  enum UserType {
+    SENDER = 'sender',
+    PICKER = 'picker'
+  }
+  Базовые поля для всех пользователей
+  interface BaseUserData {
+    fullName: string;
+    email: string;
+    age: number;
+    country: string;
+    city: string;
+    phoneNumber?: string; // опционально
+  }
+  Специфичные поля для Picker
+  enum DeliveryMethod {
+    WITHIN_CITY = 'within_city',
+    INTER_CITY = 'inter_city',
+    INTERNATIONAL = 'international',
+    COMBINED = 'combined'
+  }
+  interface PickerSpecificData {
+    deliveryMethods: DeliveryMethod[]; // массив поддерживаемых методов
+    bio?: string; // краткое описание
+    vehicleType?: 'car' | 'bike' | 'walking' | 'public_transport';
+  }
+  API Endpoints
+  1. Регистрация
+  POST /auth/register
+  interface RegisterRequest {
+    userType: UserType;
+    userData: BaseUserData;
+    pickerData?: PickerSpecificData; // только для picker
+    password: string;
+  }
+  interface RegisterResponse {
+    success: boolean;
+    user: {
+      id: string;
+      userType: UserType;
+      email: string;
+      fullName: string;
+      isVerified: boolean;
+    };
+    token: string;
+    refreshToken: string;
+  }
+  2. Авторизация
+  POST /auth/login
+  interface LoginRequest {
+    email: string;
+    password: string;
+  }
+  interface LoginResponse {
+    success: boolean;
+    user: {
+      id: string;
+      userType: UserType;
+      email: string;
+      fullName: string;
+      isVerified: boolean;
+    };
+    token: string;
+    refreshToken: string;
+  }
+  3. Получение профиля
+  GET /auth/profile
+  interface ProfileResponse {
+    id: string;
+    userType: UserType;
+    fullName: string;
+    email: string;
+    age: number;
+    country: string;
+    city: string;
+    phoneNumber?: string;
+    isVerified: boolean;
+    // Только для picker
+    deliveryMethods?: DeliveryMethod[];
+    bio?: string;
+    vehicleType?: string;
+    rating?: number;
+    deliveryCount?: number;
+  }
+  Дополнительные предложения
+  Поля для верификации:
+  interface VerificationData {
+    isIdVerified: boolean; // документы
+    verificationDocuments?: string[]; // URLs файлов (НЕ ДЛЯ MVP)
+  }
+  Настройки безопасности:
+  interface SecuritySettings {
+    twoFactorEnabled: boolean;
+    passwordLastChanged: Date; (НЕ ДЛЯ MVP)
+    lastLogin: Date; (НЕ ДЛЯ MVP)
+  }
+
+  Для Picker - дополнительные настройки:
+  interface PickerSettings {
+    isAvailable: boolean;
+    maxDeliveryDistance: number; // км (НЕ ДЛЯ MVP)
+    pricePerKm?: number; (НЕ ДЛЯ MVP)
+    workingHours?: {
+      start: string; // "09:00"
+      end: string;   // "18:00"
+    };
+    preferredAreas?: string[]; // районы города (НЕ ДЛЯ MVP)
+  }
+
+  Коды ошибок:
+  enum AuthErrorCodes {
+    EMAIL_ALREADY_EXISTS = 'email_already_exists',
+    INVALID_CREDENTIALS = 'invalid_credentials',
+    ACCOUNT_NOT_VERIFIED = 'account_not_verified', //проверка на существование email
+    VALIDATION_ERROR = 'validation_error',
+  }
+  
+  Валидация на фронтенде:
+  - Email: стандартный email формат
+  - Пароль: минимум 8 символов, содержит буквы и цифры
+  - Возраст: 18-80 лет
+  - FullName: 2-50 символов
+  - PhoneNumber: международный формат
+ 
+  Предложения по улучшению UX:
+  1. OAuth авторизация (Google/Facebook) для быстрой регистрации
+  2. Пошаговая регистрация - сначала базовые данные, потом специфичные
+  3. Геолокация для автоматического определения города
+  4. Email верификация сразу после регистрации
+  5. Возможность сменить тип аккаунта (Sender → Picker)
+
+
+222
