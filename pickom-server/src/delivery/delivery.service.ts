@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { MOCK_DELIVERY_REQUESTS } from 'src/mocks/delivery-requests.mock';
 import { MOCK_USERS } from 'src/mocks/users.mock';
 import { DeliveryDto } from './dto/delivery.dto';
+import { CreateDeliveryDto } from './dto/create-delivery.dto';
 import { UserService } from 'src/user/user.service';
 import { User } from 'src/user/types/user.type';
 import { NotificationService } from 'src/notification/notification.service';
@@ -22,34 +23,52 @@ export class DeliveryService {
   }
 
   // Создать запрос на доставку
+  // Принимает UID отправителя и данные о доставке через DTO
   async createDeliveryRequest(
-    senderId: string,
-    pickerId: string,
-    from: string,
-    to: string,
-    price: number,
-    recipientId?: string,
+    senderId: string,              // Firebase UID отправителя
+    createDto: CreateDeliveryDto,  // Данные о доставке (title, address, price и т.д.)
   ): Promise<DeliveryDto> {
+    // Создаём новый объект доставки
     const newRequest: DeliveryDto = {
+      // ID генерируется как длина массива + 1 (в реальной БД это делает автоинкремент)
       id: this.deliveryRequests.length + 1,
+
+      // UID отправителя из параметра
       senderId,
-      pickerId,
-      recipientId,
-      status: 'pending',
-      from,
-      to,
-      price,
+
+      // UID курьера из DTO (может быть null если не указан)
+      pickerId: createDto.pickerId || null,
+
+      // UID получателя (опционально)
+      recipientId: createDto.recipientId,
+
+      // Данные из CreateDeliveryDto
+      title: createDto.title,
+      description: createDto.description,
+      fromAddress: createDto.fromAddress,
+      toAddress: createDto.toAddress,
+      price: createDto.price,
+      size: createDto.size,
+      weight: createDto.weight,
+      notes: createDto.notes,
+
+      // Статус из DTO или по умолчанию 'pending' (ожидает принятия)
+      status: createDto.status || 'pending',
+
+      // Временные метки
       createdAt: new Date(),
+      updatedAt: new Date(),
     };
 
+    // Добавляем в массив (в реальной БД это будет save())
     this.deliveryRequests.push(newRequest);
 
     // Если указан получатель, создаем уведомление о входящей доставке
-    if (recipientId) {
+    if (createDto.recipientId) {
       const sender = this.users.find((u) => u.uid === senderId);
       if (sender) {
         await this.notificationService.notifyIncomingDelivery(
-          recipientId,
+          createDto.recipientId,
           newRequest.id,
           sender.name,
         );

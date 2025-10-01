@@ -18,6 +18,7 @@ import {
 import { UserService } from 'src/user/user.service';
 import { OfferService } from 'src/offer/offer.service';
 import { TrakingService } from 'src/traking/traking.service';
+import { CreateDeliveryDto } from './dto/create-delivery.dto';
 
 @Controller('delivery')
 export class DeliveryController {
@@ -41,23 +42,18 @@ export class DeliveryController {
 
   // Создать запрос на доставку (POST /delivery/requests)
   // Выполяняет это пользователь с role === 'sender'
+  // Принимает в теле запроса CreateDeliveryDto со всеми данными о доставке
   @Post('requests')
   @UseGuards(FirebaseAuthGuard)
   async createDeliveryRequest(
     @Req() req: ReqWithUser,
-    @Body('pickerId') pickerId: string,
-    @Body('from') from: string,
-    @Body('to') to: string,
-    @Body('price') price: number,
+    @Body() createDto: CreateDeliveryDto,  // Принимаем весь объект DTO
   ) {
+    // Получаем UID пользователя из Firebase токена
     const { uid } = req.user as { uid: string };
-    return await this.deliveryService.createDeliveryRequest(
-      uid,
-      pickerId,
-      from,
-      to,
-      price,
-    );
+
+    // Вызываем сервис с UID отправителя и данными о доставке
+    return await this.deliveryService.createDeliveryRequest(uid, createDto);
   }
 
   // Получить список запросов (GET /delivery/requests)
