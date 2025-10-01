@@ -1,0 +1,105 @@
+/*!*******************************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[13].oneOf[5].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[13].oneOf[5].use[3]!./components/picker/PickerSearchLoader.module.css ***!
+  \*******************************************************************************************************************************************************************************************************************************************************************************************/
+.PickerSearchLoader_loaderContainer__ClkD_ {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: white;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 1.5rem;
+}
+
+.PickerSearchLoader_spinnerContainer__Rt8hS {
+  position: relative;
+  margin-bottom: 2rem;
+}
+
+.PickerSearchLoader_spinner__7ta8M {
+  width: 4rem;
+  height: 4rem;
+  border: 4px solid #dbeafe;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: PickerSearchLoader_spin__Jg9iu 1s linear infinite;
+  margin: 0 auto;
+}
+
+.PickerSearchLoader_spinnerReverse__zPn7N {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 4rem;
+  height: 4rem;
+  border: 4px solid transparent;
+  border-right-color: #60a5fa;
+  border-radius: 50%;
+  animation: PickerSearchLoader_spin-reverse__J9JRw 1.5s linear infinite;
+  margin: 0 auto;
+}
+
+.PickerSearchLoader_title__eRyDI {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 0.75rem;
+  text-align: center;
+}
+
+.PickerSearchLoader_text__5xEcu {
+  font-size: 1rem;
+  color: #6b7280;
+  margin-bottom: 1.5rem;
+  line-height: 1.625;
+  text-align: center;
+}
+
+.PickerSearchLoader_progressContainer__FaQkW {
+  width: 12rem;
+  height: 0.25rem;
+  background-color: #e5e7eb;
+  border-radius: 9999px;
+  margin: 0 auto;
+  overflow: hidden;
+}
+
+.PickerSearchLoader_progressBar__dtDGa {
+  height: 100%;
+  background: linear-gradient(to right, #3b82f6, #2563eb);
+  border-radius: 9999px;
+  animation: PickerSearchLoader_loading-progress__H6dRw 3.5s ease-in-out;
+}
+
+@keyframes PickerSearchLoader_spin__Jg9iu {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes PickerSearchLoader_spin-reverse__J9JRw {
+  from {
+    transform: rotate(360deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes PickerSearchLoader_loading-progress__H6dRw {
+  0% { width: 0%; }
+  25% { width: 30%; }
+  50% { width: 60%; }
+  75% { width: 85%; }
+  100% { width: 100%; }
+}
