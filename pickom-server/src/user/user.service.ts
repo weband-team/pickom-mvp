@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -42,6 +41,12 @@ export class UserService {
   async findAllPickers(): Promise<UserEntity[]> {
     return this.userRepository.find({
       where: { role: 'picker' },
+    });
+  }
+
+  async findAllActivePickers(): Promise<UserEntity[]> {
+    return this.userRepository.find({
+      where: { role: 'picker', active: true },
     });
   }
 
