@@ -22,13 +22,16 @@ export class Delivery {
   senderId: number;
 
   @Column({ name: 'picker_id', nullable: true })
-  pickerId: number;
+  pickerId: number | null;
+
+  @Column({ name: 'recipient_id', nullable: true })
+  recipientId: number | null;
 
   @Column()
   title: string;
 
   @Column({ type: 'text', nullable: true })
-  description: string;
+  description: string | null;
 
   @Column({ name: 'from_address' })
   fromAddress: string;
@@ -43,7 +46,7 @@ export class Delivery {
   size: 'small' | 'medium' | 'large';
 
   @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
-  weight: number;
+  weight: number | null;
 
   @Column({
     type: 'enum',
@@ -53,13 +56,13 @@ export class Delivery {
   status: 'pending' | 'accepted' | 'picked_up' | 'delivered' | 'cancelled';
 
   @Column({ type: 'date', nullable: true, name: 'delivery_date' })
-  deliveryDate: Date;
+  deliveryDate: Date | null;
 
   @Column({ type: 'text', nullable: true })
-  notes: string;
+  notes: string | null;
 
   @Column({ type: 'text', nullable: true, name: 'deliveries_url' })
-  deliveriesUrl: string;
+  deliveriesUrl: string | null;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
@@ -75,6 +78,10 @@ export class Delivery {
   @ManyToOne(() => User, (user) => user.pickedDeliveries)
   @JoinColumn({ name: 'picker_id' })
   picker: User;
+
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'recipient_id' })
+  recipient: User;
 
   @OneToMany(() => Offer, (offer) => offer.delivery)
   offers: Offer[];

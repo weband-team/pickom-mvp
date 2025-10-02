@@ -1,23 +1,23 @@
-// DTO для работы с mock данными (временно, пока используем строковые UID)
-// Используется для возврата данных о доставке клиенту
+// DTO для возврата данных о доставке клиенту
+// Использует Firebase UID для идентификации пользователей
 export interface DeliveryDto {
-  // Уникальный ID доставки
+  // Уникальный ID доставки (автоинкремент из БД)
   id: number;
 
   // Firebase UID отправителя
-  senderId: string;
+  senderId: string | null;
 
   // Firebase UID курьера (может быть null если доставка ещё не принята)
   pickerId: string | null;
 
   // Firebase UID получателя (опционально)
-  recipientId?: string;
+  recipientId?: string | null;
 
   // Название посылки
   title: string;
 
   // Описание посылки
-  description?: string;
+  description?: string | null;
 
   // Адрес откуда забрать
   fromAddress: string;
@@ -32,7 +32,7 @@ export interface DeliveryDto {
   size: 'small' | 'medium' | 'large';
 
   // Вес в кг (опционально)
-  weight?: number;
+  weight?: number | null;
 
   // Статус доставки:
   // - pending: ожидает принятия курьером
@@ -43,10 +43,10 @@ export interface DeliveryDto {
   status: 'pending' | 'accepted' | 'picked_up' | 'delivered' | 'cancelled';
 
   // Дополнительные заметки
-  notes?: string;
+  notes?: string | null;
 
   // URL для отслеживания доставки (опционально)
-  deliveriesUrl?: string;
+  deliveriesUrl?: string | null;
 
   // Дата создания заявки
   createdAt: Date;

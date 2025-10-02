@@ -1,18 +1,19 @@
 import { Injectable } from '@nestjs/common';
-import { MOCK_DELIVERY_REQUESTS } from 'src/mocks/delivery-requests.mock';
-import { MOCK_USERS } from 'src/mocks/users.mock';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Delivery } from './entities/delivery.entity';
 import { DeliveryDto } from './dto/delivery.dto';
 import { CreateDeliveryDto } from './dto/create-delivery.dto';
 import { UserService } from 'src/user/user.service';
 import { User } from 'src/user/types/user.type';
+import { User as UserEntity } from 'src/user/entities/user.entity';
 import { NotificationService } from 'src/notification/notification.service';
 
 @Injectable()
 export class DeliveryService {
-  private deliveryRequests: DeliveryDto[] = [...MOCK_DELIVERY_REQUESTS];
-  private users = MOCK_USERS;
-
   constructor(
+    @InjectRepository(Delivery)
+    private readonly deliveryRepository: Repository<Delivery>,
     private readonly userService: UserService,
     private readonly notificationService: NotificationService,
   ) {}
@@ -25,57 +26,62 @@ export class DeliveryService {
   // Создать запрос на доставку
   // Принимает UID отправителя и данные о доставке через DTO
   async createDeliveryRequest(
-    senderId: string,              // Firebase UID отправителя
+    senderUid: string,             // Firebase UID отправителя
     createDto: CreateDeliveryDto,  // Данные о доставке (title, address, price и т.д.)
   ): Promise<DeliveryDto> {
-    // Создаём новый объект доставки
-    const newRequest: DeliveryDto = {
-      // ID генерируется как длина массива + 1 (в реальной БД это делает автоинкремент)
-      id: this.deliveryRequests.length + 1,
+    // Найти отправителя по UID
+    const sender = await this.userService.findOne(senderUid) as UserEntity;
+    if (!sender) {
+      throw new Error('Sender not found');
+    }
 
-      // UID отправителя из параметра
-      senderId,
-
-      // UID курьера из DTO (может быть null если не указан)
-      pickerId: createDto.pickerId || null,
-
-      // UID получателя (опционально)
-      recipientId: createDto.recipientId,
-
-      // Данные из CreateDeliveryDto
-      title: createDto.title,
-      description: createDto.description,
-      fromAddress: createDto.fromAddress,
-      toAddress: createDto.toAddress,
-      price: createDto.price,
-      size: createDto.size,
-      weight: createDto.weight,
-      notes: createDto.notes,
-
-      // Статус из DTO или по умолчанию 'pending' (ожидает принятия)
-      status: createDto.status || 'pending',
-
-      // Временные метки
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
-    // Добавляем в массив (в реальной БД это будет save())
-    this.deliveryRequests.push(newRequest);
-
-    // Если указан получатель, создаем уведомление о входящей доставке
-    if (createDto.recipientId) {
-      const sender = this.users.find((u) => u.uid === senderId);
-      if (sender) {
-        await this.notificationService.notifyIncomingDelivery(
-          createDto.recipientId,
-          newRequest.id,
-          sender.name,
-        );
+    // Найти курьера по UID если указан
+    let picker: UserEntity | null = null;
+    if (createDto.pickerId) {
+      picker = await this.userService.findOne(createDto.pickerId) as UserEntity;
+      if (!picker) {
+        throw new Error('Picker not found');
       }
     }
 
-    return newRequest;
+    // Найти получателя по UID если указан
+    let recipient: UserEntity | null = null;
+    if (createDto.recipientId) {
+      recipient = await this.userService.findOne(createDto.recipientId) as UserEntity;
+      if (!recipient) {
+        throw new Error('Recipient not found');
+      }
+    }
+
+    // Создаём новую сущность доставки
+    const delivery = new Delivery();
+    delivery.senderId = sender.id;
+    delivery.pickerId = picker?.id || null;
+    delivery.recipientId = recipient?.id || null;
+    delivery.title = createDto.title;
+    delivery.description = createDto.description || null;
+    delivery.fromAddress = createDto.fromAddress;
+    delivery.toAddress = createDto.toAddress;
+    delivery.price = createDto.price;
+    delivery.size = createDto.size;
+    delivery.weight = createDto.weight || null;
+    delivery.notes = createDto.notes || null;
+    delivery.status = createDto.status || 'pending';
+
+    // Сохраняем в базу данных
+    const savedDelivery = await this.deliveryRepository.save(delivery);
+
+    // Если указан получатель, создаем уведомление о входящей доставке
+    if (createDto.recipientId) {
+      await this.notificationService.notifyIncomingDelivery(
+        createDto.recipientId,
+        savedDelivery.id,
+        sender.name,
+      );
+    }
+
+    // Преобразуем в DTO для возврата
+    return this.toDto(savedDelivery, senderUid, createDto.pickerId, createDto.recipientId);
   }
 
   // Получить список всех запросов
@@ -83,9 +89,28 @@ export class DeliveryService {
     uid: string,
     role: string,
   ): Promise<DeliveryDto[]> {
-    return this.deliveryRequests.filter((request) =>
-      role === 'sender' ? request.senderId === uid : request.pickerId === uid,
-    );
+    // Найти пользователя по UID
+    const user = await this.userService.findOne(uid) as UserEntity;
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    // Получить доставки в зависимости от роли
+    let deliveries: Delivery[];
+    if (role === 'sender') {
+      deliveries = await this.deliveryRepository.find({
+        where: { senderId: user.id },
+        relations: ['sender', 'picker', 'recipient'],
+      });
+    } else {
+      deliveries = await this.deliveryRepository.find({
+        where: { pickerId: user.id },
+        relations: ['sender', 'picker', 'recipient'],
+      });
+    }
+
+    // Преобразовать в DTO
+    return deliveries.map((delivery) => this.entityToDto(delivery));
   }
 
   // Получить запрос по ID
@@ -94,18 +119,31 @@ export class DeliveryService {
     uid: string,
     role: string,
   ): Promise<DeliveryDto | null> {
-    const delivery =
-      this.deliveryRequests.find((request) => request.id === id) || null;
+    // Найти пользователя по UID
+    const user = await this.userService.findOne(uid) as UserEntity;
+    if (!user) {
+      return null;
+    }
+
+    // Найти доставку
+    const delivery = await this.deliveryRepository.findOne({
+      where: { id },
+      relations: ['sender', 'picker', 'recipient'],
+    });
+
     if (!delivery) {
       return null;
     }
-    if (role === 'sender' && delivery.senderId !== uid) {
+
+    // Проверить доступ
+    if (role === 'sender' && delivery.senderId !== user.id) {
       return null;
     }
-    if (role === 'picker' && delivery.pickerId !== uid) {
+    if (role === 'picker' && delivery.pickerId !== user.id) {
       return null;
     }
-    return delivery;
+
+    return this.entityToDto(delivery);
   }
 
   // Обновить статус запроса
@@ -114,20 +152,30 @@ export class DeliveryService {
     status: 'accepted' | 'picked_up' | 'delivered' | 'cancelled',
     uid: string,
   ): Promise<DeliveryDto | null> {
-    const requestIndex = this.deliveryRequests.findIndex(
-      (request) => request.id === id,
-    );
-
-    if (requestIndex === -1) {
+    // Найти пользователя по UID
+    const user = await this.userService.findOne(uid) as UserEntity;
+    if (!user) {
       return null;
     }
 
-    if (this.deliveryRequests[requestIndex].pickerId !== uid) {
+    // Найти доставку
+    const delivery = await this.deliveryRepository.findOne({
+      where: { id },
+      relations: ['sender', 'picker', 'recipient'],
+    });
+
+    if (!delivery) {
       return null;
     }
 
-    const delivery = this.deliveryRequests[requestIndex];
-    this.deliveryRequests[requestIndex].status = status;
+    // Проверить права (только курьер может менять статус)
+    if (delivery.pickerId !== user.id) {
+      return null;
+    }
+
+    // Обновить статус
+    delivery.status = status;
+    await this.deliveryRepository.save(delivery);
 
     // Создаем уведомления при изменении статуса
     const statusMessages: Record<string, string> = {
@@ -138,16 +186,16 @@ export class DeliveryService {
 
     const message = statusMessages[status];
     if (message) {
-      // Уведомление для отправителя
+      // Уведомление для отправителя (используем UID)
       await this.notificationService.notifyStatusUpdate(
-        delivery.senderId,
+        delivery.sender.uid,
         id,
         status,
         message,
       );
 
       // Уведомление для получателя (если указан)
-      if (delivery.recipientId) {
+      if (delivery.recipient) {
         const recipientMessages: Record<string, string> = {
           picked_up: 'Курьер забрал посылку и направляется к вам.',
           delivered: 'Посылка доставлена к вам!',
@@ -157,7 +205,7 @@ export class DeliveryService {
         const recipientMessage = recipientMessages[status];
         if (recipientMessage) {
           await this.notificationService.notifyStatusUpdate(
-            delivery.recipientId,
+            delivery.recipient.uid,
             id,
             status,
             recipientMessage,
@@ -166,6 +214,55 @@ export class DeliveryService {
       }
     }
 
-    return this.deliveryRequests[requestIndex];
+    return this.entityToDto(delivery);
+  }
+
+  // Преобразовать Entity в DTO
+  private entityToDto(delivery: Delivery): DeliveryDto {
+    return {
+      id: delivery.id,
+      senderId: delivery.sender?.uid || null,
+      pickerId: delivery.picker?.uid || null,
+      recipientId: delivery.recipient?.uid || null,
+      title: delivery.title,
+      description: delivery.description,
+      fromAddress: delivery.fromAddress,
+      toAddress: delivery.toAddress,
+      price: delivery.price,
+      size: delivery.size,
+      weight: delivery.weight,
+      status: delivery.status,
+      notes: delivery.notes,
+      deliveriesUrl: delivery.deliveriesUrl,
+      createdAt: delivery.createdAt,
+      updatedAt: delivery.updatedAt,
+    };
+  }
+
+  // Вспомогательный метод для создания DTO (используется в createDeliveryRequest)
+  private toDto(
+    delivery: Delivery,
+    senderUid: string,
+    pickerUid?: string,
+    recipientUid?: string,
+  ): DeliveryDto {
+    return {
+      id: delivery.id,
+      senderId: senderUid,
+      pickerId: pickerUid || null,
+      recipientId: recipientUid || null,
+      title: delivery.title,
+      description: delivery.description,
+      fromAddress: delivery.fromAddress,
+      toAddress: delivery.toAddress,
+      price: delivery.price,
+      size: delivery.size,
+      weight: delivery.weight,
+      status: delivery.status,
+      notes: delivery.notes,
+      deliveriesUrl: delivery.deliveriesUrl,
+      createdAt: delivery.createdAt,
+      updatedAt: delivery.updatedAt,
+    };
   }
 }

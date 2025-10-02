@@ -39,12 +39,14 @@ export class OfferService {
     this.offers.push(offer);
 
     // Создаем уведомление для отправителя о новом предложении
-    await this.notificationService.notifyOfferReceived(
-      delivery.senderId,
-      deliveryId,
-      picker.name,
-      price,
-    );
+    if (delivery.senderId) {
+      await this.notificationService.notifyOfferReceived(
+        delivery.senderId,
+        deliveryId,
+        picker.name,
+        price,
+      );
+    }
 
     return offer;
   }
@@ -65,7 +67,7 @@ export class OfferService {
     this.offers[offerIndex].status = status;
 
     // Если предложение принято, создаем уведомление
-    if (status === 'accepted' && delivery) {
+    if (status === 'accepted' && delivery && delivery.senderId) {
       await this.notificationService.notifyOfferAccepted(
         delivery.senderId,
         offer.delivery_id,
