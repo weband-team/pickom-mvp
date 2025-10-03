@@ -17,6 +17,8 @@ export default function TestDeliveryPage() {
   const [error, setError] = useState('');                   // Текст ошибки
   const [success, setSuccess] = useState('');               // Текст успеха
   const [statusFilter, setStatusFilter] = useState<string>('all'); // Фильтр по статусу
+  const [selectedDelivery, setSelectedDelivery] = useState<any | null>(null); // Выбранная доставка для редактирования
+  const [editMode, setEditMode] = useState(false); // Режим редактирования
 
   // Данные формы для создания новой доставки
   const [formData, setFormData] = useState({
@@ -157,6 +159,152 @@ export default function TestDeliveryPage() {
     }
   };
 
+  // Обновить данные доставки (PATCH /delivery/requests/:id)
+  // Требует авторизации через session cookie (FirebaseAuthGuard)
+  // Только отправитель (sender) может редактировать свою доставку
+  const updateDelivery = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedDelivery) return;
+
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      if (!auth.currentUser) {
+        throw new Error('Нет авторизации. Войдите в систему.');
+      }
+
+      const response = await fetch(`${API_URL}/delivery/requests/${selectedDelivery.id}`, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.message || `Ошибка ${response.status}: ${response.statusText}`
+        );
+      }
+
+      const updatedDelivery = await response.json();
+      console.log('✅ Доставка обновлена:', updatedDelivery);
+
+      // Обновляем доставку в списке
+      setDeliveries(
+        deliveries.map((d) => (d.id === selectedDelivery.id ? updatedDelivery : d))
+      );
+      setSuccess(`Доставка #${selectedDelivery.id} успешно обновлена!`);
+
+      // Выходим из режима редактирования
+      setEditMode(false);
+      setSelectedDelivery(null);
+
+      // Очищаем форму
+      setFormData({
+        title: '',
+        description: '',
+        fromAddress: '',
+        toAddress: '',
+        price: 0,
+        size: 'small',
+        weight: 0,
+        notes: '',
+        status: 'pending',
+      });
+    } catch (err: any) {
+      setError(`Ошибка обновления доставки: ${err.message}`);
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Обновить статус доставки (PUT /delivery/requests/:id/status)
+  // Требует авторизации через session cookie (FirebaseAuthGuard)
+  // Только курьеры (role: 'picker') могут изменять статус
+  const updateDeliveryStatus = async (deliveryId: number, newStatus: string) => {
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      if (!auth.currentUser) {
+        throw new Error('Нет авторизации. Войдите в систему.');
+      }
+
+      const response = await fetch(`${API_URL}/delivery/requests/${deliveryId}/status`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.message || `Ошибка ${response.status}: ${response.statusText}`
+        );
+      }
+
+      const updatedDelivery = await response.json();
+      console.log('✅ Статус доставки обновлен:', updatedDelivery);
+
+      // Обновляем доставку в списке
+      setDeliveries(
+        deliveries.map((d) => (d.id === deliveryId ? updatedDelivery : d))
+      );
+      setSuccess(`Статус доставки #${deliveryId} изменен на: ${newStatus}`);
+    } catch (err: any) {
+      setError(`Ошибка обновления статуса: ${err.message}`);
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Начать редактирование доставки
+  const startEdit = (delivery: any) => {
+    setSelectedDelivery(delivery);
+    setEditMode(true);
+    setFormData({
+      title: delivery.title,
+      description: delivery.description || '',
+      fromAddress: delivery.fromAddress,
+      toAddress: delivery.toAddress,
+      price: delivery.price,
+      size: delivery.size,
+      weight: delivery.weight || 0,
+      notes: delivery.notes || '',
+      status: delivery.status,
+    });
+    // Прокрутить к форме
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Отменить редактирование
+  const cancelEdit = () => {
+    setEditMode(false);
+    setSelectedDelivery(null);
+    setFormData({
+      title: '',
+      description: '',
+      fromAddress: '',
+      toAddress: '',
+      price: 0,
+      size: 'small',
+      weight: 0,
+      notes: '',
+      status: 'pending',
+    });
+  };
+
   // 3. ОБРАБОТЧИКИ СОБЫТИЙ
   // Функции, которые вызываются при взаимодействии пользователя с формой
 
@@ -249,11 +397,34 @@ export default function TestDeliveryPage() {
         </button>
       </div>
 
-      {/* Форма для создания доставки */}
+      {/* Форма для создания/редактирования доставки */}
       <div style={styles.section}>
-        <h2>2️⃣ Тестирование POST запроса (создание доставки)</h2>
+        <h2>
+          {editMode
+            ? `✏️ Редактирование доставки #${selectedDelivery?.id}`
+            : '2️⃣ Тестирование POST запроса (создание доставки)'}
+        </h2>
 
-        <form onSubmit={createDelivery} style={styles.form}>
+        {editMode && (
+          <div style={{ marginBottom: '15px', padding: '10px', backgroundColor: '#2d4a2d', borderRadius: '4px' }}>
+            <p style={{ margin: 0, color: '#6bff6b' }}>
+              📝 Режим редактирования активен. Измените нужные поля и нажмите "Сохранить изменения".
+            </p>
+            <button
+              onClick={cancelEdit}
+              style={{
+                ...styles.button,
+                backgroundColor: '#f44336',
+                marginTop: '10px',
+                marginRight: 0,
+              }}
+            >
+              ❌ Отменить редактирование
+            </button>
+          </div>
+        )}
+
+        <form onSubmit={editMode ? updateDelivery : createDelivery} style={styles.form}>
           <div style={styles.formGroup}>
             <label>
               Название посылки *
@@ -401,7 +572,11 @@ export default function TestDeliveryPage() {
             disabled={loading || !auth.currentUser}
             style={{ ...styles.button, ...styles.submitButton }}
           >
-            {loading ? '⏳ Создаём...' : '✨ Создать доставку'}
+            {loading
+              ? '⏳ Сохраняем...'
+              : editMode
+              ? '💾 Сохранить изменения'
+              : '✨ Создать доставку'}
           </button>
         </form>
       </div>
@@ -494,6 +669,24 @@ export default function TestDeliveryPage() {
                 <p style={{ fontSize: '12px', color: '#666' }}>
                   Создано: {new Date(delivery.createdAt).toLocaleString('ru-RU')}
                 </p>
+
+                {/* Кнопка редактирования доставки */}
+                <div style={{ marginTop: '15px', paddingTop: '15px', borderTop: '1px solid #333' }}>
+                  <button
+                    onClick={() => startEdit(delivery)}
+                    disabled={loading}
+                    style={{
+                      ...styles.button,
+                      backgroundColor: '#FF9800',
+                      width: '100%',
+                      marginRight: 0,
+                      marginBottom: '10px',
+                    }}
+                  >
+                    ✏️ Редактировать доставку
+                  </button>
+                </div>
+
               </div>
             ))}
           </div>
@@ -509,6 +702,10 @@ export default function TestDeliveryPage() {
           <li>Нажмите "Загрузить курьеров" для проверки GET /delivery/pickers</li>
           <li>Нажмите "Загрузить мои доставки" для проверки GET /delivery/requests</li>
           <li>Заполните форму и нажмите "Создать доставку" для проверки POST</li>
+          <li>Нажмите "✏️ Редактировать доставку" для изменения данных (PATCH запрос)</li>
+          <li>Измените статус доставки с помощью кнопок для проверки PUT /requests/:id/status</li>
+          <li>⚠️ Редактирование доступно только для sender (владельца доставки)</li>
+          <li>⚠️ Изменение статуса доступно только для picker</li>
           <li>Проверьте консоль браузера (F12) для подробных логов</li>
         </ol>
       </div>
@@ -648,5 +845,16 @@ const styles: Record<string, React.CSSProperties> = {
     backgroundColor: '#252525',
     boxShadow: '0 2px 4px rgba(0, 0, 0, 0.3)',
     transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+  },
+  statusButton: {
+    backgroundColor: '#2196F3',
+    color: 'white',
+    padding: '8px 16px',
+    border: 'none',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    fontSize: '12px',
+    transition: 'all 0.3s ease',
+    boxShadow: '0 2px 4px rgba(33, 150, 243, 0.3)',
   },
 };
