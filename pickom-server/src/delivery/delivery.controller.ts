@@ -5,6 +5,7 @@ import {
   Get,
   NotFoundException,
   Param,
+  Patch,
   Post,
   Put,
   Req,
@@ -19,6 +20,7 @@ import { UserService } from 'src/user/user.service';
 import { OfferService } from 'src/offer/offer.service';
 import { TrakingService } from 'src/traking/traking.service';
 import { CreateDeliveryDto } from './dto/create-delivery.dto';
+import { UpdateDeliveryDto } from './dto/update-delivery.dto';
 
 @Controller('delivery')
 export class DeliveryController {
@@ -89,9 +91,27 @@ export class DeliveryController {
     );
   }
 
-  // Курьер принимает/отклоняет запрос (PUT /delivery/requests/:id)
+  // Обновить данные доставки (PATCH /delivery/requests/:id)
+  // Выполяняет это отправитель (sender) - владелец доставки
+  // Позволяет изменить любые поля: title, description, addresses, price и т.д.
+  @Patch('requests/:id')
+  @UseGuards(FirebaseAuthGuard)
+  async updateDelivery(
+    @Param('id') id: number,
+    @Body() updateDto: UpdateDeliveryDto,
+    @Req() req: ReqWithUser,
+  ) {
+    const { uid } = req.user as { uid: string };
+    const user = await this.userService.findOne(uid);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    return await this.deliveryService.updateDelivery(id, uid, updateDto);
+  }
+
+  // Курьер принимает/отклоняет запрос (PUT /delivery/requests/:id/status)
   // Выполяняет это пользователь с role === 'picker'
-  @Put('requests/:id')
+  @Put('requests/:id/status')
   @UseGuards(FirebaseAuthGuard)
   async updateDeliveryRequestStatus(
     @Param('id') id: number,
