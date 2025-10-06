@@ -113,7 +113,7 @@ export class PaymentService {
       },
     });
 
-    // Save payment to database
+    // Save payment to database (payment_intent will be updated via webhook)
     const payment = this.paymentRepository.create({
       fromUserId: userId,
       toUserId: null,
@@ -122,7 +122,8 @@ export class PaymentService {
       currency,
       status: 'pending',
       paymentMethod: 'stripe',
-      stripePaymentIntentId: session.payment_intent as string,
+      stripePaymentIntentId: null, // Will be set via webhook
+      stripeClientSecret: null, // Will be set via webhook
       description,
       metadata: {
         sessionId: session.id,
@@ -186,6 +187,11 @@ export class PaymentService {
     }
 
     switch (event.type) {
+      case 'checkout.session.completed':
+        await this.handleCheckoutSessionCompleted(
+          event.data.object as Stripe.Checkout.Session,
+        );
+        break;
       case 'payment_intent.succeeded':
         await this.handlePaymentIntentSucceeded(
           event.data.object as Stripe.PaymentIntent,
@@ -208,14 +214,47 @@ export class PaymentService {
     return { received: true };
   }
 
+  private async handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) {
+    console.log('Handling checkout.session.completed:', session.id);
+
+    // Find payment by session ID in metadata
+    const payments = await this.paymentRepository.find();
+    const payment = payments.find(p => p.metadata?.sessionId === session.id);
+
+    if (payment) {
+      console.log('Found payment:', payment.id);
+
+      // Get payment intent details to retrieve client_secret
+      const paymentIntentId = session.payment_intent as string;
+      if (paymentIntentId) {
+        const paymentIntent = await this.stripe.paymentIntents.retrieve(paymentIntentId);
+
+        payment.stripePaymentIntentId = paymentIntent.id;
+        payment.stripeClientSecret = paymentIntent.client_secret;
+        payment.status = paymentIntent.status === 'succeeded' ? 'completed' : 'processing';
+
+        await this.paymentRepository.save(payment);
+        console.log('Payment updated:', payment.id, 'Status:', payment.status);
+      }
+    } else {
+      console.log('Payment not found for session:', session.id);
+    }
+  }
+
   private async handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent) {
+    console.log('Handling payment_intent.succeeded:', paymentIntent.id);
+
     const payment = await this.paymentRepository.findOne({
       where: { stripePaymentIntentId: paymentIntent.id },
     });
 
     if (payment) {
       payment.status = 'completed';
+      payment.stripeClientSecret = payment.stripeClientSecret || paymentIntent.client_secret;
       await this.paymentRepository.save(payment);
+      console.log('Payment marked as completed:', payment.id);
+    } else {
+      console.log('Payment not found for payment_intent:', paymentIntent.id);
     }
   }
 
