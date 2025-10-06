@@ -7,7 +7,9 @@ import { join } from 'path';
 import 'dotenv/config';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    rawBody: true,
+  });
 
   // Настройка статических файлов
   app.useStaticAssets(join(__dirname, '..', 'public'));
