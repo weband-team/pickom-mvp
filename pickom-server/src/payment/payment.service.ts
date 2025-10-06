@@ -96,8 +96,8 @@ export class PaymentService {
           price_data: {
             currency,
             product_data: {
-              name: description || (deliveryId ? `Оплата доставки #${deliveryId}` : 'Тестовый платеж'),
-              description: deliveryId ? `Доставка #${deliveryId}` : undefined,
+              name: deliveryId ? `Оплата доставки #${deliveryId}` : 'Тестовый платеж',
+              description: description || (deliveryId ? `Доставка #${deliveryId}` : undefined),
             },
             unit_amount: Math.round(amount * 100),
           },
@@ -110,6 +110,13 @@ export class PaymentService {
       metadata: {
         ...(deliveryId && { deliveryId: deliveryId.toString() }),
         userId: userId.toString(),
+      },
+      payment_intent_data: {
+        description: description || (deliveryId ? `Payment for delivery #${deliveryId}` : 'Test payment'),
+        metadata: {
+          ...(deliveryId && { deliveryId: deliveryId.toString() }),
+          userId: userId.toString(),
+        },
       },
     });
 
