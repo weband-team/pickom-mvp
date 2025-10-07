@@ -85,7 +85,62 @@ export class DeliveryService {
     return this.toDto(savedDelivery, senderUid, createDto.pickerId, createDto.recipientId);
   }
 
-  // Получить список всех запросов
+  async getAllDeliveredDeliveryRequests(
+    uid: string,
+    role: string,
+  ): Promise<DeliveryDto[]> {
+    // Найти пользователя по UID
+    const user = await this.userService.findOne(uid) as UserEntity;
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    // Получить доставки в зависимости от роли
+    let deliveries: Delivery[];
+    if (role === 'sender') {
+      deliveries = await this.deliveryRepository.find({
+        where: { senderId: user.id, status: 'delivered' },
+        relations: ['sender', 'picker', 'recipient'],
+      });
+    } else {
+      deliveries = await this.deliveryRepository.find({
+        where: { pickerId: user.id, status: 'delivered' },
+        relations: ['sender', 'picker', 'recipient'],
+      });
+    }
+
+    // Преобразовать в DTO
+    return deliveries.map((delivery) => this.entityToDto(delivery));
+  }
+
+  async getAllCancelledDeliveryRequests(
+    uid: string,
+    role: string,
+  ): Promise<DeliveryDto[]> {
+    // Найти пользователя по UID
+    const user = await this.userService.findOne(uid) as UserEntity;
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    // Получить доставки в зависимости от роли
+    let deliveries: Delivery[];
+    if (role === 'sender') {
+      deliveries = await this.deliveryRepository.find({
+        where: { senderId: user.id, status: 'cancelled' },
+        relations: ['sender', 'picker', 'recipient'],
+      });
+    } else {
+      deliveries = await this.deliveryRepository.find({
+        where: { pickerId: user.id, status: 'cancelled' },
+        relations: ['sender', 'picker', 'recipient'],
+      });
+    }
+
+    // Преобразовать в DTO
+    return deliveries.map((delivery) => this.entityToDto(delivery));
+  }
+
   async getAllDeliveryRequests(
     uid: string,
     role: string,
@@ -128,7 +183,7 @@ export class DeliveryService {
 
     // Найти доставку
     const delivery = await this.deliveryRepository.findOne({
-      where: { id },
+      where: { id,  },
       relations: ['sender', 'picker', 'recipient'],
     });
 
