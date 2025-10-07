@@ -7,6 +7,7 @@ import { TrakingModule } from './traking/traking.module';
 import { DatabaseModule } from './config/database.module';
 import { UserModule } from './user/user.module';
 import { NotificationModule } from './notification/notification.module';
+import { PaymentModule } from './payment/payment.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { NotificationModule } from './notification/notification.module';
     DatabaseModule,
     UserModule,
     NotificationModule,
+    PaymentModule,
   ],
   controllers: [AppController],
   providers: [],
