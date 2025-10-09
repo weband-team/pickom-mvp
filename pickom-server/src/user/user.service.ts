@@ -18,6 +18,14 @@ export class UserService {
     private readonly userRepository: Repository<UserEntity>,
   ) {}
 
+  async findUserBalance(uid: string): Promise<number | null> {
+    const user = await this.userRepository.findOne({
+      where: { uid },
+      select: ['balance'],
+    });
+    return user ? user.balance : null;
+  }
+
   async findOne(uid: string): Promise<UserDto | null> {
     return (
       this.userRepository.findOne({
