@@ -31,12 +31,27 @@ export class PaymentService {
     userId: number,
     createPaymentIntentDto: CreatePaymentIntentDto,
   ) {
-    const { amount, deliveryId, description, currency = 'usd' } = createPaymentIntentDto;
-
+    const { amount, deliveryId, description, currency = 'usd', fromUserId, toUserId } = createPaymentIntentDto;
     // Check if user exists
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) {
       throw new BadRequestException(`User with id ${userId} not found. Please create a user first.`);
+    }
+
+    // Validate fromUserId if provided
+    if (fromUserId) {
+      const fromUser = await this.userRepository.findOne({ where: { id: fromUserId } });
+      if (!fromUser) {
+        throw new BadRequestException(`From user with id ${fromUserId} not found.`);
+      }
+    }
+
+    // Validate toUserId if provided
+    if (toUserId) {
+      const toUser = await this.userRepository.findOne({ where: { id: toUserId } });
+      if (!toUser) {
+        throw new BadRequestException(`To user with id ${toUserId} not found.`);
+      }
     }
 
     // Create Stripe payment intent
@@ -52,8 +67,8 @@ export class PaymentService {
 
     // Save payment to database
     const payment = this.paymentRepository.create({
-      fromUserId: userId,
-      toUserId: null, // Will be set when delivery is accepted
+      fromUserId: fromUserId || userId,
+      toUserId: toUserId || null, // Will be set when delivery is accepted
       deliveryId,
       amount,
       currency,
@@ -80,12 +95,28 @@ export class PaymentService {
     userId: number,
     createPaymentIntentDto: CreatePaymentIntentDto,
   ) {
-    const { amount, deliveryId, description, currency = 'usd' } = createPaymentIntentDto;
+    const { amount, deliveryId, description, currency = 'usd', fromUserId, toUserId } = createPaymentIntentDto;
 
     // Check if user exists
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) {
       throw new BadRequestException(`User with id ${userId} not found. Please create a user first.`);
+    }
+
+    // Validate fromUserId if provided
+    if (fromUserId) {
+      const fromUser = await this.userRepository.findOne({ where: { id: fromUserId } });
+      if (!fromUser) {
+        throw new BadRequestException(`From user with id ${fromUserId} not found.`);
+      }
+    }
+
+    // Validate toUserId if provided
+    if (toUserId) {
+      const toUser = await this.userRepository.findOne({ where: { id: toUserId } });
+      if (!toUser) {
+        throw new BadRequestException(`To user with id ${toUserId} not found.`);
+      }
     }
 
     // Create Stripe Checkout Session
@@ -122,8 +153,8 @@ export class PaymentService {
 
     // Save payment to database (payment_intent will be updated via webhook)
     const payment = this.paymentRepository.create({
-      fromUserId: userId,
-      toUserId: null,
+      fromUserId: fromUserId || userId,
+      toUserId: toUserId || null,
       deliveryId,
       amount,
       currency,
@@ -240,8 +271,41 @@ export class PaymentService {
         payment.stripeClientSecret = paymentIntent.client_secret;
         payment.status = paymentIntent.status === 'succeeded' ? 'completed' : 'processing';
 
-        await this.paymentRepository.save(payment);
-        console.log('Payment updated:', payment.id, 'Status:', payment.status);
+        // If payment succeeded, update balances in transaction
+        if (paymentIntent.status === 'succeeded') {
+          console.log(`Processing successful payment: ID=${payment.id}, fromUserId=${payment.fromUserId}, toUserId=${payment.toUserId}, amount=${payment.amount}`);
+
+          await this.paymentRepository.manager.transaction(async (transactionalEntityManager) => {
+            // Save payment status
+            await transactionalEntityManager.save(Payment, payment);
+
+            // Update user balances
+            if (payment.fromUserId) {
+              console.log(`Decrementing balance for user ${payment.fromUserId} by ${payment.amount}`);
+              await transactionalEntityManager.decrement(
+                User,
+                { id: payment.fromUserId },
+                'balance',
+                payment.amount,
+              );
+            }
+
+            if (payment.toUserId) {
+              console.log(`Incrementing balance for user ${payment.toUserId} by ${payment.amount}`);
+              await transactionalEntityManager.increment(
+                User,
+                { id: payment.toUserId },
+                'balance',
+                payment.amount,
+              );
+            }
+          });
+
+          console.log('Payment marked as completed and balances updated:', payment.id);
+        } else {
+          await this.paymentRepository.save(payment);
+          console.log('Payment updated:', payment.id, 'Status:', payment.status);
+        }
       }
     } else {
       console.log('Payment not found for session:', session.id);
@@ -256,10 +320,38 @@ export class PaymentService {
     });
 
     if (payment) {
-      payment.status = 'completed';
-      payment.stripeClientSecret = payment.stripeClientSecret || paymentIntent.client_secret;
-      await this.paymentRepository.save(payment);
-      console.log('Payment marked as completed:', payment.id);
+      console.log(`Processing payment: ID=${payment.id}, fromUserId=${payment.fromUserId}, toUserId=${payment.toUserId}, amount=${payment.amount}`);
+
+      // Use transaction to update payment and user balances atomically
+      await this.paymentRepository.manager.transaction(async (transactionalEntityManager) => {
+        // Update payment status
+        payment.status = 'completed';
+        payment.stripeClientSecret = payment.stripeClientSecret || paymentIntent.client_secret;
+        await transactionalEntityManager.save(Payment, payment);
+
+        // Update user balances
+        if (payment.fromUserId) {
+          console.log(`Decrementing balance for user ${payment.fromUserId} by ${payment.amount}`);
+          await transactionalEntityManager.decrement(
+            User,
+            { id: payment.fromUserId },
+            'balance',
+            payment.amount,
+          );
+        }
+
+        if (payment.toUserId) {
+          console.log(`Incrementing balance for user ${payment.toUserId} by ${payment.amount}`);
+          await transactionalEntityManager.increment(
+            User,
+            { id: payment.toUserId },
+            'balance',
+            payment.amount,
+          );
+        }
+      });
+
+      console.log('Payment marked as completed and balances updated:', payment.id);
     } else {
       console.log('Payment not found for payment_intent:', paymentIntent.id);
     }

@@ -16,4 +16,12 @@ export class CreatePaymentIntentDto {
   @IsString()
   @IsOptional()
   currency?: string;
+
+  @IsNumber()
+  @IsOptional()
+  fromUserId?: number;
+
+  @IsNumber()
+  @IsOptional()
+  toUserId?: number;
 }

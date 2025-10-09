@@ -58,6 +58,15 @@ export class User {
   totalRatings: number;
 
   @ApiProperty()
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    default: 0,
+  })
+  balance: number;
+
+  @ApiProperty()
   @Column({ type: 'boolean', default: true })
   active: boolean;
 

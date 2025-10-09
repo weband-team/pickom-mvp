@@ -20,6 +20,8 @@ interface PaymentFormData {
   amount: number;
   deliveryId: number;
   description: string;
+  fromUserId: number;
+  toUserId: number;
 }
 
 export default function StripePaymentTest() {
@@ -28,6 +30,8 @@ export default function StripePaymentTest() {
     amount: 10.0,
     deliveryId: 1,
     description: 'Test payment for delivery',
+    fromUserId: 1,
+    toUserId: 2,
   });
   const [paymentStatus, setPaymentStatus] = useState<string>('');
 
@@ -45,6 +49,8 @@ export default function StripePaymentTest() {
           deliveryId: formData.deliveryId,
           description: formData.description,
           currency: 'usd',
+          fromUserId: formData.fromUserId,
+          toUserId: formData.toUserId,
         },
         {
           headers: {
@@ -135,6 +141,36 @@ export default function StripePaymentTest() {
               setFormData({ ...formData, description: e.target.value })
             }
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            From User ID
+          </label>
+          <input
+            type="number"
+            value={formData.fromUserId}
+            onChange={(e) =>
+              setFormData({ ...formData, fromUserId: parseInt(e.target.value) })
+            }
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            To User ID
+          </label>
+          <input
+            type="number"
+            value={formData.toUserId}
+            onChange={(e) =>
+              setFormData({ ...formData, toUserId: parseInt(e.target.value) })
+            }
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
           />
         </div>
 

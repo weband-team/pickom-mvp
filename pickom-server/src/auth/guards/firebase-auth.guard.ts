@@ -1,10 +1,14 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { type Request, type Response } from 'express';
 import { admin } from '../firebase-admin.module';
+import { User } from '../../user/entities/user.entity';
 import 'dotenv/config';
 
 export type ReqWithUser = Request & {
   user: {
+    id: number;
     uid: string;
     email: string;
   };
@@ -13,6 +17,10 @@ export type ReqWithUser = Request & {
 
 @Injectable()
 export class FirebaseAuthGuard implements CanActivate {
+  constructor(
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
+  ) {}
   public async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<ReqWithUser>();
     const response = context.switchToHttp().getResponse<Response>();
@@ -33,7 +41,23 @@ export class FirebaseAuthGuard implements CanActivate {
         return false;
       }
 
+      // Load user from database by Firebase UID
+      const user = await this.userRepository.findOne({
+        where: { uid: decodedClaims.uid },
+      });
+
+      if (!user) {
+        console.error('User not found in database for uid:', decodedClaims.uid);
+        response.clearCookie('session', {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        });
+        return false;
+      }
+
       request.user = {
+        id: user.id,
         email: decodedClaims.email,
         uid: decodedClaims.uid,
       };
