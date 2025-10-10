@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import { PaymentService } from './payment.service';
-import { CreatePaymentIntentDto, ConfirmPaymentDto } from './dto';
+import { CreatePaymentIntentDto, ConfirmPaymentDto, TopUpBalanceDto } from './dto';
 
 @Controller('payment')
 export class PaymentController {
@@ -61,5 +61,10 @@ export class PaymentController {
   @Get(':id')
   async getPaymentById(@Param('id') id: number) {
     return this.paymentService.getPaymentById(id);
+  }
+
+  @Post('topup-balance')
+  async topUpBalance(@Body() topUpBalanceDto: TopUpBalanceDto) {
+    return this.paymentService.topUpBalance(topUpBalanceDto);
   }
 }

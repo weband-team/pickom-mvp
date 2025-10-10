@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import Stripe from 'stripe';
 import { ConfigService } from '@nestjs/config';
 import { Payment } from './entities/payment.entity';
-import { CreatePaymentIntentDto } from './dto';
+import { CreatePaymentIntentDto, TopUpBalanceDto } from './dto';
 import { User } from '../user/entities/user.entity';
 
 @Injectable()
@@ -279,25 +279,39 @@ export class PaymentService {
             // Save payment status
             await transactionalEntityManager.save(Payment, payment);
 
-            // Update user balances
-            if (payment.fromUserId) {
-              console.log(`Decrementing balance for user ${payment.fromUserId} by ${payment.amount}`);
-              await transactionalEntityManager.decrement(
-                User,
-                { id: payment.fromUserId },
-                'balance',
-                payment.amount,
-              );
-            }
+            // Check if this is a balance top-up
+            const isTopUp = payment.metadata?.type === 'balance_topup';
 
-            if (payment.toUserId) {
-              console.log(`Incrementing balance for user ${payment.toUserId} by ${payment.amount}`);
+            if (isTopUp) {
+              // For balance top-up, only increment the user's balance
+              console.log(`Incrementing balance for user ${payment.toUserId} by ${payment.amount} (top-up)`);
               await transactionalEntityManager.increment(
                 User,
                 { id: payment.toUserId },
                 'balance',
                 payment.amount,
               );
+            } else {
+              // For regular payments, decrement from sender and increment to receiver
+              if (payment.fromUserId) {
+                console.log(`Decrementing balance for user ${payment.fromUserId} by ${payment.amount}`);
+                await transactionalEntityManager.decrement(
+                  User,
+                  { id: payment.fromUserId },
+                  'balance',
+                  payment.amount,
+                );
+              }
+
+              if (payment.toUserId) {
+                console.log(`Incrementing balance for user ${payment.toUserId} by ${payment.amount}`);
+                await transactionalEntityManager.increment(
+                  User,
+                  { id: payment.toUserId },
+                  'balance',
+                  payment.amount,
+                );
+              }
             }
           });
 
@@ -329,25 +343,39 @@ export class PaymentService {
         payment.stripeClientSecret = payment.stripeClientSecret || paymentIntent.client_secret;
         await transactionalEntityManager.save(Payment, payment);
 
-        // Update user balances
-        if (payment.fromUserId) {
-          console.log(`Decrementing balance for user ${payment.fromUserId} by ${payment.amount}`);
-          await transactionalEntityManager.decrement(
-            User,
-            { id: payment.fromUserId },
-            'balance',
-            payment.amount,
-          );
-        }
+        // Check if this is a balance top-up
+        const isTopUp = payment.metadata?.type === 'balance_topup';
 
-        if (payment.toUserId) {
-          console.log(`Incrementing balance for user ${payment.toUserId} by ${payment.amount}`);
+        if (isTopUp) {
+          // For balance top-up, only increment the user's balance
+          console.log(`Incrementing balance for user ${payment.toUserId} by ${payment.amount} (top-up)`);
           await transactionalEntityManager.increment(
             User,
             { id: payment.toUserId },
             'balance',
             payment.amount,
           );
+        } else {
+          // For regular payments, decrement from sender and increment to receiver
+          if (payment.fromUserId) {
+            console.log(`Decrementing balance for user ${payment.fromUserId} by ${payment.amount}`);
+            await transactionalEntityManager.decrement(
+              User,
+              { id: payment.fromUserId },
+              'balance',
+              payment.amount,
+            );
+          }
+
+          if (payment.toUserId) {
+            console.log(`Incrementing balance for user ${payment.toUserId} by ${payment.amount}`);
+            await transactionalEntityManager.increment(
+              User,
+              { id: payment.toUserId },
+              'balance',
+              payment.amount,
+            );
+          }
         }
       });
 
@@ -398,5 +426,72 @@ export class PaymentService {
     }
 
     return payment;
+  }
+
+  async topUpBalance(topUpBalanceDto: TopUpBalanceDto) {
+    const { userId, amount, description } = topUpBalanceDto;
+
+    // Find user by Firebase UID
+    const user = await this.userRepository.findOne({ where: { uid: userId } });
+    if (!user) {
+      throw new NotFoundException(`User with uid ${userId} not found`);
+    }
+
+    // Create Stripe Checkout Session for balance top-up
+    const session = await this.stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: 'Balance Top-Up',
+              description: description || `Top-up balance for user ${user.name}`,
+            },
+            unit_amount: Math.round(amount * 100), // Stripe expects amount in cents
+          },
+          quantity: 1,
+        },
+      ],
+      mode: 'payment',
+      success_url: `${this.configService.get<string>('CLIENT_URI')}/test-balance-topup/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${this.configService.get<string>('CLIENT_URI')}/test-balance-topup`,
+      metadata: {
+        userId: user.id.toString(),
+        type: 'balance_topup',
+      },
+      payment_intent_data: {
+        description: description || `Balance top-up for user ${user.name}`,
+        metadata: {
+          userId: user.id.toString(),
+          type: 'balance_topup',
+        },
+      },
+    });
+
+    // Save payment to database (will be updated via webhook)
+    const payment = this.paymentRepository.create({
+      fromUserId: user.id,
+      toUserId: user.id, // For balance top-up, from and to are the same
+      deliveryId: null,
+      amount,
+      currency: 'usd',
+      status: 'pending',
+      paymentMethod: 'stripe',
+      stripePaymentIntentId: null, // Will be set via webhook
+      stripeClientSecret: null, // Will be set via webhook
+      description: description || 'Balance top-up',
+      metadata: {
+        sessionId: session.id,
+        type: 'balance_topup',
+      },
+    });
+
+    await this.paymentRepository.save(payment);
+
+    return {
+      sessionId: session.id,
+      url: session.url,
+    };
   }
 }
