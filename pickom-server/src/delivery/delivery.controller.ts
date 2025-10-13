@@ -71,6 +71,19 @@ export class DeliveryController {
     return await this.deliveryService.getAllDeliveryRequests(uid, user.role);
   }
 
+  // Получить завершенные доставки (GET /delivery/completed)
+  // Выполяняет это пользователь с role === 'sender' или 'picker'
+  @Get('completed')
+  @UseGuards(FirebaseAuthGuard)
+  async getCompletedDeliveries(@Req() req: ReqWithUser) {
+    const { uid } = req.user as { uid: string };
+    const user = await this.userService.findOne(uid);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    return await this.deliveryService.getAllDeliveredDeliveryRequests(uid, user.role);
+  }
+
   // Получить детали запроса (GET /delivery/requests/:id)
   // Выполяняет это пользователь с role === 'sender' или 'picker'
   @Get('requests/:id')
