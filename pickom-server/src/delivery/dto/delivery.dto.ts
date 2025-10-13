@@ -1,0 +1,57 @@
+// DTO для возврата данных о доставке клиенту
+// Использует Firebase UID для идентификации пользователей
+export interface DeliveryDto {
+  // Уникальный ID доставки (автоинкремент из БД)
+  id: number;
+
+  // Firebase UID отправителя
+  senderId: string | null;
+
+  // Firebase UID курьера (может быть null если доставка ещё не принята)
+  pickerId: string | null;
+
+  // Firebase UID получателя (опционально)
+  recipientId?: string | null;
+
+  // Название посылки
+  title: string;
+
+  // Описание посылки
+  description?: string | null;
+
+  fromAddress: string;
+  fromCity?: string | null;
+
+  toAddress: string;
+  toCity?: string | null;
+
+  deliveryType?: 'within-city' | 'inter-city';
+
+  price: number;
+
+  // Размер: 'small' | 'medium' | 'large'
+  size: 'small' | 'medium' | 'large';
+
+  // Вес в кг (опционально)
+  weight?: number | null;
+
+  // Статус доставки:
+  // - pending: ожидает принятия курьером
+  // - accepted: курьер принял заказ
+  // - picked_up: курьер забрал посылку
+  // - delivered: доставлено
+  // - cancelled: отменено
+  status: 'pending' | 'accepted' | 'picked_up' | 'delivered' | 'cancelled';
+
+  // Дополнительные заметки
+  notes?: string | null;
+
+  // URL для отслеживания доставки (опционально)
+  deliveriesUrl?: string | null;
+
+  // Дата создания заявки
+  createdAt: Date;
+
+  // Дата последнего обновления
+  updatedAt: Date;
+}

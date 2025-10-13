@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Stripe Checkout</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 500;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        button {
+            background: #5469d4;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: 500;
+        }
+        button:hover {
+            background: #4053b8;
+        }
+        button:disabled {
+            background: #999;
+            cursor: not-allowed;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            display: none;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2196F3;
+        }
+        .info h3 {
+            margin-top: 0;
+            color: #1976D2;
+        }
+        .info p {
+            margin: 5px 0;
+            font-size: 14px;
+            color: #555;
+        }
+        .test-cards {
+            background: #fff9e6;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 20px;
+            border-left: 4px solid #ffc107;
+        }
+        .test-cards h3 {
+            margin-top: 0;
+            color: #f57c00;
+        }
+        .test-cards code {
+            background: #fff;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Stripe Checkout</h1>
+
+        <div class="info">
+            <h3>Информация</h3>
+            <p>Эта страница позволяет протестировать интеграцию Stripe Checkout.</p>
+            <p>После успешной оплаты webhook обновит статус платежа в базе данных.</p>
+        </div>
+
+        <form id="checkoutForm">
+            <div class="form-group">
+                <label for="amount">Сумма (USD)</label>
+                <input type="number" id="amount" name="amount" value="10.00" step="0.01" min="0.50" required>
+            </div>
+
+            <div class="form-group">
+                <label for="description">Описание</label>
+                <input type="text" id="description" name="description" value="Test payment" required>
+            </div>
+
+            <div class="form-group">
+                <label for="userId">User ID (отправитель)</label>
+                <input type="number" id="userId" name="userId" value="1" required>
+            </div>
+
+            <div class="form-group">
+                <label for="deliveryId">Delivery ID (опционально)</label>
+                <input type="number" id="deliveryId" name="deliveryId" placeholder="Оставьте пустым для теста">
+            </div>
+
+            <button type="submit" id="submitButton">Перейти к оплате</button>
+        </form>
+
+        <div id="status" class="status"></div>
+
+        <div class="test-cards">
+            <h3>Тестовые карты Stripe</h3>
+            <p><strong>Успешная оплата:</strong> <code>4242 4242 4242 4242</code></p>
+            <p><strong>Требует 3D Secure:</strong> <code>4000 0027 6000 3184</code></p>
+            <p><strong>Отклонена:</strong> <code>4000 0000 0000 0002</code></p>
+            <p><small>Дата: любая будущая, CVC: любые 3 цифры, ZIP: любой</small></p>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('checkoutForm');
+        const submitButton = document.getElementById('submitButton');
+        const statusDiv = document.getElementById('status');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = new FormData(form);
+            const data = {
+                amount: parseFloat(formData.get('amount')),
+                description: formData.get('description'),
+                fromUserId: parseInt(formData.get('userId')),
+                currency: 'usd'
+            };
+
+            // Добавить deliveryId только если указан
+            const deliveryId = formData.get('deliveryId');
+            if (deliveryId) {
+                data.deliveryId = parseInt(deliveryId);
+            }
+
+            submitButton.disabled = true;
+            submitButton.textContent = 'Создание сессии...';
+            showStatus('Создание Checkout Session...', 'info');
+
+            try {
+                const response = await fetch('http://localhost:4242/payment/create-checkout-session', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message || 'Failed to create checkout session');
+                }
+
+                const session = await response.json();
+
+                // Перенаправление на Stripe Checkout
+                if (session.url) {
+                    showStatus('Перенаправление на Stripe Checkout...', 'success');
+                    window.location.href = session.url;
+                } else {
+                    throw new Error('No checkout URL received');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showStatus('Ошибка: ' + error.message, 'error');
+                submitButton.disabled = false;
+                submitButton.textContent = 'Перейти к оплате';
+            }
+        });
+
+        function showStatus(message, type) {
+            statusDiv.textContent = message;
+            statusDiv.className = 'status ' + type;
+            statusDiv.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
