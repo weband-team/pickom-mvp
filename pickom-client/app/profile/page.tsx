@@ -1,7 +1,7 @@
 'use client';
 
 import { Box, Typography, IconButton, Button, CircularProgress, Alert } from '@mui/material';
-import { ArrowBack, Logout, AccountBalanceWallet } from '@mui/icons-material';
+import { ArrowBack, Logout, AccountBalanceWallet, Edit } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { signOut } from 'firebase/auth';
@@ -10,7 +10,6 @@ import { handleLogout } from '../api/auth';
 import { MobileContainer } from '@/components/ui/layout/MobileContainer';
 import { ProfileHeader } from '@/components/profile/ProfileHeader';
 import { ProfileStats } from '@/components/profile/ProfileStats';
-import { EditableDescription } from '@/components/profile/EditableDescription';
 import { UserType } from '@/types/auth';
 import BottomNavigation from '../../components/common/BottomNavigation';
 import { ThemeToggle } from '../../components/common/ThemeToggle';
@@ -43,10 +42,6 @@ export default function ProfilePage() {
 
   const handleBackClick = () => {
     router.back();
-  };
-
-  const handleDescriptionSave = (newDescription: string) => {
-    console.log('New description:', newDescription);
   };
 
   const handleSignOut = async () => {
@@ -127,11 +122,17 @@ export default function ProfilePage() {
               isVerified: user.isVerified || false,
             }} />
 
-            {/* Editable Description */}
-            <EditableDescription
-              description={user.bio || 'No description yet.'}
-              onSave={handleDescriptionSave}
-            />
+            {/* About Section */}
+            {user.about && (
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="h6" sx={{ mb: 1.5 }}>
+                  About
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
+                  {user.about}
+                </Typography>
+              </Box>
+            )}
 
             {/* Rating */}
             <ProfileStats
@@ -149,15 +150,12 @@ export default function ProfilePage() {
               </Typography>
 
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2" color="text.secondary">Location:</Typography>
-                  <Typography variant="body2">{user.city || 'N/A'}, {user.country || 'N/A'}</Typography>
-                </Box>
-
-                {user.age && (
+                {user.location && (
                   <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography variant="body2" color="text.secondary">Age:</Typography>
-                    <Typography variant="body2">{user.age}</Typography>
+                    <Typography variant="body2" color="text.secondary">Location:</Typography>
+                    <Typography variant="body2">
+                      {user.location.lat.toFixed(4)}, {user.location.lng.toFixed(4)}
+                    </Typography>
                   </Box>
                 )}
 
@@ -180,11 +178,33 @@ export default function ProfilePage() {
               </Box>
             </Box>
 
-            {/* Earnings/Balance Button */}
+            {/* Edit Profile Button */}
             <Box sx={{ mt: 4 }}>
               <Button
                 fullWidth
                 variant="contained"
+                startIcon={<Edit />}
+                onClick={() => router.push('/profile/edit')}
+                sx={{
+                  py: 1.5,
+                  textTransform: 'none',
+                  fontSize: '1rem',
+                  fontWeight: 500,
+                  backgroundColor: 'primary.main',
+                  '&:hover': {
+                    backgroundColor: 'primary.dark',
+                  }
+                }}
+              >
+                Edit Profile
+              </Button>
+            </Box>
+
+            {/* Earnings/Balance Button */}
+            <Box sx={{ mt: 2 }}>
+              <Button
+                fullWidth
+                variant="outlined"
                 startIcon={<AccountBalanceWallet />}
                 onClick={() => router.push('/earnings')}
                 sx={{

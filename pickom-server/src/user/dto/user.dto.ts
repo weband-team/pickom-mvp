@@ -15,4 +15,10 @@ export class UserDto {
   basePrice?: number;
   completedDeliveries?: number;
   totalOrders?: number;
+  about?: string;
+  location?: {
+    lat: number;
+    lng: number;
+    placeId?: string;
+  };
 }
