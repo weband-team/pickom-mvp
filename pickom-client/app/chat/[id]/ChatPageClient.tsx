@@ -157,7 +157,7 @@ export function ChatPageClient({ chatId }: ChatPageClientProps) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: '#f5f5f5',
+          bgcolor: 'background.default',
         }}
       >
         <CircularProgress />
@@ -174,7 +174,7 @@ export function ChatPageClient({ chatId }: ChatPageClientProps) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: '#f5f5f5',
+          bgcolor: 'background.default',
           p: 2,
         }}
       >
@@ -191,7 +191,7 @@ export function ChatPageClient({ chatId }: ChatPageClientProps) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: '#f5f5f5',
+          bgcolor: 'background.default',
           p: 2,
         }}
       >
@@ -204,7 +204,7 @@ export function ChatPageClient({ chatId }: ChatPageClientProps) {
     <Box
       sx={{
         minHeight: '100vh',
-        backgroundColor: '#ffffff',
+        bgcolor: 'background.default',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -217,8 +217,9 @@ export function ChatPageClient({ chatId }: ChatPageClientProps) {
           <Box
             sx={{
               p: 2,
-              borderBottom: '1px solid #e0e0e0',
-              backgroundColor: '#ffffff',
+              borderBottom: 1,
+              borderColor: 'divider',
+              bgcolor: 'background.paper',
             }}
           >
             <Stack direction="row" alignItems="center" spacing={2}>
@@ -244,7 +245,7 @@ export function ChatPageClient({ chatId }: ChatPageClientProps) {
           </Box>
 
           {/* Message Input */}
-          <Box sx={{ p: 2, borderTop: '1px solid #e0e0e0', backgroundColor: '#ffffff' }}>
+          <Box sx={{ p: 2, borderTop: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
             <Stack direction="row" spacing={1} alignItems="flex-end">
               <TextInput
                 value={newMessage}
@@ -261,14 +262,14 @@ export function ChatPageClient({ chatId }: ChatPageClientProps) {
                 onClick={handleSendMessage}
                 disabled={!newMessage.trim() || sending}
                 sx={{
-                  backgroundColor: '#000000',
-                  color: '#ffffff',
+                  bgcolor: 'primary.main',
+                  color: 'primary.contrastText',
                   '&:hover': {
-                    backgroundColor: '#333333',
+                    bgcolor: 'primary.dark',
                   },
                   '&:disabled': {
-                    backgroundColor: '#e0e0e0',
-                    color: '#999999',
+                    bgcolor: 'action.disabledBackground',
+                    color: 'action.disabled',
                   },
                 }}
               >

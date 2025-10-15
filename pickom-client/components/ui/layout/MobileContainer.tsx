@@ -18,7 +18,7 @@ export const MobileContainer: React.FC<MobileContainerProps> = ({
   width = 375,
   height = 812,
   showFrame = true,
-  backgroundColor = '#ffffff',
+  backgroundColor,
   showBottomNav = true,
 }) => {
   const pathname = usePathname();
@@ -34,8 +34,8 @@ export const MobileContainer: React.FC<MobileContainerProps> = ({
           maxWidth: width,
           height: shouldShowBottomNav ? 'calc(100vh - 70px)' : '100vh',
           maxHeight: shouldShowBottomNav ? `calc(${height}px - 70px)` : height,
-          backgroundColor,
-          overflow: 'auto',
+          bgcolor: backgroundColor || 'background.default',
+          overflow: 'hidden', // Changed from 'auto' to 'hidden' to contain modals
           position: 'relative',
           '&::-webkit-scrollbar': {
             display: 'none',
@@ -43,7 +43,7 @@ export const MobileContainer: React.FC<MobileContainerProps> = ({
           scrollbarWidth: 'none',
         }}
       >
-        <Box sx={{ paddingBottom: 0, minHeight: '100%' }}>
+        <Box sx={{ paddingBottom: 0, minHeight: '100%', overflow: 'auto', height: '100%' }}>
           {children}
         </Box>
       </Box>
@@ -68,7 +68,7 @@ export const MobileContainer: React.FC<MobileContainerProps> = ({
           borderRadius: 6,
           overflow: 'hidden',
           position: 'relative',
-          backgroundColor,
+          bgcolor: backgroundColor || 'background.default',
           border: '8px solid #000000',
           '&::before': {
             content: '""',

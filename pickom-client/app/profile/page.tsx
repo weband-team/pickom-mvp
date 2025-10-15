@@ -1,6 +1,6 @@
 'use client';
 
-import { Box, Typography, IconButton, Button, CircularProgress, Alert, Card, CardContent } from '@mui/material';
+import { Box, Typography, IconButton, Button, CircularProgress, Alert, Card, CardContent, useTheme } from '@mui/material';
 import { ArrowBack, Logout, AccountBalanceWallet, TrendingUp } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
@@ -19,6 +19,7 @@ import { getUserBalance } from '../api/user';
 
 export default function ProfilePage() {
   const router = useRouter();
+  const theme = useTheme();
   const [user, setUser] = useState<any>(null);
   const [balance, setBalance] = useState<number>(0);
   const [loading, setLoading] = useState(true);
@@ -103,13 +104,13 @@ export default function ProfilePage() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#f5f5f5',
+        bgcolor: 'background.default',
         p: 2,
       }}
     >
       <Box sx={{ position: 'relative', width: '100%', maxWidth: 375, height: 812 }}>
         <MobileContainer showFrame={false}>
-          <Box sx={{ p: 3, pb: 6, backgroundColor: 'background.default', minHeight: '100vh' }}>
+          <Box sx={{ p: 3, pb: 6, minHeight: '100vh' }}>
             {/* Header with Back Button and Theme Toggle */}
             <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <IconButton
@@ -161,7 +162,9 @@ export default function ProfilePage() {
               <Card
                 sx={{
                   mb: 4,
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  background: theme.palette.mode === 'dark'
+                    ? 'linear-gradient(135deg, #4a5568 0%, #2d3748 100%)'
+                    : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                   cursor: 'pointer',
                   transition: 'transform 0.2s, box-shadow 0.2s',
                   '&:hover': {
@@ -195,7 +198,7 @@ export default function ProfilePage() {
                     sx={{
                       mt: 2,
                       backgroundColor: 'white',
-                      color: '#667eea',
+                      color: theme.palette.mode === 'dark' ? '#4a5568' : '#667eea',
                       fontWeight: 600,
                       '&:hover': {
                         backgroundColor: 'rgba(255,255,255,0.9)',

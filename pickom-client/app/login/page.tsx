@@ -133,7 +133,7 @@ export default function LoginPage() {
     <Box
       sx={{
         minHeight: '100vh',
-        backgroundColor: '#ffffff',
+        bgcolor: 'background.default',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -207,7 +207,7 @@ export default function LoginPage() {
           </Box>
 
           {/* Register Link */}
-          <Link href="/register" passHref>
+          <Link href="/user-type" passHref>
             <Button
               variant="outlined"
               fullWidth

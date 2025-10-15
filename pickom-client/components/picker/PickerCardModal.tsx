@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import {
   SwipeableDrawer,
   Button,
@@ -44,6 +45,14 @@ export default function PickerCardModal({
   onEdit,
   picker,
 }: PickerCardModalProps) {
+  const [container, setContainer] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    // Find the mobile container element
+    const mobileContainer = document.querySelector('[data-mobile-container]') as HTMLElement;
+    setContainer(mobileContainer);
+  }, []);
+
   return (
     <SwipeableDrawer
       anchor="bottom"
@@ -51,6 +60,11 @@ export default function PickerCardModal({
       onClose={onClose}
       onOpen={() => {}}
       disableSwipeToOpen
+      disablePortal
+      container={container}
+      ModalProps={{
+        keepMounted: false,
+      }}
       PaperProps={{
         sx: {
           maxHeight: '90vh',

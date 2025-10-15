@@ -18,11 +18,10 @@ import {
   DialogActions,
   TextField,
   Stack,
+  SwipeableDrawer,
 } from '@mui/material';
 import {
   ArrowBack,
-  LocationCity,
-  DirectionsCar,
   LocationOn,
   LocalShipping,
   CalendarToday,
@@ -33,6 +32,7 @@ import {
   Cancel,
   LocalShippingOutlined,
   Star,
+  Close,
 } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
 import { MobileContainer } from '@/components/ui/layout/MobileContainer';
@@ -87,6 +87,7 @@ export default function DeliveryDetailsPage({ params }: { params: Promise<{ id: 
   const [showOfferModal, setShowOfferModal] = useState(false);
   const [offerPrice, setOfferPrice] = useState<number>(0);
   const [offerMessage, setOfferMessage] = useState('');
+  const [modalContainer, setModalContainer] = useState<HTMLElement | null>(null);
 
   // Dialogs
   const [showCancelDialog, setShowCancelDialog] = useState(false);
@@ -152,6 +153,12 @@ export default function DeliveryDetailsPage({ params }: { params: Promise<{ id: 
 
     fetchDeliveryDetails();
   }, [resolvedParams.id]);
+
+  // Find mobile container for modals
+  useEffect(() => {
+    const mobileContainer = document.querySelector('[data-mobile-container]') as HTMLElement;
+    setModalContainer(mobileContainer);
+  }, []);
 
   const handleBack = () => {
     if (userRole === 'sender') {
@@ -272,6 +279,21 @@ export default function DeliveryDetailsPage({ params }: { params: Promise<{ id: 
     }
   };
 
+  // Puller component for swipe-down gesture
+  const Puller = () => (
+    <Box
+      sx={{
+        width: 40,
+        height: 4,
+        backgroundColor: 'action.disabled',
+        borderRadius: 2,
+        position: 'absolute',
+        top: 8,
+        left: 'calc(50% - 20px)',
+      }}
+    />
+  );
+
   if (loading) {
     return (
       <Box
@@ -280,7 +302,7 @@ export default function DeliveryDetailsPage({ params }: { params: Promise<{ id: 
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: '#f5f5f5',
+          bgcolor: 'background.default',
         }}
       >
         <CircularProgress />
@@ -296,7 +318,7 @@ export default function DeliveryDetailsPage({ params }: { params: Promise<{ id: 
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: '#f5f5f5',
+          bgcolor: 'background.default',
           p: 2,
         }}
       >
@@ -318,7 +340,7 @@ export default function DeliveryDetailsPage({ params }: { params: Promise<{ id: 
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#f5f5f5',
+        bgcolor: 'background.default',
         p: 2,
       }}
     >
@@ -618,14 +640,51 @@ export default function DeliveryDetailsPage({ params }: { params: Promise<{ id: 
         <BottomNavigation />
 
         {/* Make Offer Modal */}
-        <Dialog
+        <SwipeableDrawer
+          anchor="bottom"
           open={showOfferModal}
           onClose={() => !actionLoading && setShowOfferModal(false)}
-          maxWidth="sm"
-          fullWidth
+          onOpen={() => {}}
+          disableSwipeToOpen
+          disablePortal
+          container={modalContainer}
+          ModalProps={{
+            keepMounted: false,
+          }}
+          PaperProps={{
+            sx: {
+              maxHeight: '90vh',
+              borderTopLeftRadius: 16,
+              borderTopRightRadius: 16,
+              backgroundColor: 'background.paper',
+            },
+          }}
         >
-          <DialogTitle>Make an Offer</DialogTitle>
-          <DialogContent>
+          <Puller />
+
+          {/* Header */}
+          <Box sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            px: 3,
+            pt: 3,
+            pb: 1
+          }}>
+            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+              Make an Offer
+            </Typography>
+            <IconButton
+              onClick={() => setShowOfferModal(false)}
+              size="small"
+              disabled={actionLoading}
+            >
+              <Close />
+            </IconButton>
+          </Box>
+
+          {/* Content */}
+          <Box sx={{ px: 3, pb: 2, overflowY: 'auto' }}>
             <Box sx={{ pt: 1 }}>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 Current price: <strong>{delivery.price} zł</strong>
@@ -651,20 +710,35 @@ export default function DeliveryDetailsPage({ params }: { params: Promise<{ id: 
                 disabled={actionLoading}
               />
             </Box>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setShowOfferModal(false)} disabled={actionLoading}>
+          </Box>
+
+          {/* Actions */}
+          <Box sx={{
+            px: 3,
+            py: 2,
+            borderTop: 1,
+            borderColor: 'divider',
+            display: 'flex',
+            gap: 2,
+          }}>
+            <Button
+              onClick={() => setShowOfferModal(false)}
+              disabled={actionLoading}
+              variant="outlined"
+              fullWidth
+            >
               Cancel
             </Button>
             <Button
               onClick={handleSubmitOffer}
               variant="contained"
               disabled={actionLoading || offerPrice <= 0}
+              fullWidth
             >
               {actionLoading ? 'Submitting...' : 'Submit Offer'}
             </Button>
-          </DialogActions>
-        </Dialog>
+          </Box>
+        </SwipeableDrawer>
 
         {/* Cancel Dialog */}
         <Dialog

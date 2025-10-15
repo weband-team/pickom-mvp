@@ -65,7 +65,7 @@ export function EditableDescription({ description = '', onSave }: EditableDescri
           placeholder="Tell others about yourself..."
           sx={{
             '& .MuiOutlinedInput-root': {
-              backgroundColor: '#fafafa',
+              bgcolor: 'background.elevated',
             },
           }}
         />

@@ -64,7 +64,7 @@ export default function ChatsPage() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: '#f5f5f5',
+          bgcolor: 'background.default',
           p: 2,
         }}
       >
@@ -82,7 +82,7 @@ export default function ChatsPage() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: '#f5f5f5',
+          bgcolor: 'background.default',
           p: 2,
         }}
       >
@@ -100,7 +100,7 @@ export default function ChatsPage() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: '#f5f5f5',
+          bgcolor: 'background.default',
           p: 2,
         }}
       >
@@ -115,7 +115,6 @@ export default function ChatsPage() {
                 minHeight: '100vh',
                 p: 3,
                 pb: 10,
-                backgroundColor: 'background.default',
               }}
             >
               <Box sx={{ mb: 3 }}>
@@ -191,7 +190,7 @@ export default function ChatsPage() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#f5f5f5',
+        bgcolor: 'background.default',
         p: 2,
       }}
     >
@@ -202,7 +201,6 @@ export default function ChatsPage() {
               display: 'flex',
               flexDirection: 'column',
               height: '100vh',
-              backgroundColor: 'background.default',
             }}
           >
             {/* Header */}

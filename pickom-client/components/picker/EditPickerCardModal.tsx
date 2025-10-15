@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   SwipeableDrawer,
   Button,
@@ -43,11 +43,18 @@ export default function EditPickerCardModal({
   onSave,
   initialSettings,
 }: EditPickerCardModalProps) {
+  const [container, setContainer] = useState<HTMLElement | null>(null);
   const [price, setPrice] = useState(initialSettings.price);
   const [vehicle, setVehicle] = useState(initialSettings.vehicle);
   const [workArea, setWorkArea] = useState(initialSettings.workArea);
   const [bio, setBio] = useState(initialSettings.bio);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
+  useEffect(() => {
+    // Find the mobile container element
+    const mobileContainer = document.querySelector('[data-mobile-container]') as HTMLElement;
+    setContainer(mobileContainer);
+  }, []);
 
   const validate = (): boolean => {
     const newErrors: { [key: string]: string } = {};
@@ -97,6 +104,11 @@ export default function EditPickerCardModal({
       onClose={handleCancel}
       onOpen={() => {}}
       disableSwipeToOpen
+      disablePortal
+      container={container}
+      ModalProps={{
+        keepMounted: false,
+      }}
       PaperProps={{
         sx: {
           maxHeight: '90vh',
