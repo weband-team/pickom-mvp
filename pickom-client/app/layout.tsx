@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ThemeWrapper } from '../components';
+import 'leaflet/dist/leaflet.css';
 
 
 export const metadata: Metadata = {
