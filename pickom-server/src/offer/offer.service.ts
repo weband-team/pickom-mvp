@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Offer } from './entities/offer.entity';
+import { Payment } from '../payment/entities/payment.entity';
 import { NotificationService } from 'src/notification/notification.service';
 import { UserService } from 'src/user/user.service';
 
@@ -10,6 +11,8 @@ export class OfferService {
   constructor(
     @InjectRepository(Offer)
     private readonly offerRepository: Repository<Offer>,
+    @InjectRepository(Payment)
+    private readonly paymentRepository: Repository<Payment>,
     private readonly notificationService: NotificationService,
     private readonly userService: UserService,
   ) {}
@@ -60,11 +63,38 @@ export class OfferService {
   ): Promise<Offer> {
     const offer = await this.offerRepository.findOne({
       where: { id: offerId },
-      relations: ['delivery', 'delivery.sender'],
+      relations: ['delivery', 'delivery.sender', 'picker'],
     });
 
     if (!offer) {
       throw new NotFoundException('Offer not found');
+    }
+
+    // If offer is being accepted, deduct balance from sender and create payment record
+    if (status === 'accepted' && offer.delivery?.sender && offer.picker) {
+      // Deduct balance from sender
+      await this.userService.deductBalance(
+        offer.delivery.sender.uid,
+        offer.price,
+      );
+
+      // Create payment record for audit trail
+      const payment = this.paymentRepository.create({
+        fromUserId: offer.delivery.sender.id,
+        toUserId: offer.picker.id,
+        deliveryId: offer.deliveryId,
+        amount: offer.price,
+        currency: 'usd',
+        status: 'pending', // Will be 'completed' when delivery is finished
+        paymentMethod: 'balance',
+        description: `Payment for delivery #${offer.deliveryId} - Offer #${offerId}`,
+        metadata: {
+          offerId: offerId.toString(),
+          type: 'delivery_payment',
+        },
+      });
+
+      await this.paymentRepository.save(payment);
     }
 
     offer.status = status;

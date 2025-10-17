@@ -15,10 +15,12 @@ export interface Message {
 export interface ChatSession {
   id: string;
   deliveryId?: number;
-  senderId: string; // Firebase UID
-  senderName: string;
-  pickerId: string; // Firebase UID
+  senderId: string | null;
+  senderName: string | null;
+  pickerId: string;
   pickerName: string;
+  recipientId?: string | null;
+  recipientName?: string | null;
   createdAt: Date;
   updatedAt: Date;
   messages?: Message[];

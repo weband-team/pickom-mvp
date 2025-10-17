@@ -28,13 +28,6 @@ export default function EarningsPage() {
         const userData = userResponse.data.user;
         setUser(userData);
 
-        // Check if user is a picker
-        if (userData.role !== 'picker') {
-          setError('This page is only available for pickers.');
-          setTimeout(() => router.push('/profile'), 2000);
-          return;
-        }
-
         const balanceResponse = await getUserBalance(userData.uid);
         setBalance(Number(balanceResponse.balance) || 0);
 
@@ -49,8 +42,11 @@ export default function EarningsPage() {
         setCompletedCount(completed.length);
         setCancelledCount(cancelled.length);
 
-        const earnings = completed.reduce((sum, delivery) => sum + (Number(delivery.price) || 0), 0);
-        setTotalEarnings(Number(earnings) || 0);
+        // Calculate total earnings only for pickers
+        if (userData.role === 'picker') {
+          const earnings = completed.reduce((sum, delivery) => sum + (Number(delivery.price) || 0), 0);
+          setTotalEarnings(Number(earnings) || 0);
+        }
       } catch (err) {
         console.error('Failed to fetch earnings data:', err);
         setError('Failed to load earnings. Please login again.');
@@ -117,7 +113,7 @@ export default function EarningsPage() {
                 <ArrowBack />
               </Button>
               <Typography variant="h5" sx={{ fontWeight: 600 }}>
-                My Earnings
+                {user.role === 'picker' ? 'My Earnings' : 'My Balance'}
               </Typography>
             </Box>
 
@@ -160,7 +156,7 @@ export default function EarningsPage() {
                     <TrendingUp sx={{ color: '#4caf50', mr: 1 }} />
                     <Box>
                       <Typography variant="body2" color="text.secondary">
-                        Completed Deliveries
+                        {user.role === 'picker' ? 'Completed Deliveries' : 'Completed Orders'}
                       </Typography>
                       <Typography variant="h6" sx={{ fontWeight: 600 }}>
                         {completedCount}
@@ -174,19 +170,21 @@ export default function EarningsPage() {
               </CardContent>
             </Card>
 
-            <Card sx={{ mb: 2 }}>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <AccountBalanceWallet sx={{ color: '#2196f3', mr: 1 }} />
-                  <Typography variant="body2" color="text.secondary">
-                    Total Earnings
+            {user.role === 'picker' && (
+              <Card sx={{ mb: 2 }}>
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                    <AccountBalanceWallet sx={{ color: '#2196f3', mr: 1 }} />
+                    <Typography variant="body2" color="text.secondary">
+                      Total Earnings
+                    </Typography>
+                  </Box>
+                  <Typography variant="h5" sx={{ fontWeight: 600, color: '#2196f3' }}>
+                    ${totalEarnings.toFixed(2)}
                   </Typography>
-                </Box>
-                <Typography variant="h5" sx={{ fontWeight: 600, color: '#2196f3' }}>
-                  ${totalEarnings.toFixed(2)}
-                </Typography>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
 
             <Card>
               <CardContent>
@@ -195,7 +193,7 @@ export default function EarningsPage() {
                     <Cancel sx={{ color: '#f44336', mr: 1 }} />
                     <Box>
                       <Typography variant="body2" color="text.secondary">
-                        Cancelled Deliveries
+                        {user.role === 'picker' ? 'Cancelled Deliveries' : 'Cancelled Orders'}
                       </Typography>
                       <Typography variant="h6" sx={{ fontWeight: 600 }}>
                         {cancelledCount}

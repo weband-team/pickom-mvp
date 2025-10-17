@@ -105,6 +105,18 @@ export class User {
   @Column({ type: 'timestamp', nullable: true, name: 'prev_login_at' })
   prevLoginAt: Date;
 
+  @ApiProperty()
+  @Column({ type: 'text', nullable: true })
+  about: string;
+
+  @ApiProperty()
+  @Column({ type: 'jsonb', nullable: true })
+  location: {
+    lat: number;
+    lng: number;
+    placeId?: string;
+  };
+
   // Relations
   @OneToMany(() => Delivery, (delivery) => delivery.sender)
   sentDeliveries: Delivery[];

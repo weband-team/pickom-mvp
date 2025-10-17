@@ -27,16 +27,18 @@ export class DeliveryService {
   // Создать запрос на доставку
   // Принимает UID отправителя и данные о доставке через DTO
   async createDeliveryRequest(
-    senderUid: string, // Firebase UID отправителя
-    createDto: CreateDeliveryDto, // Данные о доставке (title, address, price и т.д.)
+    senderUid: string,
+    createDto: CreateDeliveryDto,
   ): Promise<DeliveryDto> {
-    // Найти отправителя по UID
     const sender = (await this.userService.findOne(senderUid)) as UserEntity;
     if (!sender) {
       throw new Error('Sender not found');
     }
 
-    // Найти курьера по UID если указан
+    if (createDto.recipientId && createDto.recipientPhone) {
+      throw new Error('Cannot specify both recipientId and recipientPhone');
+    }
+
     let picker: UserEntity | null = null;
     if (createDto.pickerId) {
       picker = (await this.userService.findOne(
@@ -47,7 +49,6 @@ export class DeliveryService {
       }
     }
 
-    // Найти получателя по UID если указан
     let recipient: UserEntity | null = null;
     if (createDto.recipientId) {
       recipient = (await this.userService.findOne(
@@ -58,11 +59,11 @@ export class DeliveryService {
       }
     }
 
-    // Создаём новую сущность доставки
     const delivery = new Delivery();
     delivery.senderId = sender.id;
     delivery.pickerId = picker?.id || null;
     delivery.recipientId = recipient?.id || null;
+    delivery.recipientPhone = createDto.recipientPhone || null;
     delivery.title = createDto.title;
     delivery.description = createDto.description || null;
     delivery.fromAddress = createDto.fromAddress;
@@ -389,13 +390,13 @@ export class DeliveryService {
     return deliveries.map((delivery) => this.entityToDto(delivery));
   }
 
-  // Преобразовать Entity в DTO
   private entityToDto(delivery: Delivery): DeliveryDto {
     return {
       id: delivery.id,
       senderId: delivery.sender?.uid || null,
       pickerId: delivery.picker?.uid || null,
       recipientId: delivery.recipient?.uid || null,
+      recipientPhone: delivery.recipientPhone,
       title: delivery.title,
       description: delivery.description,
       fromAddress: delivery.fromAddress,
@@ -414,7 +415,6 @@ export class DeliveryService {
     };
   }
 
-  // Вспомогательный метод для создания DTO (используется в createDeliveryRequest)
   private toDto(
     delivery: Delivery,
     senderUid: string,
@@ -426,6 +426,7 @@ export class DeliveryService {
       senderId: senderUid,
       pickerId: pickerUid || null,
       recipientId: recipientUid || null,
+      recipientPhone: delivery.recipientPhone,
       title: delivery.title,
       description: delivery.description,
       fromAddress: delivery.fromAddress,

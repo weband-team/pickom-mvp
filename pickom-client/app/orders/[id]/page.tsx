@@ -8,10 +8,11 @@ import { MobileContainer } from '@/components/ui/layout/MobileContainer';
 import { UserAvatar, Button } from '@/components/ui';
 import BottomNavigation from '@/components/common/BottomNavigation';
 import { mockOrders } from '@/data/mockOrders';
-import { Order, OrderStatus, getStatusColor, getStatusLabel, canContactPicker, canCancelOrder, canReviewOrder } from '@/types/order';
+import { Order, OrderStatus, getStatusColor, getStatusLabel, canContactPicker, canContactReceiver, canCancelOrder, canReviewOrder } from '@/types/order';
 import { format } from 'date-fns';
 import { CancelOrderDialog } from '@/components/order/CancelOrderDialog';
 import { ReviewDialog } from '@/components/order/ReviewDialog';
+import ReceiverCard from '@/components/order/ReceiverCard';
 import { toast } from 'react-hot-toast';
 
 interface OrderDetailsPageProps {
@@ -44,6 +45,12 @@ export default function OrderDetailsPage({ params }: OrderDetailsPageProps) {
   const handleContactPicker = () => {
     if (order.picker) {
       router.push(`/chat/${order.picker.id}`);
+    }
+  };
+
+  const handleContactReceiver = () => {
+    if (order.receiver) {
+      router.push(`/chat/${order.receiver.id}`);
     }
   };
 
@@ -280,6 +287,33 @@ export default function OrderDetailsPage({ params }: OrderDetailsPageProps) {
                         </Typography>
                       </Box>
                     </Stack>
+                  </Box>
+                </>
+              )}
+
+              {(order.receiver || order.receiverPhone) && (
+                <>
+                  <Divider sx={{ my: 3 }} />
+                  <Box sx={{ mb: 3 }}>
+                    <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 2 }}>
+                      Receiver
+                    </Typography>
+                    <ReceiverCard
+                      receiver={{
+                        recipientId: order.receiver?.id,
+                        recipientPhone: order.receiverPhone,
+                        recipientUser: order.receiver ? {
+                          uid: order.receiver.id,
+                          fullName: order.receiver.fullName,
+                          avatarUrl: order.receiver.avatarUrl,
+                          rating: order.receiver.rating,
+                          isPhoneVerified: order.receiver.isPhoneVerified,
+                          isEmailVerified: order.receiver.isEmailVerified,
+                        } : undefined,
+                      }}
+                      onContactClick={order.receiver ? handleContactReceiver : undefined}
+                      variant="compact"
+                    />
                   </Box>
                 </>
               )}

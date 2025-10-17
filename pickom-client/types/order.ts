@@ -22,6 +22,15 @@ export interface OrderPicker {
   phone?: string;
 }
 
+export interface OrderReceiver {
+  id: string;
+  fullName: string;
+  avatarUrl?: string;
+  rating: number;
+  isPhoneVerified: boolean;
+  isEmailVerified: boolean;
+}
+
 export interface Order {
   id: string;
   trackingNumber: string;
@@ -37,6 +46,8 @@ export interface Order {
   price: number;
   currency: string;
   picker?: OrderPicker;
+  receiver?: OrderReceiver;
+  receiverPhone?: string;
   notes?: string;
   packageDescription?: string;
   review?: {
@@ -56,6 +67,10 @@ export function canReviewOrder(order: Order): boolean {
 
 export function canContactPicker(order: Order): boolean {
   return order.status === OrderStatus.ACTIVE && !!order.picker;
+}
+
+export function canContactReceiver(order: Order): boolean {
+  return order.status === OrderStatus.ACTIVE && !!order.receiver;
 }
 
 export function getStatusColor(status: OrderStatus): string {

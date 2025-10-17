@@ -11,6 +11,7 @@ import {
     PickomLogo
 } from '../../components/ui'
 import { PackageTypeEnum } from '@/types/package';
+import { ReceiverSelector } from '@/components/order/ReceiverSelector';
 
 export default function PackageTypePage(){
     const router = useRouter();
@@ -20,7 +21,9 @@ export default function PackageTypePage(){
     const [price, setPrice] = useState('');
     const [weight, setWeight] = useState('');
     const [notes, setNotes] = useState('');
-    const [otherDescription, setOtherDescription] = useState('')
+    const [otherDescription, setOtherDescription] = useState('');
+    const [recipientId, setRecipientId] = useState('');
+    const [recipientPhone, setRecipientPhone] = useState('');
     const [selectedType, setSelectedType] = useState<PackageTypeEnum | null>(null);
     const [isSearching, setIsSearching] = useState(false);
     return (
@@ -260,6 +263,13 @@ export default function PackageTypePage(){
                         </Box>
                     )}
 
+                    <ReceiverSelector
+                        recipientId={recipientId}
+                        recipientPhone={recipientPhone}
+                        onRecipientIdChange={setRecipientId}
+                        onRecipientPhoneChange={setRecipientPhone}
+                    />
+
                     {/* Navigation buttons */}
                     <Stack direction="row" justifyContent="space-between" sx={{ mt: 2 }}>
                         <Button variant="outlined" onClick={() => router.back()}>
@@ -303,7 +313,6 @@ export default function PackageTypePage(){
                                         deliveryType = 'within-city';
                                     }
 
-                                    // Create delivery request
                                     const { createDeliveryRequest } = await import('../api/delivery');
                                     const response = await createDeliveryRequest({
                                         title,
@@ -317,6 +326,8 @@ export default function PackageTypePage(){
                                         size: size as 'small' | 'medium' | 'large',
                                         weight: weight ? parseFloat(weight) : undefined,
                                         notes: notes || undefined,
+                                        recipientId: recipientId || undefined,
+                                        recipientPhone: recipientPhone || undefined,
                                     });
 
                                     const deliveryId = response.data.id;

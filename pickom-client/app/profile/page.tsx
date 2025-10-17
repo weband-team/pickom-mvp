@@ -1,7 +1,7 @@
 'use client';
 
-import { Box, Typography, IconButton, Button, CircularProgress, Alert, Card, CardContent, useTheme } from '@mui/material';
-import { ArrowBack, Logout, AccountBalanceWallet, TrendingUp } from '@mui/icons-material';
+import { Box, Typography, IconButton, Button, CircularProgress, Alert } from '@mui/material';
+import { ArrowBack, Logout, AccountBalanceWallet, Edit } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { signOut } from 'firebase/auth';
@@ -10,18 +10,14 @@ import { handleLogout } from '../api/auth';
 import { MobileContainer } from '@/components/ui/layout/MobileContainer';
 import { ProfileHeader } from '@/components/profile/ProfileHeader';
 import { ProfileStats } from '@/components/profile/ProfileStats';
-import { EditableDescription } from '@/components/profile/EditableDescription';
 import { UserType } from '@/types/auth';
 import BottomNavigation from '../../components/common/BottomNavigation';
 import { ThemeToggle } from '../../components/common/ThemeToggle';
 import { handleMe } from '../api/auth';
-import { getUserBalance } from '../api/user';
 
 export default function ProfilePage() {
   const router = useRouter();
-  const theme = useTheme();
   const [user, setUser] = useState<any>(null);
-  const [balance, setBalance] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const [loggingOut, setLoggingOut] = useState(false);
@@ -30,19 +26,7 @@ export default function ProfilePage() {
     const fetchUserData = async () => {
       try {
         const response = await handleMe();
-        const userData = response.data.user;
-        setUser(userData);
-
-        // Fetch balance only for pickers
-        if (userData.role === 'picker') {
-          try {
-            const balanceResponse = await getUserBalance(userData.uid);
-            setBalance(Number(balanceResponse.balance) || 0);
-          } catch (balanceErr) {
-            console.error('Failed to fetch balance:', balanceErr);
-            // Don't fail the whole page if balance fetch fails
-          }
-        }
+        setUser(response.data.user);
       } catch (err: any) {
         console.error('Failed to fetch user data:', err);
         setError('Failed to load profile. Please login again.');
@@ -58,10 +42,6 @@ export default function ProfilePage() {
 
   const handleBackClick = () => {
     router.back();
-  };
-
-  const handleDescriptionSave = (newDescription: string) => {
-    console.log('New description:', newDescription);
   };
 
   const handleSignOut = async () => {
@@ -104,13 +84,13 @@ export default function ProfilePage() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        bgcolor: 'background.default',
+        backgroundColor: '#f5f5f5',
         p: 2,
       }}
     >
       <Box sx={{ position: 'relative', width: '100%', maxWidth: 375, height: 812 }}>
         <MobileContainer showFrame={false}>
-          <Box sx={{ p: 3, pb: 6, minHeight: '100vh' }}>
+          <Box sx={{ p: 3, pb: 6, backgroundColor: 'background.default', minHeight: '100vh' }}>
             {/* Header with Back Button and Theme Toggle */}
             <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <IconButton
@@ -142,11 +122,17 @@ export default function ProfilePage() {
               isVerified: user.isVerified || false,
             }} />
 
-            {/* Editable Description */}
-            <EditableDescription
-              description={user.bio || 'No description yet.'}
-              onSave={handleDescriptionSave}
-            />
+            {/* About Section */}
+            {user.about && (
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="h6" sx={{ mb: 1.5 }}>
+                  About
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
+                  {user.about}
+                </Typography>
+              </Box>
+            )}
 
             {/* Rating */}
             <ProfileStats
@@ -157,64 +143,6 @@ export default function ProfilePage() {
               totalOrders={user.totalOrders || 0}
             />
 
-            {/* My Earnings Card - Only for Pickers */}
-            {user.role === 'picker' && (
-              <Card
-                sx={{
-                  mb: 4,
-                  background: theme.palette.mode === 'dark'
-                    ? 'linear-gradient(135deg, #4a5568 0%, #2d3748 100%)'
-                    : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  cursor: 'pointer',
-                  transition: 'transform 0.2s, box-shadow 0.2s',
-                  '&:hover': {
-                    transform: 'translateY(-2px)',
-                    boxShadow: 4,
-                  }
-                }}
-                onClick={() => router.push('/earnings')}
-              >
-                <CardContent>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
-                        <AccountBalanceWallet sx={{ color: 'white', mr: 1, fontSize: 20 }} />
-                        <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)', fontWeight: 500 }}>
-                          My Earnings
-                        </Typography>
-                      </Box>
-                      <Typography variant="h4" sx={{ color: 'white', fontWeight: 700 }}>
-                        ${balance.toFixed(2)}
-                      </Typography>
-                      <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.8)' }}>
-                        Current Balance
-                      </Typography>
-                    </Box>
-                    <TrendingUp sx={{ color: 'rgba(255,255,255,0.7)', fontSize: 48 }} />
-                  </Box>
-                  <Button
-                    fullWidth
-                    variant="contained"
-                    sx={{
-                      mt: 2,
-                      backgroundColor: 'white',
-                      color: theme.palette.mode === 'dark' ? '#4a5568' : '#667eea',
-                      fontWeight: 600,
-                      '&:hover': {
-                        backgroundColor: 'rgba(255,255,255,0.9)',
-                      },
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      router.push('/earnings');
-                    }}
-                  >
-                    View Earnings
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-
             {/* User Info */}
             <Box>
               <Typography variant="h6" sx={{ mb: 2 }}>
@@ -222,15 +150,12 @@ export default function ProfilePage() {
               </Typography>
 
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2" color="text.secondary">Location:</Typography>
-                  <Typography variant="body2">{user.city || 'N/A'}, {user.country || 'N/A'}</Typography>
-                </Box>
-
-                {user.age && (
+                {user.location && (
                   <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography variant="body2" color="text.secondary">Age:</Typography>
-                    <Typography variant="body2">{user.age}</Typography>
+                    <Typography variant="body2" color="text.secondary">Location:</Typography>
+                    <Typography variant="body2">
+                      {user.location.lat.toFixed(4)}, {user.location.lng.toFixed(4)}
+                    </Typography>
                   </Box>
                 )}
 
@@ -253,8 +178,48 @@ export default function ProfilePage() {
               </Box>
             </Box>
 
-            {/* Sign Out Button */}
+            {/* Edit Profile Button */}
             <Box sx={{ mt: 4 }}>
+              <Button
+                fullWidth
+                variant="contained"
+                startIcon={<Edit />}
+                onClick={() => router.push('/profile/edit')}
+                sx={{
+                  py: 1.5,
+                  textTransform: 'none',
+                  fontSize: '1rem',
+                  fontWeight: 500,
+                  backgroundColor: 'primary.main',
+                  '&:hover': {
+                    backgroundColor: 'primary.dark',
+                  }
+                }}
+              >
+                Edit Profile
+              </Button>
+            </Box>
+
+            {/* Earnings/Balance Button */}
+            <Box sx={{ mt: 2 }}>
+              <Button
+                fullWidth
+                variant="outlined"
+                startIcon={<AccountBalanceWallet />}
+                onClick={() => router.push('/earnings')}
+                sx={{
+                  py: 1.5,
+                  textTransform: 'none',
+                  fontSize: '1rem',
+                  fontWeight: 500,
+                }}
+              >
+                {user.role === 'picker' ? 'My Earnings' : 'My Balance'}
+              </Button>
+            </Box>
+
+            {/* Sign Out Button */}
+            <Box sx={{ mt: 2 }}>
               <Button
                 fullWidth
                 variant="outlined"

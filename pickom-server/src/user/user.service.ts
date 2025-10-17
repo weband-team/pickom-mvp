@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -50,10 +51,17 @@ export class UserService {
     }
     const currentBalance = Number(user.balance) || 0;
     if (currentBalance < amount) {
-      throw new ConflictException('Insufficient balance');
+      throw new BadRequestException(
+        `Insufficient balance. Current: $${currentBalance.toFixed(2)}, Required: $${amount.toFixed(2)}`,
+      );
     }
     user.balance = currentBalance - amount;
     await this.userRepository.save(user);
+  }
+
+  // Alias for clarity
+  async deductBalance(uid: string, amount: number): Promise<void> {
+    return this.subtractFromBalance(uid, amount);
   }
 
   async findOne(uid: string): Promise<UserDto | null> {
@@ -150,24 +158,36 @@ export class UserService {
       throw new NotFoundException(`User with uid ${uid} not found`);
     }
 
-    // Проверяем уникальность email если он обновляется
+    // Запрещаем изменение email через обычное обновление профиля
+    // Email изменяется только через Firebase Authentication
     if (updateData.email && updateData.email !== existingUpdateUser.email) {
-      const userWithSameEmail = await this.userRepository.findOne({
-        where: { email: updateData.email },
-      });
+      throw new ConflictException(
+        'Email cannot be changed through profile update. Please use account settings.',
+      );
+    }
 
-      if (userWithSameEmail && userWithSameEmail.uid !== uid) {
-        throw new ConflictException(`Email ${updateData.email} already in use`);
+    // Обновляем только разрешенные поля в Firebase (без email)
+    const firebaseUpdateData: any = {};
+    if (updateData.name) firebaseUpdateData.displayName = updateData.name;
+    if (updateData.avatarUrl) firebaseUpdateData.photoURL = updateData.avatarUrl;
+
+    // Добавляем телефон только если он в формате E.164 (начинается с +)
+    if (updateData.phone) {
+      const phoneStr = String(updateData.phone).trim();
+      if (phoneStr.startsWith('+') && phoneStr.length >= 10) {
+        firebaseUpdateData.phoneNumber = phoneStr;
+      } else {
+        console.warn('Phone number not in E.164 format, skipping Firebase update:', phoneStr);
       }
     }
 
-    try {
-      await admin.auth().updateUser(uid, {
-        ...updateData,
-      });
-    } catch (error) {
-      if (error.code === 'auth/email-already-exists') {
-        throw new ConflictException('The email address is already in use');
+    // Обновляем только если есть что обновлять
+    if (Object.keys(firebaseUpdateData).length > 0) {
+      try {
+        await admin.auth().updateUser(uid, firebaseUpdateData);
+      } catch (error) {
+        console.error('Error updating Firebase user:', error);
+        // Не бросаем ошибку, т.к. данные все равно сохраняются в БД
       }
     }
 

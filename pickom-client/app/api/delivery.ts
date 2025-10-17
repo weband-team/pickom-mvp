@@ -18,6 +18,7 @@ export interface CreateDeliveryRequest {
   notes?: string;
   pickerId?: string;
   recipientId?: string;
+  recipientPhone?: string;
   status?: 'pending' | 'accepted' | 'picked_up' | 'delivered' | 'cancelled';
 }
 
@@ -26,6 +27,7 @@ export interface DeliveryRequest {
   senderId: string;
   pickerId?: string;
   recipientId?: string;
+  recipientPhone?: string;
   title: string;
   description?: string;
   fromAddress: string;

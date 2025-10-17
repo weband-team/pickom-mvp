@@ -15,6 +15,12 @@ export interface User {
   completedDeliveries?: number;
   totalOrders?: number;
   active?: boolean;
+  about?: string;
+  location?: {
+    lat: number;
+    lng: number;
+    placeId?: string;
+  };
 }
 
 export interface UserMeResponce {

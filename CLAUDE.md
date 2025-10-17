@@ -141,3 +141,20 @@ cd pickom-client && npm run lint && npm run build
 # Server
 cd pickom-server && npm run lint && npm run test && npm run build
 ```
+
+## Claude Code Behavior Guidelines
+
+### Token Usage Tracking
+- **ALWAYS display remaining token count** at the end of each response
+- Format: `Tokens remaining: X/200000`
+
+### Git Commit Messages
+- **Use concise, single-line commit messages**
+- Maximum 50-60 characters
+- Format: `<type>: <brief description>`
+- Examples:
+  - `feat: add earnings page`
+  - `fix: firebase config error`
+  - `refactor: simplify auth flow`
+  - `docs: update setup instructions`
+- Do NOT use multi-line commit messages unless explicitly requested

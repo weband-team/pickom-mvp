@@ -33,17 +33,23 @@ export class ChatSessionDto {
   @ApiProperty({ required: false })
   deliveryId?: number;
 
-  @ApiProperty()
-  senderId: string; // Firebase UID
+  @ApiProperty({ required: false, nullable: true })
+  senderId: string | null;
+
+  @ApiProperty({ required: false, nullable: true })
+  senderName: string | null;
 
   @ApiProperty()
-  senderName: string;
-
-  @ApiProperty()
-  pickerId: string; // Firebase UID
+  pickerId: string;
 
   @ApiProperty()
   pickerName: string;
+
+  @ApiProperty({ required: false, nullable: true })
+  recipientId?: string | null;
+
+  @ApiProperty({ required: false, nullable: true })
+  recipientName?: string | null;
 
   @ApiProperty()
   createdAt: Date;

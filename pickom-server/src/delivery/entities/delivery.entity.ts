@@ -27,6 +27,9 @@ export class Delivery {
   @Column({ name: 'recipient_id', nullable: true })
   recipientId: number | null;
 
+  @Column({ type: 'varchar', length: 20, name: 'recipient_phone', nullable: true })
+  recipientPhone: string | null;
+
   @Column()
   title: string;
 

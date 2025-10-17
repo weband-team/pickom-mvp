@@ -6,6 +6,12 @@ export interface UpdateUserRequest {
   email?: string;
   phone?: string;
   avatarUrl?: string;
+  about?: string;
+  location?: {
+    lat: number;
+    lng: number;
+    placeId?: string;
+  };
 }
 
 export const getUser = async (uid: string): Promise<{ user: User }> => {

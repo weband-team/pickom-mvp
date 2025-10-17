@@ -45,9 +45,9 @@ export class ChatService {
       throw new NotFoundException('Participant not found');
     }
 
-    // Determine who is sender and who is picker
-    let senderId: number;
-    let pickerId: number;
+    let senderId: number | null = null;
+    let pickerId: number | null = null;
+    let recipientId: number | null = null;
 
     if (currentUser.role === 'sender' && participant.role === 'picker') {
       senderId = currentUser.id;
@@ -55,31 +55,40 @@ export class ChatService {
     } else if (currentUser.role === 'picker' && participant.role === 'sender') {
       senderId = participant.id;
       pickerId = currentUser.id;
+    } else if (currentUser.role === 'picker' && participant.role === 'recipient') {
+      pickerId = currentUser.id;
+      recipientId = participant.id;
+    } else if (currentUser.role === 'recipient' && participant.role === 'picker') {
+      recipientId = currentUser.id;
+      pickerId = participant.id;
     } else {
       throw new BadRequestException(
-        'Chat can only be created between sender and picker',
+        'Chat can only be created between sender-picker or picker-recipient',
       );
     }
 
-    // Check if chat already exists
-    let existingChat: ChatSession | null;
-    if (deliveryId) {
-      existingChat = await this.chatSessionRepository.findOne({
-        where: {
-          senderId,
-          pickerId,
-          deliveryId,
-        },
-      });
-    } else {
-      existingChat = await this.chatSessionRepository.findOne({
-        where: {
-          senderId,
-          pickerId,
-          deliveryId: null as any,
-        },
-      });
+    if (!pickerId) {
+      throw new BadRequestException('Picker must be part of the chat');
     }
+
+    let existingChat: ChatSession | null;
+
+    const whereClause: any = {
+      pickerId,
+      deliveryId: deliveryId || null,
+    };
+
+    if (senderId) {
+      whereClause.senderId = senderId;
+      whereClause.recipientId = null;
+    } else if (recipientId) {
+      whereClause.recipientId = recipientId;
+      whereClause.senderId = null;
+    }
+
+    existingChat = await this.chatSessionRepository.findOne({
+      where: whereClause,
+    });
 
     if (existingChat) {
       return {
@@ -88,11 +97,11 @@ export class ChatService {
       };
     }
 
-    // Create new chat session
     const chatSession = this.chatSessionRepository.create({
       senderId,
       pickerId,
-      deliveryId: deliveryId ? deliveryId : null,
+      recipientId,
+      deliveryId: deliveryId || null,
     });
 
     const savedChat = await this.chatSessionRepository.save(chatSession);
@@ -113,10 +122,15 @@ export class ChatService {
     }
 
     const chats = await this.chatSessionRepository.find({
-      where: [{ senderId: currentUser.id }, { pickerId: currentUser.id }],
+      where: [
+        { senderId: currentUser.id },
+        { pickerId: currentUser.id },
+        { recipientId: currentUser.id },
+      ],
       relations: [
         'sender',
         'picker',
+        'recipient',
         'messages',
         'messages.sender',
         'delivery',
@@ -146,6 +160,7 @@ export class ChatService {
       relations: [
         'sender',
         'picker',
+        'recipient',
         'messages',
         'messages.sender',
         'delivery',
@@ -156,8 +171,12 @@ export class ChatService {
       throw new NotFoundException('Chat not found');
     }
 
-    // Check if user is participant
-    if (chat.senderId !== currentUser.id && chat.pickerId !== currentUser.id) {
+    const isParticipant =
+      chat.senderId === currentUser.id ||
+      chat.pickerId === currentUser.id ||
+      chat.recipientId === currentUser.id;
+
+    if (!isParticipant) {
       throw new ForbiddenException('You are not a participant of this chat');
     }
 
@@ -179,15 +198,19 @@ export class ChatService {
 
     const chat = await this.chatSessionRepository.findOne({
       where: { id: chatId },
-      relations: ['sender', 'picker'],
+      relations: ['sender', 'picker', 'recipient'],
     });
 
     if (!chat) {
       throw new NotFoundException('Chat not found');
     }
 
-    // Check if user is participant
-    if (chat.senderId !== currentUser.id && chat.pickerId !== currentUser.id) {
+    const isParticipant =
+      chat.senderId === currentUser.id ||
+      chat.pickerId === currentUser.id ||
+      chat.recipientId === currentUser.id;
+
+    if (!isParticipant) {
       throw new ForbiddenException('You are not a participant of this chat');
     }
 
@@ -215,19 +238,28 @@ export class ChatService {
     chat.updatedAt = new Date();
     await this.chatSessionRepository.save(chat);
 
-    // Send notification to other participant
-    const recipientId =
-      chat.senderId === currentUser.id ? chat.pickerId : chat.senderId;
-    const recipient =
-      chat.senderId === currentUser.id ? chat.picker : chat.sender;
+    let recipientUser;
+    if (chat.senderId && chat.senderId === currentUser.id) {
+      recipientUser = chat.picker;
+    } else if (chat.pickerId === currentUser.id) {
+      if (chat.senderId) {
+        recipientUser = chat.sender;
+      } else if (chat.recipientId) {
+        recipientUser = chat.recipient;
+      }
+    } else if (chat.recipientId === currentUser.id) {
+      recipientUser = chat.picker;
+    }
 
-    await this.notificationService.createNotification({
-      user_id: recipient.uid,
-      type: 'new_message',
-      title: 'New message',
-      message: `${currentUser.name} sent you a message`,
-      read: false,
-    });
+    if (recipientUser) {
+      await this.notificationService.createNotification({
+        user_id: recipientUser.uid,
+        type: 'new_message',
+        title: 'New message',
+        message: `${currentUser.name} sent you a message`,
+        read: false,
+      });
+    }
 
     return this.transformMessage(messageWithSender, messageWithSender.sender);
   }
@@ -254,8 +286,12 @@ export class ChatService {
       throw new NotFoundException('Chat not found');
     }
 
-    // Check if user is participant
-    if (chat.senderId !== currentUser.id && chat.pickerId !== currentUser.id) {
+    const isParticipant =
+      chat.senderId === currentUser.id ||
+      chat.pickerId === currentUser.id ||
+      chat.recipientId === currentUser.id;
+
+    if (!isParticipant) {
       throw new ForbiddenException('You are not a participant of this chat');
     }
 
@@ -290,21 +326,23 @@ export class ChatService {
       throw new NotFoundException('Chat not found');
     }
 
-    // Check if user is participant
-    if (chat.senderId !== currentUser.id && chat.pickerId !== currentUser.id) {
+    const isParticipant =
+      chat.senderId === currentUser.id ||
+      chat.pickerId === currentUser.id ||
+      chat.recipientId === currentUser.id;
+
+    if (!isParticipant) {
       throw new ForbiddenException('You are not a participant of this chat');
     }
 
-    // Mark all messages not sent by current user as read
-    await this.messageRepository.update(
-      {
-        chatSessionId: chatId,
-        senderId:
-          currentUser.id !== chat.senderId ? chat.senderId : chat.pickerId,
-        read: false,
-      },
-      { read: true },
-    );
+    await this.messageRepository
+      .createQueryBuilder()
+      .update(Message)
+      .set({ read: true })
+      .where('chatSessionId = :chatId', { chatId })
+      .andWhere('senderId != :userId', { userId: currentUser.id })
+      .andWhere('read = :read', { read: false })
+      .execute();
   }
 
   /**
