@@ -584,6 +584,7 @@ export default function SendPackagePage() {
                     Select pickup and delivery locations
                   </Typography>
                   <DualLocationPicker
+                    deliveryType="within-city"
                     onFromLocationSelect={(location) => dispatch({
                       type: 'SET_WITHIN_CITY_FIELD',
                       field: 'fromLocation',
@@ -623,6 +624,7 @@ export default function SendPackagePage() {
                     Select sender and delivery locations
                   </Typography>
                   <DualLocationPicker
+                    deliveryType="inter-city"
                     onFromLocationSelect={(location) => dispatch({
                       type: 'SET_INTER_CITY_FIELD',
                       field: 'fromLocation',

@@ -31,6 +31,7 @@ export interface LocationData {
   lng: number;
   address: string;
   city?: string;
+  country?: string;
 }
 
 interface RouteInfo {
@@ -45,6 +46,7 @@ interface Props {
   initialFromLocation?: LocationData;
   initialToLocation?: LocationData;
   onRouteCalculated?: (routeInfo: RouteInfo) => void;
+  deliveryType?: 'within-city' | 'inter-city' | 'international';
 }
 
 export default function DualLocationPicker({
@@ -52,7 +54,8 @@ export default function DualLocationPicker({
   onToLocationSelect,
   initialFromLocation,
   initialToLocation,
-  onRouteCalculated
+  onRouteCalculated,
+  deliveryType = 'within-city'
 }: Props) {
   const [fromLocation, setFromLocation] = useState<LocationData | null>(initialFromLocation || null);
   const [toLocation, setToLocation] = useState<LocationData | null>(initialToLocation || null);
@@ -63,10 +66,37 @@ export default function DualLocationPicker({
   const [routeCoordinates, setRouteCoordinates] = useState<[number, number][]>([]);
   const [routeInfo, setRouteInfo] = useState<RouteInfo | null>(null);
   const [calculatingRoute, setCalculatingRoute] = useState(false);
+  const [restrictionType, setRestrictionType] = useState<'city' | 'country' | null>(null);
+  const [restrictionValue, setRestrictionValue] = useState<string | null>(null);
+
+  // Set restriction type based on delivery type
+  useEffect(() => {
+    if (deliveryType === 'within-city') {
+      setRestrictionType('city');
+    } else if (deliveryType === 'inter-city') {
+      setRestrictionType('country');
+    } else {
+      setRestrictionType(null);
+    }
+  }, [deliveryType]);
 
   useEffect(() => {
     setIsMounted(true);
-  }, []);
+    // Set restriction value from initial locations
+    if (initialFromLocation) {
+      if (restrictionType === 'city' && initialFromLocation.city) {
+        setRestrictionValue(initialFromLocation.city);
+      } else if (restrictionType === 'country' && initialFromLocation.country) {
+        setRestrictionValue(initialFromLocation.country);
+      }
+    } else if (initialToLocation) {
+      if (restrictionType === 'city' && initialToLocation.city) {
+        setRestrictionValue(initialToLocation.city);
+      } else if (restrictionType === 'country' && initialToLocation.country) {
+        setRestrictionValue(initialToLocation.country);
+      }
+    }
+  }, [initialFromLocation, initialToLocation, restrictionType]);
 
   // Calculate route using OSRM API
   const calculateRoute = async (from: LocationData, to: LocationData) => {
@@ -132,7 +162,7 @@ export default function DualLocationPicker({
   }, [fromLocation, toLocation]);
 
   // Reverse geocoding using Nominatim (OpenStreetMap)
-  const getAddressFromCoordinates = async (lat: number, lng: number): Promise<{ address: string; city?: string }> => {
+  const getAddressFromCoordinates = async (lat: number, lng: number): Promise<{ address: string; city?: string; country?: string }> => {
     try {
       const response = await fetch(
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
@@ -150,13 +180,15 @@ export default function DualLocationPicker({
 
       const address = data.display_name || `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
       const city = data.address?.city || data.address?.town || data.address?.village || data.address?.state || undefined;
+      const country = data.address?.country || undefined;
 
-      return { address, city };
+      return { address, city, country };
     } catch (error) {
       console.error('Geocoding error:', error);
       return {
         address: `${lat.toFixed(6)}, ${lng.toFixed(6)}`,
-        city: undefined
+        city: undefined,
+        country: undefined
       };
     }
   };
@@ -169,12 +201,46 @@ export default function DualLocationPicker({
         setError('');
 
         try {
-          const { address, city } = await getAddressFromCoordinates(lat, lng);
-          const locationData: LocationData = { lat, lng, address, city };
+          const { address, city, country } = await getAddressFromCoordinates(lat, lng);
+
+          // Check restriction based on type
+          if (restrictionType && restrictionValue) {
+            if (restrictionType === 'city') {
+              if (!city) {
+                setError('Could not determine city. Please select a more specific location.');
+                setLoading(false);
+                return;
+              }
+              if (city !== restrictionValue) {
+                setError(`You can only select locations within ${restrictionValue}. Selected location is in ${city}.`);
+                setLoading(false);
+                return;
+              }
+            } else if (restrictionType === 'country') {
+              if (!country) {
+                setError('Could not determine country. Please select a more specific location.');
+                setLoading(false);
+                return;
+              }
+              if (country !== restrictionValue) {
+                setError(`You can only select locations within ${restrictionValue}. Selected location is in ${country}.`);
+                setLoading(false);
+                return;
+              }
+            }
+          }
+
+          const locationData: LocationData = { lat, lng, address, city, country };
 
           if (activeMarker === 'from') {
             setFromLocation(locationData);
             onFromLocationSelect(locationData);
+            // Set restriction value when first location is selected
+            if (restrictionType === 'city' && city) {
+              setRestrictionValue(city);
+            } else if (restrictionType === 'country' && country) {
+              setRestrictionValue(country);
+            }
           } else {
             setToLocation(locationData);
             onToLocationSelect(locationData);
@@ -206,31 +272,51 @@ export default function DualLocationPicker({
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="subtitle2" sx={{ color: 'text.secondary' }}>
-          Select marker type, then click on the map
-        </Typography>
+      <Box sx={{ mb: 2 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+          <Typography variant="subtitle2" sx={{ color: 'text.secondary' }}>
+            Select marker type, then click on the map
+          </Typography>
 
-        <ToggleButtonGroup
-          value={activeMarker}
-          exclusive
-          onChange={(_, newValue) => {
-            if (newValue !== null) {
-              setActiveMarker(newValue);
-            }
-          }}
-          size="small"
-          sx={{ backgroundColor: 'background.paper' }}
-        >
-          <ToggleButton value="from" aria-label="from location">
-            <LocationOn sx={{ mr: 0.5, fontSize: '18px', color: 'success.main' }} />
-            <Typography variant="caption">From</Typography>
-          </ToggleButton>
-          <ToggleButton value="to" aria-label="to location">
-            <Flag sx={{ mr: 0.5, fontSize: '18px', color: 'error.main' }} />
-            <Typography variant="caption">To</Typography>
-          </ToggleButton>
-        </ToggleButtonGroup>
+          <ToggleButtonGroup
+            value={activeMarker}
+            exclusive
+            onChange={(_, newValue) => {
+              if (newValue !== null) {
+                setActiveMarker(newValue);
+              }
+            }}
+            size="small"
+            sx={{ backgroundColor: 'background.paper' }}
+          >
+            <ToggleButton value="from" aria-label="from location">
+              <LocationOn sx={{ mr: 0.5, fontSize: '18px', color: 'success.main' }} />
+              <Typography variant="caption">From</Typography>
+            </ToggleButton>
+            <ToggleButton value="to" aria-label="to location">
+              <Flag sx={{ mr: 0.5, fontSize: '18px', color: 'error.main' }} />
+              <Typography variant="caption">To</Typography>
+            </ToggleButton>
+          </ToggleButtonGroup>
+        </Box>
+
+        {restrictionValue && restrictionType && (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
+            <Chip
+              label={`${restrictionType === 'city' ? 'City' : 'Country'}: ${restrictionValue}`}
+              color={restrictionType === 'city' ? 'success' : 'primary'}
+              size="small"
+              onDelete={() => {
+                setRestrictionValue(null);
+                setFromLocation(null);
+                setToLocation(null);
+                setRouteCoordinates([]);
+                setRouteInfo(null);
+                setError('');
+              }}
+            />
+          </Box>
+        )}
       </Box>
 
       {error && (

@@ -368,6 +368,7 @@ interface CachedRoute {
 4. ✅ Visual route polyline on map
 5. ✅ Automatic fallback to straight line on error
 6. ✅ Loading indicator during route calculation
+7. ✅ **City restriction** - both markers must be in the same city
 
 **How to Use:**
 ```typescript
@@ -387,9 +388,74 @@ interface CachedRoute {
 - 🗺️ Accurate road-based routes
 - 📊 Distance and duration data
 - 🔒 No API keys needed
+- 🏙️ City restriction for within-city deliveries
+
+## City Restriction Feature
+
+### How It Works
+
+When you select the first location (FROM), the city is automatically detected and set as a restriction:
+
+1. **First marker placed** → City detected (e.g., "Warsaw")
+2. **City restriction activated** → Blue chip displayed: "Restricted to: Warsaw"
+3. **Second marker attempted in different city** → ❌ Error shown: "You can only select locations within Warsaw. Selected location is in Krakow."
+4. **Second marker placed in same city** → ✅ Route calculated
+
+### Visual Feedback
+
+```typescript
+// Blue info chip shown when restriction is active
+<Chip
+  label="Restricted to: Warsaw"
+  color="info"
+  onDelete={() => resetRestriction()}
+/>
+
+// Error alert when wrong city selected
+<Alert severity="error">
+  You can only select locations within Warsaw. Selected location is in Krakow.
+</Alert>
+```
+
+### Resetting Restriction
+
+Click the ❌ button on the city restriction chip to:
+- Clear city restriction
+- Remove both markers
+- Clear route
+- Start fresh
+
+### Implementation Details
+
+```typescript
+// State for city restriction
+const [cityRestriction, setCityRestriction] = useState<string | null>(null);
+
+// Validate city on marker placement
+if (cityRestriction && city && city !== cityRestriction) {
+  setError(`You can only select locations within ${cityRestriction}`);
+  return; // Prevent marker placement
+}
+
+// Set restriction on first marker
+if (activeMarker === 'from' && city) {
+  setCityRestriction(city);
+}
+```
+
+### Use Cases
+
+**Within-City Deliveries:**
+- Ensures both pickup and delivery are in the same city
+- Prevents cross-city delivery mistakes
+- Improves user experience with clear feedback
+
+**Inter-City Deliveries:**
+- Disable or modify this feature for inter-city routes
+- Can be toggled based on delivery type selection
 
 ---
 
 **Last Updated:** 2025-10-17
 **Author:** Claude Code
-**Version:** 2.0 (Updated to OSRM)
+**Version:** 2.1 (Added City Restriction)
