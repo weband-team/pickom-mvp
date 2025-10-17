@@ -10,10 +10,18 @@ export const MOCK_DELIVERY_REQUESTS: DeliveryDto[] = [
     recipientId: '3',
     title: 'Документы для визы',
     description: 'Срочно, нужны завтра утром',
-    fromAddress: 'ул. Ленина 10',
-    fromCity: 'Минск',
-    toAddress: 'пр. Победителей 5',
-    toCity: 'Гродно',
+    fromLocation: {
+      lat: 53.9045,
+      lng: 27.5615,
+      address: 'ул. Ленина 10',
+      city: 'Минск'
+    },
+    toLocation: {
+      lat: 53.6787,
+      lng: 23.8342,
+      address: 'пр. Победителей 5',
+      city: 'Гродно'
+    },
     deliveryType: 'inter-city' as const,
     price: 100,
     size: 'small' as const,
@@ -31,10 +39,18 @@ export const MOCK_DELIVERY_REQUESTS: DeliveryDto[] = [
     recipientId: undefined,
     title: 'Цветы',
     description: 'Букет роз, хрупкое',
-    fromAddress: 'ул. Советская 25',
-    fromCity: 'Минск',
-    toAddress: 'пр. Машерова 12',
-    toCity: 'Минск',
+    fromLocation: {
+      lat: 53.9006,
+      lng: 27.5590,
+      address: 'ул. Советская 25',
+      city: 'Минск'
+    },
+    toLocation: {
+      lat: 53.9168,
+      lng: 27.5950,
+      address: 'пр. Машерова 12',
+      city: 'Минск'
+    },
     deliveryType: 'within-city' as const,
     price: 50,
     size: 'medium' as const,
@@ -52,10 +68,18 @@ export const MOCK_DELIVERY_REQUESTS: DeliveryDto[] = [
     recipientId: '5',
     title: 'Ноутбук',
     description: 'MacBook Pro, застрахован',
-    fromAddress: 'ул. Немига 3',
-    fromCity: 'Минск',
-    toAddress: 'ул. Богдановича 155',
-    toCity: 'Минск',
+    fromLocation: {
+      lat: 53.9040,
+      lng: 27.5560,
+      address: 'ул. Немига 3',
+      city: 'Минск'
+    },
+    toLocation: {
+      lat: 53.9400,
+      lng: 27.6800,
+      address: 'ул. Богдановича 155',
+      city: 'Минск'
+    },
     deliveryType: 'within-city' as const,
     price: 150,
     size: 'large' as const,

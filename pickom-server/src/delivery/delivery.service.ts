@@ -65,10 +65,8 @@ export class DeliveryService {
     delivery.recipientId = recipient?.id || null;
     delivery.title = createDto.title;
     delivery.description = createDto.description || null;
-    delivery.fromAddress = createDto.fromAddress;
-    delivery.fromCity = createDto.fromCity || null;
-    delivery.toAddress = createDto.toAddress;
-    delivery.toCity = createDto.toCity || null;
+    delivery.fromLocation = createDto.fromLocation;
+    delivery.toLocation = createDto.toLocation;
     delivery.deliveryType = createDto.deliveryType || 'within-city';
     delivery.price = createDto.price;
     delivery.size = createDto.size;
@@ -284,13 +282,10 @@ export class DeliveryService {
     if (updateDto.title !== undefined) updateData.title = updateDto.title;
     if (updateDto.description !== undefined)
       updateData.description = updateDto.description;
-    if (updateDto.fromAddress !== undefined)
-      updateData.fromAddress = updateDto.fromAddress;
-    if (updateDto.fromCity !== undefined)
-      updateData.fromCity = updateDto.fromCity;
-    if (updateDto.toAddress !== undefined)
-      updateData.toAddress = updateDto.toAddress;
-    if (updateDto.toCity !== undefined) updateData.toCity = updateDto.toCity;
+    if (updateDto.fromLocation !== undefined)
+      updateData.fromLocation = updateDto.fromLocation;
+    if (updateDto.toLocation !== undefined)
+      updateData.toLocation = updateDto.toLocation;
     if (updateDto.deliveryType !== undefined)
       updateData.deliveryType = updateDto.deliveryType;
     if (updateDto.price !== undefined) updateData.price = updateDto.price;
@@ -398,10 +393,8 @@ export class DeliveryService {
       recipientId: delivery.recipient?.uid || null,
       title: delivery.title,
       description: delivery.description,
-      fromAddress: delivery.fromAddress,
-      fromCity: delivery.fromCity,
-      toAddress: delivery.toAddress,
-      toCity: delivery.toCity,
+      fromLocation: delivery.fromLocation,
+      toLocation: delivery.toLocation,
       deliveryType: delivery.deliveryType,
       price: Number(delivery.price),
       size: delivery.size,
@@ -428,10 +421,8 @@ export class DeliveryService {
       recipientId: recipientUid || null,
       title: delivery.title,
       description: delivery.description,
-      fromAddress: delivery.fromAddress,
-      fromCity: delivery.fromCity,
-      toAddress: delivery.toAddress,
-      toCity: delivery.toCity,
+      fromLocation: delivery.fromLocation,
+      toLocation: delivery.toLocation,
       deliveryType: delivery.deliveryType,
       price: Number(delivery.price),
       size: delivery.size,

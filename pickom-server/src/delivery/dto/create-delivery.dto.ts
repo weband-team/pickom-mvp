@@ -5,7 +5,30 @@ import {
   IsOptional,
   IsNotEmpty,
   Min,
+  ValidateNested,
+  IsObject,
 } from 'class-validator';
+import { Type } from 'class-transformer';
+
+class LocationDto {
+  @IsNumber()
+  lat: number;
+
+  @IsNumber()
+  lng: number;
+
+  @IsString()
+  @IsNotEmpty()
+  address: string;
+
+  @IsString()
+  @IsOptional()
+  city?: string;
+
+  @IsString()
+  @IsOptional()
+  placeId?: string;
+}
 
 // DTO для создания новой доставки
 // Используется когда отправитель (sender) создаёт заявку на доставку
@@ -22,21 +45,17 @@ export class CreateDeliveryDto {
   @IsOptional()
   description?: string;
 
-  @IsString()
+  @ValidateNested()
+  @Type(() => LocationDto)
+  @IsObject()
   @IsNotEmpty()
-  fromAddress: string;
+  fromLocation: LocationDto;
 
-  @IsString()
-  @IsOptional()
-  fromCity?: string;
-
-  @IsString()
+  @ValidateNested()
+  @Type(() => LocationDto)
+  @IsObject()
   @IsNotEmpty()
-  toAddress: string;
-
-  @IsString()
-  @IsOptional()
-  toCity?: string;
+  toLocation: LocationDto;
 
   @IsEnum(['within-city', 'inter-city'])
   @IsOptional()

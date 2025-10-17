@@ -15,6 +15,13 @@ import { DeliveryMethodType } from '../../types/delivery';
 import BottomNavigation from '../../components/common/BottomNavigation';
 import { getMyDeliveryRequests } from '../api/delivery';
 import { useNavigationBadges } from '../../hooks/useNavigationBadges';
+import dynamic from 'next/dynamic';
+
+// Dynamically import DualLocationPicker to avoid SSR issues with Leaflet
+const DualLocationPicker = dynamic(() => import('@/components/DualLocationPicker'), {
+  ssr: false,
+  loading: () => <Box sx={{ height: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><CircularProgress /></Box>
+});
 
 interface DeliveryRequest {
   id: number;
@@ -22,10 +29,8 @@ interface DeliveryRequest {
   pickerId?: string;
   title: string;
   description?: string;
-  fromAddress: string;
-  fromCity?: string;
-  toAddress: string;
-  toCity?: string;
+  fromLocation: LocationData | null;
+  toLocation: LocationData | null;
   deliveryType?: 'within-city' | 'inter-city';
   price: number;
   size: 'small' | 'medium' | 'large';
@@ -33,6 +38,13 @@ interface DeliveryRequest {
   notes?: string;
   status: 'pending' | 'accepted' | 'picked_up' | 'delivered' | 'cancelled';
   createdAt: string;
+}
+
+interface LocationData {
+  lat: number;
+  lng: number;
+  address: string;
+  city?: string;
 }
 
 interface DeliveryFormState {
@@ -44,15 +56,13 @@ interface DeliveryFormState {
   weight: number;
   notes: string;
   withinCity: {
-    pickupLocation: string;
-    dropoffLocation: string;
+    fromLocation: LocationData | null;
+    toLocation: LocationData | null;
     pickupDateTime: Date | null;
   };
   interCity: {
-    senderCity: string;
-    senderAddress: string;
-    deliveryCity: string;
-    deliveryAddress: string;
+    fromLocation: LocationData | null;
+    toLocation: LocationData | null;
     preferredDeliveryDate: Date | null;
   };
   international: {
@@ -74,8 +84,8 @@ type DeliveryFormAction =
   | { type: 'SET_SIZE'; payload: 'small' | 'medium' | 'large' | '' }
   | { type: 'SET_WEIGHT'; payload: number }
   | { type: 'SET_NOTES'; payload: string }
-  | { type: 'SET_WITHIN_CITY_FIELD'; field: keyof DeliveryFormState['withinCity']; value: string | Date | null }
-  | { type: 'SET_INTER_CITY_FIELD'; field: keyof DeliveryFormState['interCity']; value: string | Date | null }
+  | { type: 'SET_WITHIN_CITY_FIELD'; field: keyof DeliveryFormState['withinCity']; value: LocationData | Date | null }
+  | { type: 'SET_INTER_CITY_FIELD'; field: keyof DeliveryFormState['interCity']; value: LocationData | Date | null }
   | { type: 'SET_INTERNATIONAL_FIELD'; field: keyof DeliveryFormState['international']; value: string | Date | null | number }
   | { type: 'RESET' };
 
@@ -88,15 +98,13 @@ const initialState: DeliveryFormState = {
   weight: 0,
   notes: '',
   withinCity: {
-    pickupLocation: '',
-    dropoffLocation: '',
+    fromLocation: null,
+    toLocation: null,
     pickupDateTime: null,
   },
   interCity: {
-    senderCity: '',
-    senderAddress: '',
-    deliveryCity: '',
-    deliveryAddress: '',
+    fromLocation: null,
+    toLocation: null,
     preferredDeliveryDate: null,
   },
   international: {
@@ -209,7 +217,7 @@ function MyDeliveriesTab({ deliveries, loading, onRefresh }: MyDeliveriesTabProp
                 )}
               </Box>
               <Typography variant="body2" color="text.secondary">
-                {delivery.fromAddress} → {delivery.toAddress}
+                {delivery.fromLocation?.address || 'N/A'} → {delivery.toLocation?.address || 'N/A'}
               </Typography>
               <Typography variant="body2" sx={{ mt: 1 }}>
                 Price: {delivery.price} zł | Size: {delivery.size}
@@ -229,8 +237,8 @@ function MyDeliveriesTab({ deliveries, loading, onRefresh }: MyDeliveriesTabProp
                     // Save delivery ID to localStorage for picker selection
                     const deliveryData = {
                       deliveryId: delivery.id,
-                      fromAddress: delivery.fromAddress,
-                      toAddress: delivery.toAddress,
+                      fromLocation: delivery.fromLocation,
+                      toLocation: delivery.toLocation,
                     };
                     localStorage.setItem('deliveryData', JSON.stringify(deliveryData));
                     router.push('/picker-results');
@@ -274,7 +282,7 @@ function MyDeliveriesTab({ deliveries, loading, onRefresh }: MyDeliveriesTabProp
                 )}
               </Box>
               <Typography variant="body2" color="text.secondary">
-                {delivery.fromAddress} → {delivery.toAddress}
+                {delivery.fromLocation?.address || 'N/A'} → {delivery.toLocation?.address || 'N/A'}
               </Typography>
               <Chip
                 label={delivery.status}
@@ -309,7 +317,7 @@ function MyDeliveriesTab({ deliveries, loading, onRefresh }: MyDeliveriesTabProp
                 )}
               </Box>
               <Typography variant="body2" color="text.secondary">
-                {delivery.fromAddress} → {delivery.toAddress}
+                {delivery.fromLocation?.address || 'N/A'} → {delivery.toLocation?.address || 'N/A'}
               </Typography>
               <Chip
                 label="Completed"
@@ -344,7 +352,7 @@ function MyDeliveriesTab({ deliveries, loading, onRefresh }: MyDeliveriesTabProp
                 )}
               </Box>
               <Typography variant="body2" color="text.secondary">
-                {delivery.fromAddress} → {delivery.toAddress}
+                {delivery.fromLocation?.address || 'N/A'} → {delivery.toLocation?.address || 'N/A'}
               </Typography>
               <Chip
                 label="Cancelled"
@@ -437,10 +445,9 @@ export default function SendPackagePage() {
 
     switch (selectedMethod) {
       case 'within-city':
-        return withinCity.pickupLocation && withinCity.dropoffLocation && withinCity.pickupDateTime;
+        return withinCity.fromLocation && withinCity.toLocation && withinCity.pickupDateTime;
       case 'inter-city':
-        return interCity.senderCity && interCity.senderAddress &&
-               interCity.deliveryCity && interCity.deliveryAddress && interCity.preferredDeliveryDate;
+        return interCity.fromLocation && interCity.toLocation && interCity.preferredDeliveryDate;
       case 'international':
         return international.pickupCountry && international.pickupCity && international.pickupAddress &&
                international.destinationCountry && international.destinationCity &&
@@ -452,31 +459,41 @@ export default function SendPackagePage() {
 
   const handleNext = () => {
     if (canRequestPicker) {
-      // Prepare delivery data
-      let fromAddress = '';
-      let toAddress = '';
+      // Prepare delivery data with location objects
+      let fromLocation: LocationData | null = null;
+      let toLocation: LocationData | null = null;
 
-      // Set addresses based on method
+      // Set locations based on method
       switch (state.selectedMethod) {
         case 'within-city':
-          fromAddress = state.withinCity.pickupLocation;
-          toAddress = state.withinCity.dropoffLocation;
+          fromLocation = state.withinCity.fromLocation;
+          toLocation = state.withinCity.toLocation;
           break;
         case 'inter-city':
-          fromAddress = `${state.interCity.senderAddress}, ${state.interCity.senderCity}`;
-          toAddress = `${state.interCity.deliveryAddress}, ${state.interCity.deliveryCity}`;
+          fromLocation = state.interCity.fromLocation;
+          toLocation = state.interCity.toLocation;
           break;
         case 'international':
-          fromAddress = `${state.international.pickupAddress}, ${state.international.pickupCity}, ${state.international.pickupCountry}`;
-          toAddress = `${state.international.destinationAddress}, ${state.international.destinationCity}, ${state.international.destinationCountry}`;
+          fromLocation = {
+            lat: 0,
+            lng: 0,
+            address: `${state.international.pickupAddress}, ${state.international.pickupCity}, ${state.international.pickupCountry}`,
+            city: state.international.pickupCity
+          };
+          toLocation = {
+            lat: 0,
+            lng: 0,
+            address: `${state.international.destinationAddress}, ${state.international.destinationCity}, ${state.international.destinationCountry}`,
+            city: state.international.destinationCity
+          };
           break;
       }
 
       // Save delivery method data to localStorage for next step
       const deliveryMethodData = {
         selectedMethod: state.selectedMethod,
-        fromAddress,
-        toAddress,
+        fromLocation,
+        toLocation,
       };
 
       localStorage.setItem('deliveryData', JSON.stringify(deliveryMethodData));
@@ -562,29 +579,25 @@ export default function SendPackagePage() {
               <Stack spacing={3}>
                 <Typography variant="h6">Package Details</Typography>
 
-                <TextInput
-                  label="Pickup Location"
-                  placeholder="Enter pickup address"
-                  value={state.withinCity.pickupLocation}
-                  onChange={(e) => dispatch({
-                    type: 'SET_WITHIN_CITY_FIELD',
-                    field: 'pickupLocation',
-                    value: e.target.value
-                  })}
-                  fullWidth
-                />
-
-                <TextInput
-                  label="Drop-off Location"
-                  placeholder="Enter delivery address"
-                  value={state.withinCity.dropoffLocation}
-                  onChange={(e) => dispatch({
-                    type: 'SET_WITHIN_CITY_FIELD',
-                    field: 'dropoffLocation',
-                    value: e.target.value
-                  })}
-                  fullWidth
-                />
+                <Box>
+                  <Typography variant="subtitle2" sx={{ mb: 1, color: 'text.secondary' }}>
+                    Select pickup and delivery locations
+                  </Typography>
+                  <DualLocationPicker
+                    onFromLocationSelect={(location) => dispatch({
+                      type: 'SET_WITHIN_CITY_FIELD',
+                      field: 'fromLocation',
+                      value: location
+                    })}
+                    onToLocationSelect={(location) => dispatch({
+                      type: 'SET_WITHIN_CITY_FIELD',
+                      field: 'toLocation',
+                      value: location
+                    })}
+                    initialFromLocation={state.withinCity.fromLocation || undefined}
+                    initialToLocation={state.withinCity.toLocation || undefined}
+                  />
+                </Box>
 
                 <DateTimePicker
                   type="datetime"
@@ -605,53 +618,25 @@ export default function SendPackagePage() {
               <Stack spacing={3}>
                 <Typography variant="h6">Package Details</Typography>
 
-                <TextInput
-                  label="Sender City"
-                  placeholder="Enter sender city"
-                  value={state.interCity.senderCity}
-                  onChange={(e) => dispatch({
-                    type: 'SET_INTER_CITY_FIELD',
-                    field: 'senderCity',
-                    value: e.target.value
-                  })}
-                  fullWidth
-                />
-
-                <TextInput
-                  label="Sender Address"
-                  placeholder="Enter sender address"
-                  value={state.interCity.senderAddress}
-                  onChange={(e) => dispatch({
-                    type: 'SET_INTER_CITY_FIELD',
-                    field: 'senderAddress',
-                    value: e.target.value
-                  })}
-                  fullWidth
-                />
-
-                <TextInput
-                  label="Delivery City"
-                  placeholder="Enter delivery city"
-                  value={state.interCity.deliveryCity}
-                  onChange={(e) => dispatch({
-                    type: 'SET_INTER_CITY_FIELD',
-                    field: 'deliveryCity',
-                    value: e.target.value
-                  })}
-                  fullWidth
-                />
-
-                <TextInput
-                  label="Delivery Address"
-                  placeholder="Enter delivery address"
-                  value={state.interCity.deliveryAddress}
-                  onChange={(e) => dispatch({
-                    type: 'SET_INTER_CITY_FIELD',
-                    field: 'deliveryAddress',
-                    value: e.target.value
-                  })}
-                  fullWidth
-                />
+                <Box>
+                  <Typography variant="subtitle2" sx={{ mb: 1, color: 'text.secondary' }}>
+                    Select sender and delivery locations
+                  </Typography>
+                  <DualLocationPicker
+                    onFromLocationSelect={(location) => dispatch({
+                      type: 'SET_INTER_CITY_FIELD',
+                      field: 'fromLocation',
+                      value: location
+                    })}
+                    onToLocationSelect={(location) => dispatch({
+                      type: 'SET_INTER_CITY_FIELD',
+                      field: 'toLocation',
+                      value: location
+                    })}
+                    initialFromLocation={state.interCity.fromLocation || undefined}
+                    initialToLocation={state.interCity.toLocation || undefined}
+                  />
+                </Box>
 
                 <DateTimePicker
                   type="datetime"

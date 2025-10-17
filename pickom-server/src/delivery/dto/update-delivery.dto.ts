@@ -1,4 +1,24 @@
-import { IsString, IsNumber, IsEnum, IsOptional, Min } from 'class-validator';
+import { IsString, IsNumber, IsEnum, IsOptional, Min, ValidateNested, IsObject } from 'class-validator';
+import { Type } from 'class-transformer';
+
+class LocationDto {
+  @IsNumber()
+  lat: number;
+
+  @IsNumber()
+  lng: number;
+
+  @IsString()
+  address: string;
+
+  @IsString()
+  @IsOptional()
+  city?: string;
+
+  @IsString()
+  @IsOptional()
+  placeId?: string;
+}
 
 // DTO для обновления существующей доставки
 // Все поля необязательные - можно обновить только нужные поля
@@ -13,21 +33,17 @@ export class UpdateDeliveryDto {
   @IsOptional()
   description?: string;
 
-  @IsString()
+  @ValidateNested()
+  @Type(() => LocationDto)
+  @IsObject()
   @IsOptional()
-  fromAddress?: string;
+  fromLocation?: LocationDto;
 
-  @IsString()
+  @ValidateNested()
+  @Type(() => LocationDto)
+  @IsObject()
   @IsOptional()
-  fromCity?: string;
-
-  @IsString()
-  @IsOptional()
-  toAddress?: string;
-
-  @IsString()
-  @IsOptional()
-  toCity?: string;
+  toLocation?: LocationDto;
 
   @IsEnum(['within-city', 'inter-city'])
   @IsOptional()

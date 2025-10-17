@@ -280,27 +280,20 @@ export default function PackageTypePage(){
 
                                     const deliveryMethodData = JSON.parse(existingData);
 
-                                    // Determine delivery type and extract city info
-                                    let fromCity: string | undefined = undefined;
-                                    let toCity: string | undefined = undefined;
-                                    let deliveryType: 'within-city' | 'inter-city' | undefined = undefined;
-
-                                    // Parse fromAddress and toAddress to extract cities
-                                    const fromAddressParts = deliveryMethodData.fromAddress.split(',').map((s: string) => s.trim());
-                                    const toAddressParts = deliveryMethodData.toAddress.split(',').map((s: string) => s.trim());
-
-                                    if (fromAddressParts.length > 1) {
-                                        fromCity = fromAddressParts[fromAddressParts.length - 1];
-                                    }
-                                    if (toAddressParts.length > 1) {
-                                        toCity = toAddressParts[toAddressParts.length - 1];
+                                    // Check if we have location data
+                                    if (!deliveryMethodData.fromLocation || !deliveryMethodData.toLocation) {
+                                        alert('Location information not found. Please start from the beginning.');
+                                        router.push('/delivery-methods');
+                                        return;
                                     }
 
-                                    // Determine delivery type
+                                    // Determine delivery type based on cities
+                                    let deliveryType: 'within-city' | 'inter-city' | undefined = 'within-city';
+                                    const fromCity = deliveryMethodData.fromLocation.city;
+                                    const toCity = deliveryMethodData.toLocation.city;
+
                                     if (fromCity && toCity && fromCity !== toCity) {
                                         deliveryType = 'inter-city';
-                                    } else {
-                                        deliveryType = 'within-city';
                                     }
 
                                     // Create delivery request
@@ -308,10 +301,8 @@ export default function PackageTypePage(){
                                     const response = await createDeliveryRequest({
                                         title,
                                         description: description || undefined,
-                                        fromAddress: deliveryMethodData.fromAddress,
-                                        fromCity,
-                                        toAddress: deliveryMethodData.toAddress,
-                                        toCity,
+                                        fromLocation: deliveryMethodData.fromLocation,
+                                        toLocation: deliveryMethodData.toLocation,
                                         deliveryType,
                                         price: parseFloat(price),
                                         size: size as 'small' | 'medium' | 'large',
