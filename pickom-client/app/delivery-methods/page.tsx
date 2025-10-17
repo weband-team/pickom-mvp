@@ -2,7 +2,8 @@
 
 import { useReducer, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Box, Typography, Stack, Tabs, Tab, Card, Chip, CircularProgress } from '@mui/material';
+import { Box, Typography, Stack, Tabs, Tab, Card, Chip, CircularProgress, Badge, IconButton, Tooltip } from '@mui/material';
+import { CheckCircle, Clear as ClearIcon } from '@mui/icons-material';
 import {
   Button,
   TextInput,
@@ -440,6 +441,11 @@ export default function SendPackagePage() {
     { value: 'TR', label: 'Turkey' }
   ];
 
+  // Check if each tab is filled
+  const isWithinCityFilled = state.withinCity.fromLocation && state.withinCity.toLocation;
+  const isInterCityFilled = state.interCity.fromLocation && state.interCity.toLocation;
+  const isInternationalFilled = state.international.pickupCountry && state.international.pickupCity;
+
   const canRequestPicker = (() => {
     const { selectedMethod, withinCity, interCity, international } = state;
 
@@ -456,6 +462,29 @@ export default function SendPackagePage() {
         return false;
     }
   })();
+
+  // Clear functions for each tab
+  const clearWithinCity = () => {
+    dispatch({ type: 'SET_WITHIN_CITY_FIELD', field: 'fromLocation', value: null });
+    dispatch({ type: 'SET_WITHIN_CITY_FIELD', field: 'toLocation', value: null });
+    dispatch({ type: 'SET_WITHIN_CITY_FIELD', field: 'pickupDateTime', value: null });
+  };
+
+  const clearInterCity = () => {
+    dispatch({ type: 'SET_INTER_CITY_FIELD', field: 'fromLocation', value: null });
+    dispatch({ type: 'SET_INTER_CITY_FIELD', field: 'toLocation', value: null });
+    dispatch({ type: 'SET_INTER_CITY_FIELD', field: 'preferredDeliveryDate', value: null });
+  };
+
+  const clearInternational = () => {
+    dispatch({ type: 'SET_INTERNATIONAL_FIELD', field: 'pickupCountry', value: '' });
+    dispatch({ type: 'SET_INTERNATIONAL_FIELD', field: 'pickupCity', value: '' });
+    dispatch({ type: 'SET_INTERNATIONAL_FIELD', field: 'pickupAddress', value: '' });
+    dispatch({ type: 'SET_INTERNATIONAL_FIELD', field: 'destinationCountry', value: '' });
+    dispatch({ type: 'SET_INTERNATIONAL_FIELD', field: 'destinationCity', value: '' });
+    dispatch({ type: 'SET_INTERNATIONAL_FIELD', field: 'destinationAddress', value: '' });
+    dispatch({ type: 'SET_INTERNATIONAL_FIELD', field: 'deliveryDate', value: null });
+  };
 
   const handleNext = () => {
     if (canRequestPicker) {
@@ -544,40 +573,68 @@ export default function SendPackagePage() {
                 Choose Delivery Method
               </Typography>
               <Stack direction="row" spacing={1} sx={{ mb: 3 }}>
-                {deliveryMethods.map((method) => (
-                  <Button
-                    key={method.id}
-                    selected={state.selectedMethod === method.id}
-                    onClick={() => dispatch({ type: 'SET_METHOD', payload: method.id })}
-                    size="small"
-                    sx={{
-                      flex: 1,
-                      flexDirection: 'column',
-                      py: 1.5,
-                      minWidth: 0,
-                      px: 0.5,
-                    }}
-                  >
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        fontWeight: 'bold',
-                        lineHeight: 1.2,
-                        fontSize: '0.7rem',
-                        whiteSpace: 'nowrap',
-                      }}
+                {deliveryMethods.map((method) => {
+                  const isFilled =
+                    (method.id === 'within-city' && isWithinCityFilled) ||
+                    (method.id === 'inter-city' && isInterCityFilled) ||
+                    (method.id === 'international' && isInternationalFilled);
+
+                  return (
+                    <Badge
+                      key={method.id}
+                      badgeContent={isFilled ? <CheckCircle sx={{ fontSize: 16 }} /> : null}
+                      color="success"
+                      overlap="circular"
+                      anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
                     >
-                      {method.name}
-                    </Typography>
-                  </Button>
-                ))}
+                      <Button
+                        selected={state.selectedMethod === method.id}
+                        onClick={() => dispatch({ type: 'SET_METHOD', payload: method.id })}
+                        size="small"
+                        sx={{
+                          flex: 1,
+                          flexDirection: 'column',
+                          py: 1.5,
+                          minWidth: 0,
+                          px: 2,
+                        }}
+                      >
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            fontWeight: 'bold',
+                            lineHeight: 1.2,
+                            fontSize: '0.7rem',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {method.name}
+                        </Typography>
+                      </Button>
+                    </Badge>
+                  );
+                })}
               </Stack>
             </Box>
 
             {/* Within-City Form */}
             {state.selectedMethod === 'within-city' && (
               <Stack spacing={3}>
-                <Typography variant="h6">Package Details</Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography variant="h6">Package Details</Typography>
+                  {isWithinCityFilled && (
+                    <Tooltip title="Clear all fields">
+                      <IconButton
+                        size="small"
+                        color="error"
+                        onClick={clearWithinCity}
+                        sx={{ ml: 1 }}
+                      >
+                        <ClearIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  )}
+                </Box>
 
                 <Box>
                   <Typography variant="subtitle2" sx={{ mb: 1, color: 'text.secondary' }}>
@@ -617,7 +674,21 @@ export default function SendPackagePage() {
             {/* Inter-City Form */}
             {state.selectedMethod === 'inter-city' && (
               <Stack spacing={3}>
-                <Typography variant="h6">Package Details</Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography variant="h6">Package Details</Typography>
+                  {isInterCityFilled && (
+                    <Tooltip title="Clear all fields">
+                      <IconButton
+                        size="small"
+                        color="error"
+                        onClick={clearInterCity}
+                        sx={{ ml: 1 }}
+                      >
+                        <ClearIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  )}
+                </Box>
 
                 <Box>
                   <Typography variant="subtitle2" sx={{ mb: 1, color: 'text.secondary' }}>
@@ -657,7 +728,21 @@ export default function SendPackagePage() {
             {/* International Form */}
             {state.selectedMethod === 'international' && (
               <Stack spacing={3}>
-                <Typography variant="h6">Package Details</Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography variant="h6">Package Details</Typography>
+                  {isInternationalFilled && (
+                    <Tooltip title="Clear all fields">
+                      <IconButton
+                        size="small"
+                        color="error"
+                        onClick={clearInternational}
+                        sx={{ ml: 1 }}
+                      >
+                        <ClearIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  )}
+                </Box>
 
                 <Select
                   label="Pickup Country"

@@ -80,9 +80,14 @@ export default function DualLocationPicker({
     }
   }, [deliveryType]);
 
+  // Update internal state when initial locations change (e.g., when Clear button is clicked)
   useEffect(() => {
-    setIsMounted(true);
-    // Set restriction value from initial locations
+    setFromLocation(initialFromLocation || null);
+    setToLocation(initialToLocation || null);
+  }, [initialFromLocation, initialToLocation]);
+
+  // Update restriction value when locations or restriction type changes
+  useEffect(() => {
     if (initialFromLocation) {
       if (restrictionType === 'city' && initialFromLocation.city) {
         setRestrictionValue(initialFromLocation.city);
@@ -95,8 +100,15 @@ export default function DualLocationPicker({
       } else if (restrictionType === 'country' && initialToLocation.country) {
         setRestrictionValue(initialToLocation.country);
       }
+    } else {
+      // Clear restriction when both locations are null
+      setRestrictionValue(null);
     }
   }, [initialFromLocation, initialToLocation, restrictionType]);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Calculate route using OSRM API
   const calculateRoute = async (from: LocationData, to: LocationData) => {
