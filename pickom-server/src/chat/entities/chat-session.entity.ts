@@ -20,8 +20,8 @@ export class ChatSession {
   @Column({ name: 'delivery_id', nullable: true })
   deliveryId: number | null;
 
-  @Column({ name: 'sender_id' })
-  senderId: number;
+  @Column({ name: 'sender_id', nullable: true })
+  senderId: number | null;
 
   @Column({ name: 'picker_id' })
   pickerId: number;
@@ -40,7 +40,7 @@ export class ChatSession {
   @JoinColumn({ name: 'delivery_id' })
   delivery: Delivery;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => User, { nullable: true })
   @JoinColumn({ name: 'sender_id' })
   sender: User;
 

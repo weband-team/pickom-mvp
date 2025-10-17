@@ -3,6 +3,8 @@ import {
   NotFoundException,
   ForbiddenException,
   BadRequestException,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -10,6 +12,7 @@ import { ChatSession } from './entities/chat-session.entity';
 import { Message } from './entities/message.entity';
 import { UserService } from '../user/user.service';
 import { NotificationService } from '../notification/notification.service';
+import { DeliveryService } from '../delivery/delivery.service';
 import { CreateChatDto } from './dto/create-chat.dto';
 import { SendMessageDto } from './dto/send-message.dto';
 import { ChatSessionDto, MessageDto } from './dto/chat-response.dto';
@@ -23,6 +26,8 @@ export class ChatService {
     private readonly messageRepository: Repository<Message>,
     private readonly userService: UserService,
     private readonly notificationService: NotificationService,
+    @Inject(forwardRef(() => DeliveryService))
+    private readonly deliveryService: DeliveryService,
   ) {}
 
   /**
@@ -50,20 +55,36 @@ export class ChatService {
     let recipientId: number | null = null;
 
     if (currentUser.role === 'sender' && participant.role === 'picker') {
-      senderId = currentUser.id;
-      pickerId = participant.id;
+      if (deliveryId) {
+        const delivery = await this.deliveryService.getDeliveryRequestById(deliveryId, currentUser.uid, currentUser.role);
+        if (delivery?.recipientId === currentUser.uid) {
+          pickerId = participant.id;
+          recipientId = currentUser.id;
+        } else {
+          senderId = currentUser.id;
+          pickerId = participant.id;
+        }
+      } else {
+        senderId = currentUser.id;
+        pickerId = participant.id;
+      }
     } else if (currentUser.role === 'picker' && participant.role === 'sender') {
-      senderId = participant.id;
-      pickerId = currentUser.id;
-    } else if (currentUser.role === 'picker' && participant.role === 'recipient') {
-      pickerId = currentUser.id;
-      recipientId = participant.id;
-    } else if (currentUser.role === 'recipient' && participant.role === 'picker') {
-      recipientId = currentUser.id;
-      pickerId = participant.id;
+      if (deliveryId) {
+        const delivery = await this.deliveryService.getDeliveryRequestById(deliveryId, currentUser.uid, currentUser.role);
+        if (delivery?.recipientId === participant.uid) {
+          pickerId = currentUser.id;
+          recipientId = participant.id;
+        } else {
+          senderId = participant.id;
+          pickerId = currentUser.id;
+        }
+      } else {
+        senderId = participant.id;
+        pickerId = currentUser.id;
+      }
     } else {
       throw new BadRequestException(
-        'Chat can only be created between sender-picker or picker-recipient',
+        'Chat can only be created between sender and picker',
       );
     }
 
