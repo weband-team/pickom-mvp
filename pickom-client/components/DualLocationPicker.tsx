@@ -2,8 +2,8 @@
 
 import { MapContainer, TileLayer, Marker, useMapEvents, Polyline } from 'react-leaflet';
 import { useState, useEffect } from 'react';
-import { Box, Typography, Paper, Button, ToggleButtonGroup, ToggleButton, Alert } from '@mui/material';
-import { LocationOn, Flag } from '@mui/icons-material';
+import { Box, Typography, Paper, ToggleButtonGroup, ToggleButton, Alert, Chip } from '@mui/material';
+import { LocationOn, Flag, DirectionsCar, Schedule } from '@mui/icons-material';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -33,18 +33,26 @@ export interface LocationData {
   city?: string;
 }
 
+interface RouteInfo {
+  distance: string;
+  duration: string;
+  coordinates: [number, number][];
+}
+
 interface Props {
   onFromLocationSelect: (location: LocationData) => void;
   onToLocationSelect: (location: LocationData) => void;
   initialFromLocation?: LocationData;
   initialToLocation?: LocationData;
+  onRouteCalculated?: (routeInfo: RouteInfo) => void;
 }
 
 export default function DualLocationPicker({
   onFromLocationSelect,
   onToLocationSelect,
   initialFromLocation,
-  initialToLocation
+  initialToLocation,
+  onRouteCalculated
 }: Props) {
   const [fromLocation, setFromLocation] = useState<LocationData | null>(initialFromLocation || null);
   const [toLocation, setToLocation] = useState<LocationData | null>(initialToLocation || null);
@@ -52,10 +60,76 @@ export default function DualLocationPicker({
   const [isMounted, setIsMounted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
+  const [routeCoordinates, setRouteCoordinates] = useState<[number, number][]>([]);
+  const [routeInfo, setRouteInfo] = useState<RouteInfo | null>(null);
+  const [calculatingRoute, setCalculatingRoute] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  // Calculate route using OSRM API
+  const calculateRoute = async (from: LocationData, to: LocationData) => {
+    setCalculatingRoute(true);
+    setError('');
+
+    try {
+      // OSRM API endpoint for driving route
+      const url = `https://router.project-osrm.org/route/v1/driving/${from.lng},${from.lat};${to.lng},${to.lat}?overview=full&geometries=geojson`;
+
+      const response = await fetch(url);
+      const data = await response.json();
+
+      if (data.code !== 'Ok' || !data.routes || data.routes.length === 0) {
+        throw new Error('Could not calculate route');
+      }
+
+      const route = data.routes[0];
+      const coordinates: [number, number][] = route.geometry.coordinates.map(
+        (coord: number[]) => [coord[1], coord[0]] // OSRM returns [lng, lat], we need [lat, lng]
+      );
+
+      // Calculate distance and duration
+      const distanceKm = (route.distance / 1000).toFixed(1);
+      const durationMin = Math.round(route.duration / 60);
+
+      const routeData: RouteInfo = {
+        distance: `${distanceKm} km`,
+        duration: `${durationMin} min`,
+        coordinates
+      };
+
+      setRouteCoordinates(coordinates);
+      setRouteInfo(routeData);
+
+      // Call optional callback
+      if (onRouteCalculated) {
+        onRouteCalculated(routeData);
+      }
+    } catch (err) {
+      console.error('Route calculation error:', err);
+      setError('Could not calculate route. Showing straight line.');
+      // Fallback to straight line
+      setRouteCoordinates([
+        [from.lat, from.lng],
+        [to.lat, to.lng]
+      ]);
+      setRouteInfo(null);
+    } finally {
+      setCalculatingRoute(false);
+    }
+  };
+
+  // Update route when both locations are set
+  useEffect(() => {
+    if (fromLocation && toLocation) {
+      calculateRoute(fromLocation, toLocation);
+    } else {
+      setRouteCoordinates([]);
+      setRouteInfo(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fromLocation, toLocation]);
 
   // Reverse geocoding using Nominatim (OpenStreetMap)
   const getAddressFromCoordinates = async (lat: number, lng: number): Promise<{ address: string; city?: string }> => {
@@ -196,19 +270,40 @@ export default function DualLocationPicker({
           <Marker position={[toLocation.lat, toLocation.lng]} icon={toIcon} />
         )}
 
-        {fromLocation && toLocation && (
+        {routeCoordinates.length > 0 && (
           <Polyline
-            positions={[
-              [fromLocation.lat, fromLocation.lng],
-              [toLocation.lat, toLocation.lng]
-            ]}
-            color="#3b82f6"
-            weight={3}
-            opacity={0.7}
-            dashArray="10, 10"
+            positions={routeCoordinates}
+            color="#2563eb"
+            weight={4}
+            opacity={0.8}
           />
         )}
       </MapContainer>
+
+      {calculatingRoute && (
+        <Alert severity="info" sx={{ mt: 2 }}>
+          Calculating route...
+        </Alert>
+      )}
+
+      {routeInfo && (
+        <Box sx={{ mt: 2, display: 'flex', gap: 1, justifyContent: 'center' }}>
+          <Chip
+            icon={<DirectionsCar />}
+            label={routeInfo.distance}
+            color="primary"
+            variant="outlined"
+            size="small"
+          />
+          <Chip
+            icon={<Schedule />}
+            label={routeInfo.duration}
+            color="primary"
+            variant="outlined"
+            size="small"
+          />
+        </Box>
+      )}
 
       <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
         <Paper sx={{ p: 1.5, backgroundColor: fromLocation ? 'success.lighter' : 'action.hover' }}>
