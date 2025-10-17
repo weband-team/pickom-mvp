@@ -58,6 +58,20 @@ export class ChatController {
     return this.chatService.getMyChats(req.user.uid);
   }
 
+  @Get('delivery/:deliveryId')
+  @ApiOperation({ summary: 'Get chats by delivery ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of chat sessions for delivery',
+    type: [ChatSessionDto],
+  })
+  async getChatsByDeliveryId(
+    @Req() req: any,
+    @Param('deliveryId') deliveryId: string,
+  ): Promise<ChatSessionDto[]> {
+    return this.chatService.getChatsByDeliveryId(parseInt(deliveryId), req.user.uid);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get chat by ID with all messages' })
   @ApiResponse({

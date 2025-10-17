@@ -144,6 +144,43 @@ export class ChatService {
   }
 
   /**
+   * Get chats by delivery ID
+   */
+  async getChatsByDeliveryId(
+    deliveryId: number,
+    currentUserUid: string,
+  ): Promise<ChatSessionDto[]> {
+    const currentUser = await this.userService.findOne(currentUserUid);
+    if (!currentUser) {
+      throw new NotFoundException('User not found');
+    }
+
+    const chats = await this.chatSessionRepository.find({
+      where: { deliveryId },
+      relations: [
+        'sender',
+        'picker',
+        'recipient',
+        'messages',
+        'messages.sender',
+        'delivery',
+      ],
+      order: { updatedAt: 'DESC' },
+    });
+
+    const participatingChats = chats.filter(
+      (chat) =>
+        chat.senderId === currentUser.id ||
+        chat.pickerId === currentUser.id ||
+        chat.recipientId === currentUser.id,
+    );
+
+    return Promise.all(
+      participatingChats.map((chat) => this.transformChatSession(chat, currentUser.id, true)),
+    );
+  }
+
+  /**
    * Get chat by ID
    */
   async getChatById(
@@ -373,10 +410,12 @@ export class ChatService {
     return {
       id: chat.id,
       deliveryId: chat.deliveryId || undefined,
-      senderId: chat.sender.uid,
-      senderName: chat.sender.name,
+      senderId: chat.sender?.uid || null,
+      senderName: chat.sender?.name || null,
       pickerId: chat.picker.uid,
       pickerName: chat.picker.name,
+      recipientId: chat.recipient?.uid || null,
+      recipientName: chat.recipient?.name || null,
       createdAt: chat.createdAt,
       updatedAt: chat.updatedAt,
       messages,

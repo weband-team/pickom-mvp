@@ -8,7 +8,8 @@ import { MobileContainer } from '@/components/ui/layout/MobileContainer';
 import { PickomLogo } from '@/components/ui';
 import { TextInput } from '@/components/ui';
 import { ChatRoll, ChatMessage } from '@/components';
-import { getChatById, sendMessage, markMessagesAsRead } from '@/app/api/chat';
+import { TabbedChat } from '@/components/chat/TabbedChat';
+import { getChatById, sendMessage, markMessagesAsRead, getChatsByDeliveryId } from '@/app/api/chat';
 import { ChatSession as ChatSessionType, Message } from '@/types/chat';
 import { getCurrentUser } from '@/app/api/user';
 
@@ -25,6 +26,9 @@ export function ChatPageClient({ chatId }: ChatPageClientProps) {
   const [error, setError] = useState('');
   const [sending, setSending] = useState(false);
   const [currentUserUid, setCurrentUserUid] = useState<string>('');
+  const [currentUserRole, setCurrentUserRole] = useState<string>('');
+  const [senderChatId, setSenderChatId] = useState<string>('');
+  const [receiverChatId, setReceiverChatId] = useState<string | undefined>();
 
   // Fetch current user
   useEffect(() => {
@@ -32,6 +36,7 @@ export function ChatPageClient({ chatId }: ChatPageClientProps) {
       try {
         const response = await getCurrentUser();
         setCurrentUserUid(response.user.uid);
+        setCurrentUserRole(response.user.role);
       } catch (err) {
         console.error('Failed to fetch current user:', err);
       }
@@ -43,6 +48,8 @@ export function ChatPageClient({ chatId }: ChatPageClientProps) {
   // Fetch chat data
   useEffect(() => {
     const fetchChat = async () => {
+      if (!currentUserRole) return;
+
       setLoading(true);
       setError('');
 
@@ -51,8 +58,20 @@ export function ChatPageClient({ chatId }: ChatPageClientProps) {
         const chatData = response.data;
         setChatSession(chatData);
 
-        // Convert API messages to local format
-        if (chatData.messages) {
+        // If picker and has delivery, fetch both chats
+        if (currentUserRole === 'picker' && chatData.deliveryId) {
+          const chatsResponse = await getChatsByDeliveryId(chatData.deliveryId);
+          const allChats = chatsResponse.data;
+
+          const senderChat = allChats.find(chat => chat.senderId !== null);
+          const receiverChat = allChats.find(chat => chat.recipientId !== null);
+
+          if (senderChat) setSenderChatId(senderChat.id);
+          if (receiverChat) setReceiverChatId(receiverChat.id);
+        }
+
+        // Convert API messages to local format (for non-picker or single chat)
+        if (chatData.messages && currentUserRole !== 'picker') {
           const formattedMessages: Message[] = chatData.messages.map((msg: any) => ({
             id: msg.id,
             senderId: msg.senderId,
@@ -68,8 +87,10 @@ export function ChatPageClient({ chatId }: ChatPageClientProps) {
           setMessages(formattedMessages);
         }
 
-        // Mark messages as read
-        await markMessagesAsRead(chatId);
+        // Mark messages as read (for non-picker)
+        if (currentUserRole !== 'picker') {
+          await markMessagesAsRead(chatId);
+        }
       } catch (err: any) {
         console.error('Failed to fetch chat:', err);
         setError('Failed to load chat. Please try again.');
@@ -79,7 +100,7 @@ export function ChatPageClient({ chatId }: ChatPageClientProps) {
     };
 
     fetchChat();
-  }, [chatId]);
+  }, [chatId, currentUserRole]);
 
   const handleSendMessage = useCallback(async () => {
     if (!newMessage.trim() || sending) return;
@@ -196,6 +217,57 @@ export function ChatPageClient({ chatId }: ChatPageClientProps) {
         }}
       >
         <Alert severity="warning">Chat not found</Alert>
+      </Box>
+    );
+  }
+
+  // Show TabbedChat for picker with delivery
+  if (currentUserRole === 'picker' && chatSession?.deliveryId && senderChatId) {
+    return (
+      <Box
+        sx={{
+          minHeight: '100vh',
+          bgcolor: 'background.default',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          p: 2,
+        }}
+      >
+        <MobileContainer showFrame={false}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+            <Box
+              sx={{
+                p: 2,
+                borderBottom: 1,
+                borderColor: 'divider',
+                bgcolor: 'background.paper',
+              }}
+            >
+              <Stack direction="row" alignItems="center" spacing={2}>
+                <IconButton
+                  onClick={() => router.push('/chats')}
+                  size="small"
+                  sx={{ p: 1 }}
+                >
+                  <ArrowBack />
+                </IconButton>
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                    Delivery Chat
+                  </Typography>
+                </Box>
+                <PickomLogo variant="icon" size="small" />
+              </Stack>
+            </Box>
+
+            <TabbedChat
+              senderChatId={senderChatId}
+              receiverChatId={receiverChatId}
+              currentUserUid={currentUserUid}
+            />
+          </Box>
+        </MobileContainer>
       </Box>
     );
   }

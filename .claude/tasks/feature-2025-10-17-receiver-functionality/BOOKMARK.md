@@ -23,9 +23,9 @@
 
 ## 🔄 In Progress
 
-### Frontend - Chat System Integration
-- **Currently working on**: Integrating TabbedChat into ChatPageClient with role detection
-- **Status**: Need to add logic to detect picker role and fetch both chat sessions
+### Testing Phase
+- **Currently working on**: Ready for testing
+- **Status**: All core functionality implemented, need to test end-to-end flows
 
 ## 📋 Remaining Tasks
 
@@ -38,6 +38,7 @@
 - File: `pickom-server/src/chat/dto/chat-response.dto.ts`
 - Added recipientId and recipientName fields
 - Made senderId/senderName nullable
+- Fixed transformChatSession method to include recipient fields
 
 ### 3. ✅ Create TabbedChat Component - DONE
 - File: `pickom-client/components/chat/TabbedChat.tsx`
@@ -46,9 +47,20 @@
 - Reuses ChatRoll component for message display
 - Handles sending messages to active tab chat
 
-### 4. Integrate TabbedChat into Chat Page
+### 4. ✅ Integrate TabbedChat into Chat Page - DONE
 - File: `pickom-client/app/chat/[id]/ChatPageClient.tsx`
-- Detect if current user is a picker
+- Added role detection (currentUserRole from getCurrentUser)
+- For picker with deliveryId: fetches both chats via getChatsByDeliveryId
+- Shows TabbedChat component for picker role
+- Regular chat for sender/receiver roles
+
+### 5. ✅ Add Backend Endpoint for Chats by Delivery - DONE
+- File: `pickom-server/src/chat/chat.service.ts`
+- Added getChatsByDeliveryId method
+- File: `pickom-server/src/chat/chat.controller.ts`
+- Added GET /chat/delivery/:deliveryId endpoint
+- File: `pickom-client/app/api/chat.ts`
+- Added getChatsByDeliveryId API function
 - If picker: show TabbedChat component
 - If sender/receiver: show regular chat (existing behavior)
 - Need to fetch both chat sessions for picker (sender chat + receiver chat)

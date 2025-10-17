@@ -60,6 +60,13 @@ export const getMyChats = async (): Promise<AxiosResponse<ChatSession[]>> => {
 };
 
 /**
+ * Get chats by delivery ID
+ */
+export const getChatsByDeliveryId = async (deliveryId: number): Promise<AxiosResponse<ChatSession[]>> => {
+  return protectedFetch.get(`/chat/delivery/${deliveryId}`);
+};
+
+/**
  * Get chat by ID with all messages
  */
 export const getChatById = async (chatId: string): Promise<AxiosResponse<ChatSession>> => {
