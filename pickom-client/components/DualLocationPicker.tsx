@@ -1,8 +1,8 @@
 'use client';
 
-import { MapContainer, TileLayer, Marker, useMapEvents, Polyline } from 'react-leaflet';
-import { useState, useEffect } from 'react';
-import { Box, Typography, Paper, ToggleButtonGroup, ToggleButton, Alert, Chip } from '@mui/material';
+import { MapContainer, TileLayer, Marker, useMapEvents, Polyline, useMap } from 'react-leaflet';
+import { useState, useEffect, useRef } from 'react';
+import { Box, Typography, Paper, ToggleButtonGroup, ToggleButton, Alert, Chip, TextField, Autocomplete, CircularProgress } from '@mui/material';
 import { LocationOn, Flag, DirectionsCar, Schedule } from '@mui/icons-material';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -32,6 +32,19 @@ export interface LocationData {
   address: string;
   city?: string;
   country?: string;
+}
+
+interface AddressSuggestion {
+  display_name: string;
+  lat: string;
+  lon: string;
+  address: {
+    city?: string;
+    town?: string;
+    village?: string;
+    state?: string;
+    country?: string;
+  };
 }
 
 interface RouteInfo {
@@ -69,6 +82,15 @@ export default function DualLocationPicker({
   const [restrictionType, setRestrictionType] = useState<'city' | 'country' | null>(null);
   const [restrictionValue, setRestrictionValue] = useState<string | null>(null);
 
+  // Address autocomplete states
+  const [fromAddressInput, setFromAddressInput] = useState('');
+  const [toAddressInput, setToAddressInput] = useState('');
+  const [fromSuggestions, setFromSuggestions] = useState<AddressSuggestion[]>([]);
+  const [toSuggestions, setToSuggestions] = useState<AddressSuggestion[]>([]);
+  const [loadingFromSuggestions, setLoadingFromSuggestions] = useState(false);
+  const [loadingToSuggestions, setLoadingToSuggestions] = useState(false);
+  const mapRef = useRef<L.Map | null>(null);
+
   // Set restriction type based on delivery type
   useEffect(() => {
     if (deliveryType === 'within-city') {
@@ -84,6 +106,8 @@ export default function DualLocationPicker({
   useEffect(() => {
     setFromLocation(initialFromLocation || null);
     setToLocation(initialToLocation || null);
+    setFromAddressInput(initialFromLocation?.address || '');
+    setToAddressInput(initialToLocation?.address || '');
   }, [initialFromLocation, initialToLocation]);
 
   // Update restriction value when locations or restriction type changes
@@ -109,6 +133,73 @@ export default function DualLocationPicker({
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  // Search for address suggestions using Nominatim
+  const searchAddress = async (query: string, type: 'from' | 'to') => {
+    if (!query || query.length < 3) {
+      if (type === 'from') {
+        setFromSuggestions([]);
+      } else {
+        setToSuggestions([]);
+      }
+      return;
+    }
+
+    const setLoading = type === 'from' ? setLoadingFromSuggestions : setLoadingToSuggestions;
+    const setSuggestions = type === 'from' ? setFromSuggestions : setToSuggestions;
+
+    setLoading(true);
+
+    try {
+      // Build search query with restrictions if applicable
+      let searchQuery = query;
+      if (restrictionType === 'city' && restrictionValue) {
+        searchQuery = `${query}, ${restrictionValue}`;
+      } else if (restrictionType === 'country' && restrictionValue) {
+        searchQuery = `${query}, ${restrictionValue}`;
+      }
+
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&addressdetails=1&limit=5&accept-language=en`,
+        {
+          headers: {
+            'Accept-Language': 'en'
+          }
+        }
+      );
+
+      const data: AddressSuggestion[] = await response.json();
+      setSuggestions(data);
+    } catch (error) {
+      console.error('Address search error:', error);
+      setSuggestions([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Debounce address search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (fromAddressInput) {
+        searchAddress(fromAddressInput, 'from');
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fromAddressInput]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (toAddressInput) {
+        searchAddress(toAddressInput, 'to');
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [toAddressInput]);
 
   // Calculate route using OSRM API
   const calculateRoute = async (from: LocationData, to: LocationData) => {
@@ -204,7 +295,7 @@ export default function DualLocationPicker({
   const getAddressFromCoordinates = async (lat: number, lng: number): Promise<{ address: string; city?: string; country?: string; isLand: boolean }> => {
     try {
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=en`,
         {
           headers: {
             'Accept-Language': 'en'
@@ -248,6 +339,87 @@ export default function DualLocationPicker({
         country: undefined,
         isLand: false
       };
+    }
+  };
+
+  // Handle address selection from autocomplete
+  const handleAddressSelect = async (suggestion: AddressSuggestion | null, type: 'from' | 'to') => {
+    if (!suggestion) return;
+
+    const lat = parseFloat(suggestion.lat);
+    const lng = parseFloat(suggestion.lon);
+    const address = suggestion.display_name;
+    const city = suggestion.address?.city || suggestion.address?.town || suggestion.address?.village || suggestion.address?.state;
+    const country = suggestion.address?.country;
+
+    setLoading(true);
+    setError('');
+
+    try {
+      // For international delivery, check if location is on land
+      if (!restrictionType) {
+        const { isLand } = await getAddressFromCoordinates(lat, lng);
+        if (!isLand) {
+          setError('Please select a location on land. Water/ocean locations are not allowed.');
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Check restriction based on type
+      if (restrictionType && restrictionValue) {
+        if (restrictionType === 'city') {
+          if (!city) {
+            setError('Could not determine city. Please select a more specific location.');
+            setLoading(false);
+            return;
+          }
+          if (city !== restrictionValue) {
+            setError(`You can only select locations within ${restrictionValue}. Selected location is in ${city}.`);
+            setLoading(false);
+            return;
+          }
+        } else if (restrictionType === 'country') {
+          if (!country) {
+            setError('Could not determine country. Please select a more specific location.');
+            setLoading(false);
+            return;
+          }
+          if (country !== restrictionValue) {
+            setError(`You can only select locations within ${restrictionValue}. Selected location is in ${country}.`);
+            setLoading(false);
+            return;
+          }
+        }
+      }
+
+      const locationData: LocationData = { lat, lng, address, city, country };
+
+      if (type === 'from') {
+        setFromLocation(locationData);
+        onFromLocationSelect(locationData);
+        setFromAddressInput(address);
+        // Set restriction value when first location is selected
+        if (restrictionType === 'city' && city) {
+          setRestrictionValue(city);
+        } else if (restrictionType === 'country' && country) {
+          setRestrictionValue(country);
+        }
+      } else {
+        setToLocation(locationData);
+        onToLocationSelect(locationData);
+        setToAddressInput(address);
+      }
+
+      // Center map on the selected location
+      if (mapRef.current) {
+        mapRef.current.setView([lat, lng], 13);
+      }
+    } catch (err) {
+      setError('Failed to set location. Please try again.');
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -300,6 +472,7 @@ export default function DualLocationPicker({
           if (activeMarker === 'from') {
             setFromLocation(locationData);
             onFromLocationSelect(locationData);
+            setFromAddressInput(address);
             // Set restriction value when first location is selected
             if (restrictionType === 'city' && city) {
               setRestrictionValue(city);
@@ -309,6 +482,7 @@ export default function DualLocationPicker({
           } else {
             setToLocation(locationData);
             onToLocationSelect(locationData);
+            setToAddressInput(address);
           }
         } catch (err) {
           setError('Failed to get address. Please try again.');
@@ -319,6 +493,15 @@ export default function DualLocationPicker({
       },
     });
 
+    return null;
+  }
+
+  // Component to access map instance
+  function MapInstanceHandler() {
+    const map = useMap();
+    useEffect(() => {
+      mapRef.current = map;
+    }, [map]);
     return null;
   }
 
@@ -337,10 +520,87 @@ export default function DualLocationPicker({
 
   return (
     <Box>
+      {/* Address Input Fields */}
+      <Box sx={{ mb: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Autocomplete
+          freeSolo
+          options={fromSuggestions}
+          getOptionLabel={(option) => typeof option === 'string' ? option : option.display_name}
+          inputValue={fromAddressInput}
+          onInputChange={(_, newValue) => setFromAddressInput(newValue)}
+          onChange={(_, newValue) => {
+            if (typeof newValue !== 'string') {
+              handleAddressSelect(newValue, 'from');
+            }
+          }}
+          loading={loadingFromSuggestions}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label="From Address"
+              placeholder="Type to search address..."
+              size="small"
+              InputProps={{
+                ...params.InputProps,
+                startAdornment: <LocationOn sx={{ color: 'success.main', mr: 1 }} />,
+                endAdornment: (
+                  <>
+                    {loadingFromSuggestions ? <CircularProgress color="inherit" size={20} /> : null}
+                    {params.InputProps.endAdornment}
+                  </>
+                ),
+              }}
+            />
+          )}
+          renderOption={(props, option) => (
+            <Box component="li" {...props} key={option.lat + option.lon}>
+              <Typography variant="body2">{option.display_name}</Typography>
+            </Box>
+          )}
+        />
+
+        <Autocomplete
+          freeSolo
+          options={toSuggestions}
+          getOptionLabel={(option) => typeof option === 'string' ? option : option.display_name}
+          inputValue={toAddressInput}
+          onInputChange={(_, newValue) => setToAddressInput(newValue)}
+          onChange={(_, newValue) => {
+            if (typeof newValue !== 'string') {
+              handleAddressSelect(newValue, 'to');
+            }
+          }}
+          loading={loadingToSuggestions}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label="To Address"
+              placeholder="Type to search address..."
+              size="small"
+              InputProps={{
+                ...params.InputProps,
+                startAdornment: <Flag sx={{ color: 'error.main', mr: 1 }} />,
+                endAdornment: (
+                  <>
+                    {loadingToSuggestions ? <CircularProgress color="inherit" size={20} /> : null}
+                    {params.InputProps.endAdornment}
+                  </>
+                ),
+              }}
+            />
+          )}
+          renderOption={(props, option) => (
+            <Box component="li" {...props} key={option.lat + option.lon}>
+              <Typography variant="body2">{option.display_name}</Typography>
+            </Box>
+          )}
+        />
+      </Box>
+
       <Box sx={{ mb: 2 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
           <Typography variant="subtitle2" sx={{ color: 'text.secondary' }}>
-            Select marker type, then click on the map
+            Or select marker type and click on the map
           </Typography>
 
           <ToggleButtonGroup
@@ -378,6 +638,8 @@ export default function DualLocationPicker({
                 setRouteCoordinates([]);
                 setRouteInfo(null);
                 setError('');
+                setFromAddressInput('');
+                setToAddressInput('');
               }}
             />
           </Box>
@@ -412,6 +674,7 @@ export default function DualLocationPicker({
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         <MapClickHandler />
+        <MapInstanceHandler />
 
         {fromLocation && (
           <Marker position={[fromLocation.lat, fromLocation.lng]} icon={fromIcon} />

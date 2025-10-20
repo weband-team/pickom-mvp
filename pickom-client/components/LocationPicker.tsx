@@ -17,7 +17,7 @@ L.Icon.Default.mergeOptions({
 });
 
 interface Props {
-  onLocationSelect: (lat: number, lng: number) => void;
+  onLocationSelect: (lat: number, lng: number, address?: string) => void;
   initialPosition?: { lat: number; lng: number };
 }
 
@@ -29,6 +29,7 @@ export default function LocationPicker({ onLocationSelect, initialPosition }: Pr
   const [loadingLocation, setLoadingLocation] = useState(false);
   const [locationError, setLocationError] = useState<string>('');
   const [hasRequestedLocation, setHasRequestedLocation] = useState(false);
+  const [loadingAddress, setLoadingAddress] = useState(false);
 
   // Only render map on client side
   useEffect(() => {
@@ -50,6 +51,33 @@ export default function LocationPicker({ onLocationSelect, initialPosition }: Pr
     }
   }, [initialPosition]);
 
+  // Reverse geocoding to get address from coordinates
+  const getAddressFromCoordinates = async (lat: number, lng: number): Promise<string | undefined> => {
+    setLoadingAddress(true);
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=en`,
+        {
+          headers: {
+            'Accept-Language': 'en'
+          }
+        }
+      );
+      const data = await response.json();
+
+      if (data.error) {
+        return undefined;
+      }
+
+      return data.display_name || undefined;
+    } catch (error) {
+      console.error('Reverse geocoding error:', error);
+      return undefined;
+    } finally {
+      setLoadingAddress(false);
+    }
+  };
+
   const requestCurrentLocation = () => {
     setLoadingLocation(true);
     setLocationError('');
@@ -61,10 +89,13 @@ export default function LocationPicker({ onLocationSelect, initialPosition }: Pr
     }
 
     navigator.geolocation.getCurrentPosition(
-      (geoPosition) => {
+      async (geoPosition) => {
         const { latitude, longitude } = geoPosition.coords;
         setPosition({ lat: latitude, lng: longitude });
-        onLocationSelect(latitude, longitude);
+
+        // Get address for the location
+        const address = await getAddressFromCoordinates(latitude, longitude);
+        onLocationSelect(latitude, longitude, address);
         setLoadingLocation(false);
       },
       (error) => {
@@ -98,10 +129,13 @@ export default function LocationPicker({ onLocationSelect, initialPosition }: Pr
     const map = useMap();
 
     useMapEvents({
-      click(e) {
+      async click(e) {
         const { lat, lng } = e.latlng;
         setPosition({ lat, lng });
-        onLocationSelect(lat, lng);
+
+        // Get address for the clicked location
+        const address = await getAddressFromCoordinates(lat, lng);
+        onLocationSelect(lat, lng, address);
       },
     });
 
@@ -171,6 +205,11 @@ export default function LocationPicker({ onLocationSelect, initialPosition }: Pr
         <Typography variant="caption" color="text.secondary">
           Selected location: {position.lat.toFixed(6)}, {position.lng.toFixed(6)}
         </Typography>
+        {loadingAddress && (
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+            Getting address...
+          </Typography>
+        )}
       </Paper>
     </Box>
   );

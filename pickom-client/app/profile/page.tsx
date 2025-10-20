@@ -150,9 +150,18 @@ export default function ProfilePage() {
               </Typography>
 
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                {user.location?.address && (
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ minWidth: '80px' }}>Address:</Typography>
+                    <Typography variant="body2" sx={{ textAlign: 'right', flex: 1 }}>
+                      {user.location.address}
+                    </Typography>
+                  </Box>
+                )}
+
                 {user.location && (
                   <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography variant="body2" color="text.secondary">Location:</Typography>
+                    <Typography variant="body2" color="text.secondary">Coordinates:</Typography>
                     <Typography variant="body2">
                       {user.location.lat.toFixed(4)}, {user.location.lng.toFixed(4)}
                     </Typography>

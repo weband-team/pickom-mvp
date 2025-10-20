@@ -12,8 +12,9 @@ import {
   Avatar,
   Card,
   CardContent,
+  Autocomplete,
 } from '@mui/material';
-import { ArrowBack, PhotoCamera, Save } from '@mui/icons-material';
+import { ArrowBack, PhotoCamera, Save, LocationOn } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
 import { MobileContainer } from '@/components/ui/layout/MobileContainer';
 import BottomNavigation from '@/components/common/BottomNavigation';
@@ -37,6 +38,7 @@ interface EditFormData {
   locationLat: string;
   locationLng: string;
   locationPlaceId: string;
+  address: string;
 }
 
 export default function EditProfilePage() {
@@ -56,9 +58,12 @@ export default function EditProfilePage() {
     locationLat: '',
     locationLng: '',
     locationPlaceId: '',
+    address: '',
   });
 
   const [phoneError, setPhoneError] = useState<string>('');
+  const [addressSuggestions, setAddressSuggestions] = useState<any[]>([]);
+  const [loadingAddressSuggestions, setLoadingAddressSuggestions] = useState(false);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -75,6 +80,7 @@ export default function EditProfilePage() {
           locationLat: user.location?.lat?.toString() || '',
           locationLng: user.location?.lng?.toString() || '',
           locationPlaceId: user.location?.placeId || '',
+          address: (user.location as any)?.address || '',
         });
       } catch (err: any) {
         console.error('Failed to fetch user data:', err);
@@ -146,14 +152,72 @@ export default function EditProfilePage() {
     setSuccess('');
   };
 
-  const handleLocationSelect = (lat: number, lng: number) => {
+  const handleLocationSelect = (lat: number, lng: number, address?: string) => {
     setFormData({
       ...formData,
       locationLat: lat.toString(),
       locationLng: lng.toString(),
+      address: address || formData.address, // Keep existing address if no new address provided
     });
     setError('');
     setSuccess('');
+  };
+
+  // Search for address suggestions using Nominatim
+  const searchAddress = async (query: string) => {
+    if (!query || query.length < 3) {
+      setAddressSuggestions([]);
+      return;
+    }
+
+    setLoadingAddressSuggestions(true);
+
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&addressdetails=1&limit=5&accept-language=en`,
+        {
+          headers: {
+            'Accept-Language': 'en'
+          }
+        }
+      );
+
+      const data = await response.json();
+      setAddressSuggestions(data);
+    } catch (error) {
+      console.error('Address search error:', error);
+      setAddressSuggestions([]);
+    } finally {
+      setLoadingAddressSuggestions(false);
+    }
+  };
+
+  // Debounce address search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (formData.address) {
+        searchAddress(formData.address);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.address]);
+
+  // Handle address selection from autocomplete
+  const handleAddressSelect = (suggestion: any) => {
+    if (!suggestion) return;
+
+    const lat = parseFloat(suggestion.lat);
+    const lng = parseFloat(suggestion.lon);
+    const address = suggestion.display_name;
+
+    setFormData({
+      ...formData,
+      address: address,
+      locationLat: lat.toString(),
+      locationLng: lng.toString(),
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -187,6 +251,7 @@ export default function EditProfilePage() {
         lat: parseFloat(formData.locationLat),
         lng: parseFloat(formData.locationLng),
         placeId: formData.locationPlaceId || undefined,
+        address: formData.address || undefined,
       } : undefined;
 
       await updateUser(userUid, {
@@ -395,6 +460,54 @@ export default function EditProfilePage() {
                       <Typography variant="subtitle2" sx={{ mb: 2, color: 'text.secondary' }}>
                         Your Location
                       </Typography>
+
+                      <Autocomplete
+                        freeSolo
+                        options={addressSuggestions}
+                        getOptionLabel={(option) => typeof option === 'string' ? option : option.display_name}
+                        inputValue={formData.address}
+                        onInputChange={(_, newValue) => {
+                          setFormData({
+                            ...formData,
+                            address: newValue,
+                          });
+                        }}
+                        onChange={(_, newValue) => {
+                          if (typeof newValue !== 'string' && newValue) {
+                            handleAddressSelect(newValue);
+                          }
+                        }}
+                        loading={loadingAddressSuggestions}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            label="Address"
+                            placeholder="Type to search address..."
+                            size="small"
+                            InputProps={{
+                              ...params.InputProps,
+                              startAdornment: <LocationOn sx={{ color: 'primary.main', mr: 1 }} />,
+                              endAdornment: (
+                                <>
+                                  {loadingAddressSuggestions ? <CircularProgress color="inherit" size={20} /> : null}
+                                  {params.InputProps.endAdornment}
+                                </>
+                              ),
+                            }}
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                backgroundColor: 'background.paper',
+                              },
+                              mb: 2,
+                            }}
+                          />
+                        )}
+                        renderOption={(props, option) => (
+                          <Box component="li" {...props} key={option.lat + option.lon}>
+                            <Typography variant="body2">{option.display_name}</Typography>
+                          </Box>
+                        )}
+                      />
 
                       <LocationPicker
                         onLocationSelect={handleLocationSelect}
