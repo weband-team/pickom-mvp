@@ -54,7 +54,7 @@ Add receiver/recipient functionality to the Pickom delivery system. Currently, t
 ### Frontend (Client)
 - `pickom-client/app/package-type/page.tsx` - Order creation form, needs receiver input
 - `pickom-client/app/api/delivery.ts` - ✅ Already has `recipientId` in interfaces (line 20, 28)
-- `pickom-client/app/orders/[id]/page.tsx` - Order details view, needs to show receiver
+- `pickom-client/app/delivery-details/[id]/page.tsx` - Delivery details view, needs to show receiver
 - `pickom-client/app/chat/[id]/page.tsx` - Chat page, needs tabbed UI for picker
 - `pickom-client/app/chat/[id]/ChatPageClient.tsx` - Chat client implementation
 
@@ -162,7 +162,7 @@ if (currentUser.role === 'sender' && participant.role === 'picker') {
 21. Include receiver data in createDeliveryRequest API call
 
 ### Phase 5: Frontend - Order Details UI (Conditional Display)
-22. Update orders/[id]/page.tsx to fetch and display receiver info
+22. Update delivery-details/[id]/page.tsx to fetch and display receiver info
 23. **Implement conditional rendering**:
     ```typescript
     if (order.recipientId && order.recipient) {
@@ -199,7 +199,7 @@ if (currentUser.role === 'sender' && participant.role === 'picker') {
 38. Test receiver receives notifications (user ID case)
 39. Test conditional display in order details (both cases)
 40. Test edge cases (receiver not found, invalid phone, etc.)
-41. Test existing flows still work (orders without receiver)
+41. Test existing flows still work (deliveries without receiver)
 
 ## 🧪 Testing Instructions
 
@@ -308,7 +308,7 @@ package-type/
       ├── TextInput: User ID
       └── TextInput: Phone Number
 
-orders/[id]/
+delivery-details/[id]/
   └── ReceiverCard.tsx (new component)
       ├── if recipientId: UserCard component
       └── if recipientPhone: PhoneDisplay component

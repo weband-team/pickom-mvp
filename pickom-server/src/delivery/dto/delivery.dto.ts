@@ -4,6 +4,7 @@ export interface DeliveryDto {
   pickerId: string | null;
   recipientId?: string | null;
   recipientPhone?: string | null;
+  recipientConfirmed?: boolean;
   title: string;
   description?: string | null;
   fromAddress: string;

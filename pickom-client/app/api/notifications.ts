@@ -5,7 +5,7 @@ export interface Notification {
   user_id: string; // Firebase UID
   title: string;
   message: string;
-  type: 'offer_received' | 'offer_accepted' | 'status_update' | 'incoming_delivery' | 'new_delivery';
+  type: 'offer_received' | 'offer_accepted' | 'status_update' | 'incoming_delivery' | 'new_delivery' | 'recipient_confirmed' | 'recipient_rejected';
   read: boolean;
   created_at: string; // ISO string from Date
   related_delivery_id?: number;
@@ -20,7 +20,7 @@ export interface CreateNotificationRequest {
   user_id: string;
   title: string;
   message: string;
-  type: 'offer_received' | 'offer_accepted' | 'status_update' | 'incoming_delivery' | 'new_delivery';
+  type: 'offer_received' | 'offer_accepted' | 'status_update' | 'incoming_delivery' | 'new_delivery' | 'recipient_confirmed' | 'recipient_rejected';
   read: boolean;
   related_delivery_id?: number;
 }

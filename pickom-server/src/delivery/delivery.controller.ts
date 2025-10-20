@@ -165,4 +165,24 @@ export class DeliveryController {
       user.role,
     );
   }
+
+  // Confirm or reject delivery by recipient
+  @Put('requests/:id/confirm-recipient')
+  @UseGuards(FirebaseAuthGuard)
+  async confirmRecipient(
+    @Param('id') id: number,
+    @Body('confirmed') confirmed: boolean,
+    @Req() req: ReqWithUser,
+  ) {
+    const { uid } = req.user as { uid: string };
+    const result = await this.deliveryService.confirmRecipient(
+      id,
+      uid,
+      confirmed,
+    );
+    if (!result) {
+      throw new NotFoundException('Delivery not found or access denied');
+    }
+    return result;
+  }
 }

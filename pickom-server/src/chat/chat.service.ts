@@ -54,37 +54,37 @@ export class ChatService {
     let pickerId: number | null = null;
     let recipientId: number | null = null;
 
-    if (currentUser.role === 'sender' && participant.role === 'picker') {
-      if (deliveryId) {
-        const delivery = await this.deliveryService.getDeliveryRequestById(deliveryId, currentUser.uid, currentUser.role);
-        if (delivery?.recipientId === currentUser.uid) {
-          pickerId = participant.id;
-          recipientId = currentUser.id;
-        } else {
-          senderId = currentUser.id;
-          pickerId = participant.id;
-        }
-      } else {
-        senderId = currentUser.id;
-        pickerId = participant.id;
-      }
-    } else if (currentUser.role === 'picker' && participant.role === 'sender') {
-      if (deliveryId) {
-        const delivery = await this.deliveryService.getDeliveryRequestById(deliveryId, currentUser.uid, currentUser.role);
-        if (delivery?.recipientId === participant.uid) {
-          pickerId = currentUser.id;
-          recipientId = participant.id;
-        } else {
-          senderId = participant.id;
-          pickerId = currentUser.id;
-        }
+    // If deliveryId is provided, check if either user is the recipient
+    let delivery: any = null;
+    if (deliveryId) {
+      delivery = await this.deliveryService.getDeliveryRequestById(deliveryId, currentUser.uid, currentUser.role);
+    }
+
+    // Determine roles based on actual delivery data, not just user.role
+    const isCurrentUserRecipient = delivery?.recipientId === currentUser.id;
+    const isParticipantRecipient = delivery?.recipientId === participant.id;
+    const isCurrentUserPicker = currentUser.role === 'picker';
+    const isParticipantPicker = participant.role === 'picker';
+
+    if (isCurrentUserPicker && !isParticipantPicker) {
+      // Current user is picker
+      pickerId = currentUser.id;
+      if (isParticipantRecipient) {
+        recipientId = participant.id;
       } else {
         senderId = participant.id;
-        pickerId = currentUser.id;
+      }
+    } else if (isParticipantPicker && !isCurrentUserPicker) {
+      // Participant is picker
+      pickerId = participant.id;
+      if (isCurrentUserRecipient) {
+        recipientId = currentUser.id;
+      } else {
+        senderId = currentUser.id;
       }
     } else {
       throw new BadRequestException(
-        'Chat can only be created between sender and picker',
+        'Chat can only be created between picker and sender/recipient',
       );
     }
 
@@ -112,11 +112,19 @@ export class ChatService {
     });
 
     if (existingChat) {
+      console.log('[ChatService] Found existing chat:', existingChat.id);
       return {
         chatId: existingChat.id,
         createdAt: existingChat.createdAt,
       };
     }
+
+    console.log('[ChatService] Creating new chat:', {
+      senderId,
+      pickerId,
+      recipientId,
+      deliveryId,
+    });
 
     const chatSession = this.chatSessionRepository.create({
       senderId,
@@ -126,6 +134,8 @@ export class ChatService {
     });
 
     const savedChat = await this.chatSessionRepository.save(chatSession);
+
+    console.log('[ChatService] Created new chat:', savedChat.id);
 
     return {
       chatId: savedChat.id,

@@ -41,12 +41,15 @@ import { getDeliveryRequestById, updateDeliveryRequestStatus } from '@/app/api/d
 import { createOffer } from '@/app/api/offers';
 import { getUser, getCurrentUser } from '@/app/api/user';
 import SenderCard, { SenderCardData } from '@/components/sender/SenderCard';
+import ReceiverCard from '@/components/order/ReceiverCard';
 import { createChat } from '@/app/api/chat';
 
 interface DeliveryRequest {
   id: number;
   senderId: string;
   pickerId?: string;
+  recipientId?: number;
+  recipientPhone?: string;
   title: string;
   description?: string;
   fromAddress: string;
@@ -71,12 +74,22 @@ interface PickerCardData {
   phone?: string;
 }
 
+interface ReceiverCardData {
+  uid: string;
+  fullName: string;
+  avatarUrl?: string;
+  rating: number;
+  isPhoneVerified?: boolean;
+  isEmailVerified?: boolean;
+}
+
 export default function DeliveryDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
   const router = useRouter();
   const [delivery, setDelivery] = useState<DeliveryRequest | null>(null);
   const [sender, setSender] = useState<SenderCardData | null>(null);
   const [picker, setPicker] = useState<PickerCardData | null>(null);
+  const [receiver, setReceiver] = useState<ReceiverCardData | null>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [userRole, setUserRole] = useState<'sender' | 'picker' | null>(null);
   const [loading, setLoading] = useState(true);
@@ -111,37 +124,71 @@ export default function DeliveryDetailsPage({ params }: { params: Promise<{ id: 
         setDelivery(deliveryData as any);
 
         // Fetch sender data
-        const senderResponse = await getUser(deliveryData.senderId);
-        const senderUser = senderResponse.user;
+        try {
+          const senderResponse = await getUser(deliveryData.senderId);
+          const senderUser = senderResponse.user;
 
-        const senderData: SenderCardData = {
-          uid: senderUser.uid,
-          fullName: senderUser.name,
-          avatarUrl: senderUser.avatarUrl,
-          rating: 4.8,
-          totalOrders: 45,
-          isPhoneVerified: senderUser.phone ? true : false,
-          isEmailVerified: true,
-          memberSince: senderUser.createdAt,
-          phone: senderUser.phone,
-          email: senderUser.email,
-        };
-        setSender(senderData);
+          if (senderUser) {
+            const senderData: SenderCardData = {
+              uid: senderUser.uid,
+              fullName: senderUser.name,
+              avatarUrl: senderUser.avatarUrl,
+              rating: 4.8,
+              totalOrders: 45,
+              isPhoneVerified: senderUser.phone ? true : false,
+              isEmailVerified: true,
+              memberSince: senderUser.createdAt,
+              phone: senderUser.phone,
+              email: senderUser.email,
+            };
+            setSender(senderData);
+          }
+        } catch (err) {
+          console.error('Failed to fetch sender:', err);
+        }
 
         // Fetch picker data if assigned
         if (deliveryData.pickerId) {
-          const pickerResponse = await getUser(deliveryData.pickerId);
-          const pickerUser = pickerResponse.user;
+          try {
+            const pickerResponse = await getUser(deliveryData.pickerId);
+            const pickerUser = pickerResponse.user;
 
-          const pickerData: PickerCardData = {
-            uid: pickerUser.uid,
-            fullName: pickerUser.name,
-            avatarUrl: pickerUser.avatarUrl,
-            rating: 4.5,
-            completedDeliveries: 100,
-            phone: pickerUser.phone,
-          };
-          setPicker(pickerData);
+            if (pickerUser) {
+              const pickerData: PickerCardData = {
+                uid: pickerUser.uid,
+                fullName: pickerUser.name,
+                avatarUrl: pickerUser.avatarUrl,
+                rating: 4.5,
+                completedDeliveries: 100,
+                phone: pickerUser.phone,
+              };
+              setPicker(pickerData);
+            }
+          } catch (err) {
+            console.error('Failed to fetch picker:', err);
+          }
+        }
+
+        // Fetch receiver data if assigned
+        if (deliveryData.recipientId) {
+          try {
+            const receiverResponse = await getUser(String(deliveryData.recipientId));
+            const receiverUser = receiverResponse.user;
+
+            if (receiverUser) {
+              const receiverData: ReceiverCardData = {
+                uid: receiverUser.uid,
+                fullName: receiverUser.name,
+                avatarUrl: receiverUser.avatarUrl,
+                rating: receiverUser.rating || 0,
+                isPhoneVerified: receiverUser.phone ? true : false,
+                isEmailVerified: true,
+              };
+              setReceiver(receiverData);
+            }
+          } catch (err) {
+            console.error('Failed to fetch receiver:', err);
+          }
         }
       } catch (err: any) {
         console.error('Failed to fetch delivery:', err);
@@ -172,6 +219,22 @@ export default function DeliveryDetailsPage({ params }: { params: Promise<{ id: 
     try {
       const response = await createChat({
         participantId: userId,
+        deliveryId: delivery?.id,
+      });
+      const { chatId } = response.data;
+      router.push(`/chat/${chatId}`);
+    } catch (err: any) {
+      console.error('Failed to create chat:', err);
+      alert('Failed to open chat. Please try again.');
+    }
+  };
+
+  const handleChatWithReceiver = async () => {
+    if (!receiver) return;
+
+    try {
+      const response = await createChat({
+        participantId: receiver.uid,
         deliveryId: delivery?.id,
       });
       const { chatId } = response.data;
@@ -494,6 +557,30 @@ export default function DeliveryDetailsPage({ params }: { params: Promise<{ id: 
                     Sender Information
                   </Typography>
                   <SenderCard sender={sender} variant="full" />
+                </Box>
+              )}
+
+              {isPicker && (receiver || delivery?.recipientPhone) && (
+                <Box sx={{ m: 2 }}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+                    Receiver Information
+                  </Typography>
+                  <ReceiverCard
+                    receiver={{
+                      recipientId: receiver?.uid,
+                      recipientPhone: delivery?.recipientPhone,
+                      recipientUser: receiver ? {
+                        uid: receiver.uid,
+                        fullName: receiver.fullName,
+                        avatarUrl: receiver.avatarUrl,
+                        rating: receiver.rating,
+                        isPhoneVerified: receiver.isPhoneVerified,
+                        isEmailVerified: receiver.isEmailVerified,
+                      } : undefined,
+                    }}
+                    onContactClick={receiver ? handleChatWithReceiver : undefined}
+                    variant="compact"
+                  />
                 </Box>
               )}
             </Box>

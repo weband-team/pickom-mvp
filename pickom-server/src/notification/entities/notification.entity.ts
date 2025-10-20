@@ -31,6 +31,8 @@ export class Notification {
       'offer_accepted',
       'incoming_delivery',
       'new_message',
+      'recipient_confirmed',
+      'recipient_rejected',
     ],
   })
   type:
@@ -39,7 +41,9 @@ export class Notification {
     | 'status_update'
     | 'offer_accepted'
     | 'incoming_delivery'
-    | 'new_message';
+    | 'new_message'
+    | 'recipient_confirmed'
+    | 'recipient_rejected';
 
   @Column({ type: 'boolean', default: false })
   read: boolean;

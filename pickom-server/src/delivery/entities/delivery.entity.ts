@@ -30,6 +30,9 @@ export class Delivery {
   @Column({ type: 'varchar', length: 20, name: 'recipient_phone', nullable: true })
   recipientPhone: string | null;
 
+  @Column({ type: 'boolean', name: 'recipient_confirmed', default: false })
+  recipientConfirmed: boolean;
+
   @Column()
   title: string;
 

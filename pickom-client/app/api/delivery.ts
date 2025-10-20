@@ -28,6 +28,7 @@ export interface DeliveryRequest {
   pickerId?: string;
   recipientId?: string;
   recipientPhone?: string;
+  recipientConfirmed?: boolean;
   title: string;
   description?: string;
   fromAddress: string;
@@ -125,4 +126,15 @@ export const getCompletedDeliveries = async (): Promise<AxiosResponse<DeliveryRe
 
 export const getCancelledDeliveries = async (): Promise<AxiosResponse<DeliveryRequest[]>> => {
   return protectedFetch.get('/delivery/cancelled');
+};
+
+/**
+ * Confirm or reject delivery by recipient
+ * Requires authentication (recipient role)
+ */
+export const confirmRecipient = async (
+  id: number,
+  confirmed: boolean
+): Promise<AxiosResponse<DeliveryRequest>> => {
+  return protectedFetch.put(`/delivery/requests/${id}/confirm-recipient`, { confirmed });
 };

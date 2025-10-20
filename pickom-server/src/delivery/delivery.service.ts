@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Delivery } from './entities/delivery.entity';
@@ -9,6 +9,7 @@ import { UserService } from 'src/user/user.service';
 import { User } from 'src/user/types/user.type';
 import { User as UserEntity } from 'src/user/entities/user.entity';
 import { NotificationService } from 'src/notification/notification.service';
+import { ChatService } from 'src/chat/chat.service';
 
 @Injectable()
 export class DeliveryService {
@@ -17,6 +18,8 @@ export class DeliveryService {
     private readonly deliveryRepository: Repository<Delivery>,
     private readonly userService: UserService,
     private readonly notificationService: NotificationService,
+    @Inject(forwardRef(() => ChatService))
+    private readonly chatService: ChatService,
   ) {}
 
   // Получить всех курьеров (role: 'picker')
@@ -51,12 +54,15 @@ export class DeliveryService {
 
     let recipient: UserEntity | null = null;
     if (createDto.recipientId) {
-      recipient = (await this.userService.findOne(
+      const recipientData = await this.userService.findOne(
         createDto.recipientId,
-      )) as UserEntity;
-      if (!recipient) {
-        throw new Error('Recipient not found');
+      );
+      if (!recipientData) {
+        throw new Error(
+          `Recipient not found. Please provide a valid Firebase UID, not a numeric ID.`,
+        );
       }
+      recipient = recipientData as UserEntity;
     }
 
     const delivery = new Delivery();
@@ -110,13 +116,20 @@ export class DeliveryService {
     }
 
     let deliveries: Delivery[];
+    const { Or } = await import('typeorm');
+
     if (role === 'sender') {
+      // Show deliveries where user is sender OR recipient
       deliveries = await this.deliveryRepository.find({
-        where: { senderId: user.id },
+        where: [
+          { senderId: user.id },
+          { recipientId: user.id },
+        ],
         relations: ['sender', 'picker', 'recipient'],
+        order: { createdAt: 'DESC' },
       });
-    } else {
-      const { In, IsNull } = await import('typeorm');
+    } else if (role === 'picker') {
+      const { IsNull } = await import('typeorm');
       deliveries = await this.deliveryRepository.find({
         where: [
           { pickerId: user.id },
@@ -125,10 +138,17 @@ export class DeliveryService {
         relations: ['sender', 'picker', 'recipient'],
         order: { createdAt: 'DESC' },
       });
+    } else {
+      // For any other role, show deliveries where user is recipient
+      deliveries = await this.deliveryRepository.find({
+        where: { recipientId: user.id },
+        relations: ['sender', 'picker', 'recipient'],
+        order: { createdAt: 'DESC' },
+      });
     }
 
     // Преобразовать в DTO
-    return deliveries.map((delivery) => this.entityToDto(delivery));
+    return Promise.all(deliveries.map((delivery) => this.entityToDto(delivery)));
   }
 
   // Получить запрос по ID
@@ -153,20 +173,28 @@ export class DeliveryService {
       return null;
     }
 
-    if (role === 'sender' && delivery.senderId !== user.id) {
+    const isSender = delivery.senderId === user.id;
+    const isPicker = delivery.pickerId === user.id;
+    const isRecipient = delivery.recipientId === user.id;
+    const isPendingAvailable =
+      delivery.status === 'pending' && delivery.pickerId === null;
+
+    // Sender role can access if they are sender OR recipient
+    if (role === 'sender' && !isSender && !isRecipient) {
       return null;
     }
-    if (role === 'picker') {
-      const isAssignedPicker = delivery.pickerId === user.id;
-      const isPendingAvailable =
-        delivery.status === 'pending' && delivery.pickerId === null;
 
-      if (!isAssignedPicker && !isPendingAvailable) {
-        return null;
-      }
+    // Picker can access if they are assigned or if delivery is pending and available
+    if (role === 'picker' && !isPicker && !isPendingAvailable) {
+      return null;
     }
 
-    return this.entityToDto(delivery);
+    // Final check: user must be sender, picker, recipient, or viewing pending delivery
+    if (!isSender && !isPicker && !isRecipient && !isPendingAvailable) {
+      return null;
+    }
+
+    return await this.entityToDto(delivery);
   }
 
   // Обновить статус запроса
@@ -199,11 +227,41 @@ export class DeliveryService {
     delivery.status = status;
     await this.deliveryRepository.save(delivery);
 
-    if (status === 'accepted' && delivery.sender) {
-      await this.userService.subtractFromBalance(
-        delivery.sender.uid,
-        Number(delivery.price),
-      );
+    if (status === 'accepted') {
+      if (delivery.sender) {
+        await this.userService.subtractFromBalance(
+          delivery.sender.uid,
+          Number(delivery.price),
+        );
+      }
+
+      // Create chat between sender and picker
+      console.log('[DeliveryService] Creating chat between picker and sender', {
+        pickerUid: user.uid,
+        senderUid: delivery.sender.uid,
+        deliveryId: delivery.id,
+      });
+      const senderChat = await this.chatService.createChat(user.uid, {
+        participantId: delivery.sender.uid,
+        deliveryId: delivery.id,
+      });
+      console.log('[DeliveryService] Created sender chat:', senderChat);
+
+      // Create chat between picker and receiver (if receiver exists)
+      if (delivery.recipient) {
+        console.log('[DeliveryService] Creating chat between picker and receiver', {
+          pickerUid: user.uid,
+          recipientUid: delivery.recipient.uid,
+          deliveryId: delivery.id,
+        });
+        const receiverChat = await this.chatService.createChat(user.uid, {
+          participantId: delivery.recipient.uid,
+          deliveryId: delivery.id,
+        });
+        console.log('[DeliveryService] Created receiver chat:', receiverChat);
+      } else {
+        console.log('[DeliveryService] No recipient for delivery', delivery.id);
+      }
     }
 
     if (status === 'delivered' && delivery.picker) {
@@ -248,7 +306,7 @@ export class DeliveryService {
       }
     }
 
-    return this.entityToDto(delivery);
+    return await this.entityToDto(delivery);
   }
 
   // Обновить данные доставки
@@ -337,7 +395,7 @@ export class DeliveryService {
       relations: ['sender', 'picker', 'recipient'],
     });
 
-    return this.entityToDto(updatedDelivery!);
+    return await this.entityToDto(updatedDelivery!);
   }
 
   async getAllDeliveredDeliveryRequests(
@@ -362,7 +420,7 @@ export class DeliveryService {
       });
     }
 
-    return deliveries.map((delivery) => this.entityToDto(delivery));
+    return Promise.all(deliveries.map((delivery) => this.entityToDto(delivery)));
   }
 
   async getAllCancelledDeliveryRequests(
@@ -387,16 +445,100 @@ export class DeliveryService {
       });
     }
 
-    return deliveries.map((delivery) => this.entityToDto(delivery));
+    return Promise.all(deliveries.map((delivery) => this.entityToDto(delivery)));
   }
 
-  private entityToDto(delivery: Delivery): DeliveryDto {
+  // Confirm or reject delivery by recipient
+  async confirmRecipient(
+    id: number,
+    uid: string,
+    confirmed: boolean,
+  ): Promise<DeliveryDto | null> {
+    // Find user by UID
+    const user = (await this.userService.findOne(uid)) as UserEntity;
+    if (!user) {
+      return null;
+    }
+
+    // Find delivery
+    const delivery = await this.deliveryRepository.findOne({
+      where: { id },
+      relations: ['sender', 'picker', 'recipient'],
+    });
+
+    if (!delivery) {
+      return null;
+    }
+
+    // Check if user is the recipient
+    if (delivery.recipientId !== user.id) {
+      return null;
+    }
+
+    // If confirming
+    if (confirmed) {
+      delivery.recipientConfirmed = true;
+      await this.deliveryRepository.save(delivery);
+
+      // Notify sender that recipient confirmed
+      if (delivery.sender) {
+        await this.notificationService.createNotification({
+          user_id: delivery.sender.uid,
+          type: 'recipient_confirmed',
+          title: 'Получатель подтвердил доставку',
+          message: `${user.name} подтвердил готовность принять доставку`,
+          read: false,
+        });
+      }
+    } else {
+      // If rejecting, cancel the delivery
+      delivery.status = 'cancelled';
+      await this.deliveryRepository.save(delivery);
+
+      // Notify sender that recipient rejected
+      if (delivery.sender) {
+        await this.notificationService.createNotification({
+          user_id: delivery.sender.uid,
+          type: 'recipient_rejected',
+          title: 'Получатель отклонил доставку',
+          message: `${user.name} отклонил доставку. Заказ отменён.`,
+          read: false,
+        });
+      }
+    }
+
+    return await this.entityToDto(delivery);
+  }
+
+  private async entityToDto(delivery: Delivery): Promise<DeliveryDto> {
+    // Load UIDs if relations are not loaded
+    let senderUid: string | null = delivery.sender?.uid || null;
+    let pickerUid: string | null = delivery.picker?.uid || null;
+    let recipientUid: string | null = delivery.recipient?.uid || null;
+
+    // Fallback: load uid from User entity if relation not loaded
+    if (!senderUid && delivery.senderId) {
+      const sender = await this.userService.findById(delivery.senderId);
+      senderUid = sender?.uid || null;
+    }
+
+    if (!pickerUid && delivery.pickerId) {
+      const picker = await this.userService.findById(delivery.pickerId);
+      pickerUid = picker?.uid || null;
+    }
+
+    if (!recipientUid && delivery.recipientId) {
+      const recipient = await this.userService.findById(delivery.recipientId);
+      recipientUid = recipient?.uid || null;
+    }
+
     return {
       id: delivery.id,
-      senderId: delivery.sender?.uid || null,
-      pickerId: delivery.picker?.uid || null,
-      recipientId: delivery.recipient?.uid || null,
+      senderId: senderUid,
+      pickerId: pickerUid,
+      recipientId: recipientUid,
       recipientPhone: delivery.recipientPhone,
+      recipientConfirmed: delivery.recipientConfirmed || false,
       title: delivery.title,
       description: delivery.description,
       fromAddress: delivery.fromAddress,
@@ -427,6 +569,7 @@ export class DeliveryService {
       pickerId: pickerUid || null,
       recipientId: recipientUid || null,
       recipientPhone: delivery.recipientPhone,
+      recipientConfirmed: delivery.recipientConfirmed || false,
       title: delivery.title,
       description: delivery.description,
       fromAddress: delivery.fromAddress,

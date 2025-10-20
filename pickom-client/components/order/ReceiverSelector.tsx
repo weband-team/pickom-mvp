@@ -1,8 +1,10 @@
 'use client';
 
-import { useState } from 'react';
-import { Box, Stack, Typography, ToggleButtonGroup, ToggleButton } from '@mui/material';
-import { TextInput } from '../ui';
+import { useState, useEffect } from 'react';
+import { Box, Stack, Typography, ToggleButtonGroup, ToggleButton, MenuItem, CircularProgress } from '@mui/material';
+import { TextInput, Select } from '../ui';
+import { getAllUsers } from '@/app/api/user';
+import { User } from '@/app/api/dto/user';
 
 interface ReceiverSelectorProps {
   recipientId: string;
@@ -24,6 +26,25 @@ export function ReceiverSelector({
     if (recipientPhone) return 'phone';
     return 'none';
   });
+
+  const [users, setUsers] = useState<User[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+
+  useEffect(() => {
+    if (receiverType === 'userId') {
+      setLoadingUsers(true);
+      getAllUsers()
+        .then((response) => {
+          setUsers(response.users);
+        })
+        .catch((error) => {
+          console.error('Failed to load users:', error);
+        })
+        .finally(() => {
+          setLoadingUsers(false);
+        });
+    }
+  }, [receiverType]);
 
   const handleTypeChange = (_: React.MouseEvent<HTMLElement>, newType: ReceiverType | null) => {
     if (newType === null) return;
@@ -65,13 +86,22 @@ export function ReceiverSelector({
       </ToggleButtonGroup>
 
       {receiverType === 'userId' && (
-        <TextInput
-          label="Receiver User ID"
-          value={recipientId}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => onRecipientIdChange(e.target.value)}
-          placeholder="Enter user ID"
-          fullWidth
-        />
+        loadingUsers ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
+            <CircularProgress size={24} />
+          </Box>
+        ) : (
+          <Select
+            label="Select Receiver"
+            value={recipientId}
+            onChange={(value) => onRecipientIdChange(value)}
+            options={users.map((user) => ({
+              value: user.uid,
+              label: `${user.name} (${user.email})`,
+            }))}
+            placeholder="Choose a user"
+          />
+        )
       )}
 
       {receiverType === 'phone' && (

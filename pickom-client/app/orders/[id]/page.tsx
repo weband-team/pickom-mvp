@@ -1,19 +1,20 @@
 'use client';
 
-import { use, useState } from 'react';
-import { Box, Typography, IconButton, Chip, Stack, Divider } from '@mui/material';
+import { use, useState, useEffect } from 'react';
+import { Box, Typography, IconButton, Chip, Stack, Divider, CircularProgress, Alert } from '@mui/material';
 import { ArrowBack, LocationOn, CalendarToday, LocalShipping, Refresh } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
 import { MobileContainer } from '@/components/ui/layout/MobileContainer';
 import { UserAvatar, Button } from '@/components/ui';
 import BottomNavigation from '@/components/common/BottomNavigation';
-import { mockOrders } from '@/data/mockOrders';
 import { Order, OrderStatus, getStatusColor, getStatusLabel, canContactPicker, canContactReceiver, canCancelOrder, canReviewOrder } from '@/types/order';
 import { format } from 'date-fns';
 import { CancelOrderDialog } from '@/components/order/CancelOrderDialog';
 import { ReviewDialog } from '@/components/order/ReviewDialog';
 import ReceiverCard from '@/components/order/ReceiverCard';
 import { toast } from 'react-hot-toast';
+import { getDeliveryRequestById, confirmRecipient } from '@/app/api/delivery';
+import { getUser, getCurrentUser } from '@/app/api/user';
 
 interface OrderDetailsPageProps {
   params: Promise<{
@@ -25,15 +26,158 @@ export default function OrderDetailsPage({ params }: OrderDetailsPageProps) {
   const router = useRouter();
   const { orderId } = use(params);
 
-  const initialOrder = mockOrders.find(o => o.id === orderId);
-  const [order, setOrder] = useState<Order | undefined>(initialOrder);
+  const [order, setOrder] = useState<Order | undefined>();
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
+  const [confirmingRecipient, setConfirmingRecipient] = useState(false);
 
-  if (!order) {
+  // Fetch current user
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const { user } = await getCurrentUser();
+        setCurrentUser(user);
+      } catch (err) {
+        console.error('Failed to fetch current user:', err);
+      }
+    };
+    fetchCurrentUser();
+  }, []);
+
+  // Fetch order from backend
+  useEffect(() => {
+    const fetchOrder = async () => {
+      setLoading(true);
+      setError('');
+
+      try {
+        const response = await getDeliveryRequestById(parseInt(orderId));
+        const req = response.data;
+
+        // Map backend status to frontend OrderStatus
+        let frontendStatus: OrderStatus;
+        switch (req.status) {
+          case 'pending':
+            frontendStatus = OrderStatus.PENDING;
+            break;
+          case 'accepted':
+          case 'picked_up':
+            frontendStatus = OrderStatus.ACTIVE;
+            break;
+          case 'delivered':
+            frontendStatus = OrderStatus.COMPLETED;
+            break;
+          case 'cancelled':
+            frontendStatus = OrderStatus.CANCELLED;
+            break;
+          default:
+            frontendStatus = OrderStatus.PENDING;
+        }
+
+        // Fetch picker and recipient details if they exist
+        let pickerData = undefined;
+        let receiverData = undefined;
+
+        if (req.pickerId) {
+          try {
+            const { user: picker } = await getUser(req.pickerId);
+            pickerData = {
+              id: picker.uid,
+              fullName: picker.name || 'Picker',
+              rating: picker.rating || 0,
+              avatarUrl: picker.avatarUrl,
+            };
+          } catch (err) {
+            console.error('Failed to fetch picker:', err);
+          }
+        }
+
+        if (req.recipientId) {
+          try {
+            const { user: recipient } = await getUser(req.recipientId);
+            receiverData = {
+              id: recipient.uid,
+              fullName: recipient.name || 'Recipient',
+              rating: recipient.rating || 0,
+              avatarUrl: recipient.avatarUrl,
+              isPhoneVerified: true, // TODO: get from user data
+              isEmailVerified: true, // TODO: get from user data
+            };
+          } catch (err) {
+            console.error('Failed to fetch recipient:', err);
+          }
+        }
+
+        const mappedOrder: Order = {
+          id: req.id.toString(),
+          trackingNumber: `PCK${req.id.toString().padStart(6, '0')}`,
+          status: frontendStatus,
+          deliveryMethod: 'within-city' as any,
+          packageType: 'SMALL_PARCEL' as any,
+          pickup: {
+            address: req.fromAddress,
+            city: req.fromCity,
+          },
+          dropoff: {
+            address: req.toAddress,
+            city: req.toCity,
+          },
+          createdAt: new Date(req.createdAt),
+          pickupDateTime: new Date(req.createdAt),
+          price: req.price,
+          currency: 'USD',
+          picker: pickerData,
+          receiver: receiverData,
+          receiverPhone: req.recipientPhone || undefined,
+          recipientConfirmed: req.recipientConfirmed,
+          notes: req.notes || undefined,
+          packageDescription: req.description || undefined,
+        };
+
+        setOrder(mappedOrder);
+      } catch (err: any) {
+        console.error('Failed to fetch order:', err);
+        setError('Failed to load order. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrder();
+  }, [orderId]);
+
+  if (loading) {
     return (
-      <Box sx={{ p: 3 }}>
-        <Typography>Order not found</Typography>
+      <Box
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          bgcolor: 'background.default',
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error || !order) {
+    return (
+      <Box
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          bgcolor: 'background.default',
+          p: 2,
+        }}
+      >
+        <Alert severity="error">{error || 'Order not found'}</Alert>
       </Box>
     );
   }
@@ -42,15 +186,39 @@ export default function OrderDetailsPage({ params }: OrderDetailsPageProps) {
     router.back();
   };
 
-  const handleContactPicker = () => {
-    if (order.picker) {
-      router.push(`/chat/${order.picker.id}`);
+  const handleContactPicker = async () => {
+    if (!order.picker) return;
+
+    try {
+      // Create/get chat with picker for this delivery
+      const { createChat } = await import('@/app/api/chat');
+      const response = await createChat({
+        participantId: order.picker.id,
+        deliveryId: parseInt(order.id),
+      });
+      const { chatId } = response.data;
+      router.push(`/chat/${chatId}`);
+    } catch (err) {
+      console.error('Failed to create chat:', err);
+      toast.error('Failed to open chat');
     }
   };
 
-  const handleContactReceiver = () => {
-    if (order.receiver) {
-      router.push(`/chat/${order.receiver.id}`);
+  const handleContactReceiver = async () => {
+    if (!order.receiver) return;
+
+    try {
+      // Create/get chat with receiver for this delivery
+      const { createChat } = await import('@/app/api/chat');
+      const response = await createChat({
+        participantId: order.receiver.id,
+        deliveryId: parseInt(order.id),
+      });
+      const { chatId } = response.data;
+      router.push(`/chat/${chatId}`);
+    } catch (err) {
+      console.error('Failed to create chat:', err);
+      toast.error('Failed to open chat');
     }
   };
 
@@ -90,6 +258,52 @@ export default function OrderDetailsPage({ params }: OrderDetailsPageProps) {
     toast.success('Redirecting to create new order...');
     setTimeout(() => router.push('/delivery-methods'), 1000);
   };
+
+  const handleConfirmRecipient = async () => {
+    if (!order) return;
+
+    setConfirmingRecipient(true);
+    try {
+      await confirmRecipient(parseInt(order.id), true);
+      toast.success('Delivery confirmed successfully!');
+
+      // Refresh order data
+      const response = await getDeliveryRequestById(parseInt(orderId));
+      const req = response.data;
+      setOrder({
+        ...order,
+        recipientConfirmed: req.recipientConfirmed,
+      });
+    } catch (err: any) {
+      console.error('Failed to confirm recipient:', err);
+      toast.error('Failed to confirm delivery. Please try again.');
+    } finally {
+      setConfirmingRecipient(false);
+    }
+  };
+
+  const handleRejectRecipient = async () => {
+    if (!order) return;
+
+    setConfirmingRecipient(true);
+    try {
+      await confirmRecipient(parseInt(order.id), false);
+      toast.success('Delivery rejected. Order has been cancelled.');
+
+      // Redirect to orders list after a short delay
+      setTimeout(() => router.push('/orders'), 1500);
+    } catch (err: any) {
+      console.error('Failed to reject recipient:', err);
+      toast.error('Failed to reject delivery. Please try again.');
+      setConfirmingRecipient(false);
+    }
+  };
+
+  // Check if current user is the recipient
+  const isRecipient = currentUser && order?.receiver?.id === currentUser.uid;
+  const showConfirmationButtons = isRecipient &&
+    !order?.recipientConfirmed &&
+    order?.status === OrderStatus.PENDING;
 
   return (
     <Box
@@ -375,6 +589,35 @@ export default function OrderDetailsPage({ params }: OrderDetailsPageProps) {
               }}
             >
               <Stack spacing={1}>
+                {showConfirmationButtons && (
+                  <>
+                    <Alert severity="info" sx={{ mb: 1 }}>
+                      You have been selected as the recipient. Please confirm or reject this delivery.
+                    </Alert>
+                    <Button
+                      variant="contained"
+                      fullWidth
+                      onClick={handleConfirmRecipient}
+                      disabled={confirmingRecipient}
+                    >
+                      {confirmingRecipient ? 'Confirming...' : 'Confirm Delivery'}
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      fullWidth
+                      onClick={handleRejectRecipient}
+                      color="error"
+                      disabled={confirmingRecipient}
+                    >
+                      {confirmingRecipient ? 'Rejecting...' : 'Reject Delivery'}
+                    </Button>
+                  </>
+                )}
+                {isRecipient && order?.recipientConfirmed && order?.status === OrderStatus.PENDING && (
+                  <Alert severity="success" sx={{ mb: 1 }}>
+                    You have confirmed this delivery. Waiting for sender to proceed.
+                  </Alert>
+                )}
                 {canContactPicker(order) && (
                   <Button
                     variant="contained"
@@ -384,7 +627,7 @@ export default function OrderDetailsPage({ params }: OrderDetailsPageProps) {
                     Contact Picker
                   </Button>
                 )}
-                {canCancelOrder(order) && (
+                {canCancelOrder(order) && !showConfirmationButtons && (
                   <Button
                     variant="outlined"
                     fullWidth

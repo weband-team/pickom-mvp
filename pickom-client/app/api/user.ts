@@ -14,6 +14,11 @@ export interface UpdateUserRequest {
   };
 }
 
+export const getAllUsers = async (): Promise<{ users: User[] }> => {
+  const response = await protectedFetch.get('/user');
+  return response.data;
+};
+
 export const getUser = async (uid: string): Promise<{ user: User }> => {
   const response = await protectedFetch.get(`/user/${uid}`);
   return response.data;

@@ -8,6 +8,9 @@ import BottomNavigation from '@/components/common/BottomNavigation';
 import { useNotifications } from '../hooks/useNotifications';
 import { formatDistanceToNow } from 'date-fns';
 import { enUS } from 'date-fns/locale';
+import { useState, useEffect } from 'react';
+import { getCurrentUser } from '../api/user';
+import { getDeliveryRequestById } from '../api/delivery';
 
 export default function NotificationsPage() {
   const router = useRouter();
@@ -20,6 +23,51 @@ export default function NotificationsPage() {
     markAsRead,
     markAllAsRead
   } = useNotifications();
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+  const [currentUserRole, setCurrentUserRole] = useState<string>('');
+
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const response = await getCurrentUser();
+        setCurrentUserRole(response.user.role);
+        setCurrentUserId(response.user.id);
+      } catch (err) {
+        console.error('Failed to fetch current user:', err);
+      }
+    };
+
+    fetchCurrentUser();
+  }, []);
+
+  const handleNotificationClick = async (notification: any) => {
+    if (!notification.read) markAsRead(notification.id);
+
+    // Check if user is recipient for this delivery
+    if (notification.related_delivery_id) {
+      try {
+        const deliveryResponse = await getDeliveryRequestById(notification.related_delivery_id);
+        const delivery = deliveryResponse.data;
+
+        // If current user is recipient, redirect to delivery-details
+        const isRecipient = delivery.recipientId === currentUserId;
+
+        if (isRecipient) {
+          router.push(`/delivery-details/${notification.related_delivery_id}`);
+        } else if (notification.type === 'offer_received') {
+          router.push(`/orders/${notification.related_delivery_id}/offers`);
+        } else if (currentUserRole === 'sender') {
+          router.push(`/delivery-details/${notification.related_delivery_id}`);
+        } else {
+          router.push(`/orders/${notification.related_delivery_id}`);
+        }
+      } catch (err) {
+        console.error('Failed to fetch delivery:', err);
+        // Fallback to orders page
+        router.push(`/orders/${notification.related_delivery_id}`);
+      }
+    }
+  };
 
   const getTypeIcon = (type: string) => {
     switch (type) {
@@ -28,6 +76,8 @@ export default function NotificationsPage() {
       case 'status_update': return '📦';
       case 'incoming_delivery': return '📥';
       case 'new_delivery': return '🚚';
+      case 'recipient_confirmed': return '✅';
+      case 'recipient_rejected': return '❌';
       default: return '🔔';
     }
   };
@@ -131,19 +181,7 @@ export default function NotificationsPage() {
                   {notifications.map((notification) => (
                     <Box
                       key={notification.id}
-                      onClick={() => {
-                        if (!notification.read) markAsRead(notification.id);
-
-                        // Navigate based on notification type
-                        if (notification.type === 'offer_received' && notification.related_delivery_id) {
-                          router.push(`/orders/${notification.related_delivery_id}/offers`);
-                        } else if (notification.type === 'new_delivery' && notification.related_delivery_id) {
-                          // For new delivery invitation - picker should see delivery details
-                          router.push(`/delivery-details/${notification.related_delivery_id}`);
-                        } else if (notification.related_delivery_id) {
-                          router.push(`/delivery-details/${notification.related_delivery_id}`);
-                        }
-                      }}
+                      onClick={() => handleNotificationClick(notification)}
                       sx={{
                         p: 2,
                         mb: 1.5,

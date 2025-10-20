@@ -65,7 +65,7 @@ export default function ReceiverCard({
             </Box>
 
             <Typography variant="body2" color="text.secondary">
-              ⭐ {receiver.recipientUser.rating.toFixed(1)}
+              ⭐ {typeof receiver.recipientUser.rating === 'number' ? receiver.recipientUser.rating.toFixed(1) : '0.0'}
             </Typography>
           </Box>
         </Stack>

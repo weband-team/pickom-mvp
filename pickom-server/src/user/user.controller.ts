@@ -16,6 +16,12 @@ import { UserDto } from './dto/user.dto';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
+  @Get()
+  async getAllUsers() {
+    const users = await this.userService.findAll();
+    return { users };
+  }
+
   @Get(':uid/balance')
   async getUserBalance(@Param('uid') uid: string) {
     const balance = await this.userService.findUserBalance(uid);

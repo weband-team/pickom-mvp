@@ -165,7 +165,7 @@ export class NotificationService {
     return await this.createNotification({
       user_id: recipientId,
       title: 'Вам отправили посылку',
-      message: `${senderName} отправил вам посылку. Курьер уже в пути.`,
+      message: `${senderName} хочет отправить вам посылку. Пожалуйста, подтвердите получение.`,
       type: 'incoming_delivery',
       read: false,
       related_delivery_id: deliveryId,

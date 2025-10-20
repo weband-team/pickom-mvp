@@ -48,6 +48,7 @@ export interface Order {
   picker?: OrderPicker;
   receiver?: OrderReceiver;
   receiverPhone?: string;
+  recipientConfirmed?: boolean;
   notes?: string;
   packageDescription?: string;
   review?: {

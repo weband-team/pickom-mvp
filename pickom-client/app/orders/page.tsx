@@ -115,13 +115,23 @@ export default function OrdersPage() {
   };
 
   const handleViewDetails = (orderId: string) => {
-    router.push(`/orders/${orderId}`);
+    router.push(`/delivery-details/${orderId}`);
   };
 
-  const handleContactPicker = (orderId: string) => {
+  const handleContactPicker = async (orderId: string) => {
     const order = orders.find(o => o.id === orderId);
-    if (order?.picker) {
-      router.push(`/chat/${order.picker.id}`);
+    if (!order?.picker) return;
+
+    try {
+      const { createChat } = await import('@/app/api/chat');
+      const response = await createChat({
+        participantId: order.picker.id,
+        deliveryId: parseInt(orderId),
+      });
+      const { chatId } = response.data;
+      router.push(`/chat/${chatId}`);
+    } catch (err) {
+      console.error('Failed to create chat:', err);
     }
   };
 

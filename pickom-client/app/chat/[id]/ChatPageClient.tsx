@@ -63,7 +63,7 @@ export function ChatPageClient({ chatId }: ChatPageClientProps) {
           const chatsResponse = await getChatsByDeliveryId(chatData.deliveryId);
           const allChats = chatsResponse.data;
 
-          const senderChat = allChats.find(chat => chat.senderId !== null);
+          const senderChat = allChats.find(chat => chat.senderId !== null && chat.recipientId === null);
           const receiverChat = allChats.find(chat => chat.recipientId !== null);
 
           if (senderChat) setSenderChatId(senderChat.id);

@@ -64,6 +64,14 @@ export class UserService {
     return this.subtractFromBalance(uid, amount);
   }
 
+  async findById(id: number): Promise<UserEntity | null> {
+    const user = await this.userRepository.findOne({
+      where: { id },
+    });
+
+    return user;
+  }
+
   async findOne(uid: string): Promise<UserDto | null> {
     const user = await this.userRepository.findOne({
       where: { uid },
