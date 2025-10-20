@@ -67,12 +67,8 @@ interface DeliveryFormState {
     preferredDeliveryDate: Date | null;
   };
   international: {
-    pickupCountry: string;
-    pickupCity: string;
-    pickupAddress: string;
-    destinationCountry: string;
-    destinationCity: string;
-    destinationAddress: string;
+    fromLocation: LocationData | null;
+    toLocation: LocationData | null;
     deliveryDate: Date | null;
   };
 }
@@ -109,12 +105,8 @@ const initialState: DeliveryFormState = {
     preferredDeliveryDate: null,
   },
   international: {
-    pickupCountry: '',
-    pickupCity: '',
-    pickupAddress: '',
-    destinationCountry: '',
-    destinationCity: '',
-    destinationAddress: '',
+    fromLocation: null,
+    toLocation: null,
     deliveryDate: null,
   },
 };
@@ -444,7 +436,7 @@ export default function SendPackagePage() {
   // Check if each tab is filled
   const isWithinCityFilled = state.withinCity.fromLocation && state.withinCity.toLocation;
   const isInterCityFilled = state.interCity.fromLocation && state.interCity.toLocation;
-  const isInternationalFilled = state.international.pickupCountry && state.international.pickupCity;
+  const isInternationalFilled = state.international.fromLocation && state.international.toLocation;
 
   const canRequestPicker = (() => {
     const { selectedMethod, withinCity, interCity, international } = state;
@@ -455,9 +447,7 @@ export default function SendPackagePage() {
       case 'inter-city':
         return interCity.fromLocation && interCity.toLocation && interCity.preferredDeliveryDate;
       case 'international':
-        return international.pickupCountry && international.pickupCity && international.pickupAddress &&
-               international.destinationCountry && international.destinationCity &&
-               international.destinationAddress && international.deliveryDate;
+        return international.fromLocation && international.toLocation && international.deliveryDate;
       default:
         return false;
     }
@@ -477,12 +467,8 @@ export default function SendPackagePage() {
   };
 
   const clearInternational = () => {
-    dispatch({ type: 'SET_INTERNATIONAL_FIELD', field: 'pickupCountry', value: '' });
-    dispatch({ type: 'SET_INTERNATIONAL_FIELD', field: 'pickupCity', value: '' });
-    dispatch({ type: 'SET_INTERNATIONAL_FIELD', field: 'pickupAddress', value: '' });
-    dispatch({ type: 'SET_INTERNATIONAL_FIELD', field: 'destinationCountry', value: '' });
-    dispatch({ type: 'SET_INTERNATIONAL_FIELD', field: 'destinationCity', value: '' });
-    dispatch({ type: 'SET_INTERNATIONAL_FIELD', field: 'destinationAddress', value: '' });
+    dispatch({ type: 'SET_INTERNATIONAL_FIELD', field: 'fromLocation', value: null });
+    dispatch({ type: 'SET_INTERNATIONAL_FIELD', field: 'toLocation', value: null });
     dispatch({ type: 'SET_INTERNATIONAL_FIELD', field: 'deliveryDate', value: null });
   };
 
@@ -503,18 +489,8 @@ export default function SendPackagePage() {
           toLocation = state.interCity.toLocation;
           break;
         case 'international':
-          fromLocation = {
-            lat: 0,
-            lng: 0,
-            address: `${state.international.pickupAddress}, ${state.international.pickupCity}, ${state.international.pickupCountry}`,
-            city: state.international.pickupCity
-          };
-          toLocation = {
-            lat: 0,
-            lng: 0,
-            address: `${state.international.destinationAddress}, ${state.international.destinationCity}, ${state.international.destinationCountry}`,
-            city: state.international.destinationCity
-          };
+          fromLocation = state.international.fromLocation;
+          toLocation = state.international.toLocation;
           break;
       }
 
@@ -744,77 +720,26 @@ export default function SendPackagePage() {
                   )}
                 </Box>
 
-                <Select
-                  label="Pickup Country"
-                  options={countries}
-                  value={state.international.pickupCountry}
-                  onChange={(value) => dispatch({
-                    type: 'SET_INTERNATIONAL_FIELD',
-                    field: 'pickupCountry',
-                    value
-                  })}
-                  placeholder="Select pickup country"
-                />
-
-                <TextInput
-                  label="Pickup City"
-                  placeholder="Enter pickup city"
-                  value={state.international.pickupCity}
-                  onChange={(e) => dispatch({
-                    type: 'SET_INTERNATIONAL_FIELD',
-                    field: 'pickupCity',
-                    value: e.target.value
-                  })}
-                  fullWidth
-                />
-
-                <TextInput
-                  label="Pickup Address"
-                  placeholder="Enter pickup address"
-                  value={state.international.pickupAddress}
-                  onChange={(e) => dispatch({
-                    type: 'SET_INTERNATIONAL_FIELD',
-                    field: 'pickupAddress',
-                    value: e.target.value
-                  })}
-                  fullWidth
-                />
-
-                <Select
-                  label="Destination Country"
-                  options={countries}
-                  value={state.international.destinationCountry}
-                  onChange={(value) => dispatch({
-                    type: 'SET_INTERNATIONAL_FIELD',
-                    field: 'destinationCountry',
-                    value
-                  })}
-                  placeholder="Select destination country"
-                />
-
-                <TextInput
-                  label="Destination City"
-                  placeholder="Enter destination city"
-                  value={state.international.destinationCity}
-                  onChange={(e) => dispatch({
-                    type: 'SET_INTERNATIONAL_FIELD',
-                    field: 'destinationCity',
-                    value: e.target.value
-                  })}
-                  fullWidth
-                />
-
-                <TextInput
-                  label="Destination Address"
-                  placeholder="Enter destination address"
-                  value={state.international.destinationAddress}
-                  onChange={(e) => dispatch({
-                    type: 'SET_INTERNATIONAL_FIELD',
-                    field: 'destinationAddress',
-                    value: e.target.value
-                  })}
-                  fullWidth
-                />
+                <Box>
+                  <Typography variant="subtitle2" sx={{ mb: 1, color: 'text.secondary' }}>
+                    Select pickup and delivery locations (worldwide)
+                  </Typography>
+                  <DualLocationPicker
+                    deliveryType="international"
+                    onFromLocationSelect={(location) => dispatch({
+                      type: 'SET_INTERNATIONAL_FIELD',
+                      field: 'fromLocation',
+                      value: location
+                    })}
+                    onToLocationSelect={(location) => dispatch({
+                      type: 'SET_INTERNATIONAL_FIELD',
+                      field: 'toLocation',
+                      value: location
+                    })}
+                    initialFromLocation={state.international.fromLocation || undefined}
+                    initialToLocation={state.international.toLocation || undefined}
+                  />
+                </Box>
 
                 <DateTimePicker
                   type="datetime"

@@ -131,6 +131,24 @@ export default function DualLocationPicker({
         (coord: number[]) => [coord[1], coord[0]] // OSRM returns [lng, lat], we need [lat, lng]
       );
 
+      // For international deliveries, check if the route actually reaches the destination
+      if (restrictionType === null && coordinates.length > 0) {
+        const lastPoint = coordinates[coordinates.length - 1];
+        const distanceToDestination = Math.sqrt(
+          Math.pow(lastPoint[0] - to.lat, 2) + Math.pow(lastPoint[1] - to.lng, 2)
+        );
+
+        // If route doesn't reach destination (more than ~1km away), don't show it
+        // 0.01 degrees is roughly 1km
+        if (distanceToDestination > 0.01) {
+          console.log('Route does not reach destination, hiding route');
+          setRouteCoordinates([]);
+          setRouteInfo(null);
+          setCalculatingRoute(false);
+          return;
+        }
+      }
+
       // Calculate distance and duration
       const distanceKm = (route.distance / 1000).toFixed(1);
       const durationMin = Math.round(route.duration / 60);
@@ -150,12 +168,21 @@ export default function DualLocationPicker({
       }
     } catch (err) {
       console.error('Route calculation error:', err);
-      setError('Could not calculate route. Showing straight line.');
-      // Fallback to straight line
-      setRouteCoordinates([
-        [from.lat, from.lng],
-        [to.lat, to.lng]
-      ]);
+
+      // For international delivery (no restriction), silently fail without showing error
+      // For within-city and inter-city, show error and fallback to straight line
+      if (restrictionType !== null) {
+        setError('Could not calculate route. Showing straight line.');
+        // Fallback to straight line
+        setRouteCoordinates([
+          [from.lat, from.lng],
+          [to.lat, to.lng]
+        ]);
+      } else {
+        // For international, just don't show any route
+        setRouteCoordinates([]);
+      }
+
       setRouteInfo(null);
     } finally {
       setCalculatingRoute(false);
@@ -174,7 +201,7 @@ export default function DualLocationPicker({
   }, [fromLocation, toLocation]);
 
   // Reverse geocoding using Nominatim (OpenStreetMap)
-  const getAddressFromCoordinates = async (lat: number, lng: number): Promise<{ address: string; city?: string; country?: string }> => {
+  const getAddressFromCoordinates = async (lat: number, lng: number): Promise<{ address: string; city?: string; country?: string; isLand: boolean }> => {
     try {
       const response = await fetch(
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
@@ -186,21 +213,40 @@ export default function DualLocationPicker({
       );
       const data = await response.json();
 
+      // If geocoding failed (e.g., ocean/water), return as not land
       if (data.error) {
-        throw new Error(data.error);
+        return {
+          address: `${lat.toFixed(6)}, ${lng.toFixed(6)}`,
+          city: undefined,
+          country: undefined,
+          isLand: false
+        };
       }
 
       const address = data.display_name || `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
       const city = data.address?.city || data.address?.town || data.address?.village || data.address?.state || undefined;
       const country = data.address?.country || undefined;
 
-      return { address, city, country };
+      // Check if location is on land (has address components or is not water)
+      const isLand = !!(data.address && (
+        data.address.country ||
+        data.address.city ||
+        data.address.town ||
+        data.address.village ||
+        data.address.state ||
+        data.address.county ||
+        data.address.road ||
+        data.address.postcode
+      )) && data.type !== 'sea' && data.type !== 'ocean';
+
+      return { address, city, country, isLand };
     } catch (error) {
       console.error('Geocoding error:', error);
       return {
         address: `${lat.toFixed(6)}, ${lng.toFixed(6)}`,
         city: undefined,
-        country: undefined
+        country: undefined,
+        isLand: false
       };
     }
   };
@@ -213,7 +259,14 @@ export default function DualLocationPicker({
         setError('');
 
         try {
-          const { address, city, country } = await getAddressFromCoordinates(lat, lng);
+          const { address, city, country, isLand } = await getAddressFromCoordinates(lat, lng);
+
+          // For international delivery, check if location is on land
+          if (!restrictionType && !isLand) {
+            setError('Please select a location on land. Water/ocean locations are not allowed.');
+            setLoading(false);
+            return;
+          }
 
           // Check restriction based on type
           if (restrictionType && restrictionValue) {
