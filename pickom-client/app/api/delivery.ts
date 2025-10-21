@@ -2,16 +2,26 @@ import { AxiosResponse } from 'axios';
 import { basicFetch, protectedFetch } from './base';
 
 /**
+ * Location interface for delivery addresses
+ */
+export interface Location {
+  lat: number;
+  lng: number;
+  address: string;
+  city?: string;
+  country?: string;
+  placeId?: string;
+}
+
+/**
  * Delivery Request interfaces
  */
 export interface CreateDeliveryRequest {
   title: string;
   description?: string;
-  fromAddress: string;
-  fromCity?: string;
-  toAddress: string;
-  toCity?: string;
-  deliveryType?: 'within-city' | 'inter-city';
+  fromLocation: Location;
+  toLocation: Location;
+  deliveryType?: 'within-city' | 'inter-city' | 'international';
   price: number;
   size: 'small' | 'medium' | 'large';
   weight?: number;
@@ -31,11 +41,9 @@ export interface DeliveryRequest {
   recipientConfirmed?: boolean;
   title: string;
   description?: string;
-  fromAddress: string;
-  fromCity?: string;
-  toAddress: string;
-  toCity?: string;
-  deliveryType?: 'within-city' | 'inter-city';
+  fromLocation: Location | null;
+  toLocation: Location | null;
+  deliveryType?: 'within-city' | 'inter-city' | 'international';
   price: number;
   size: 'small' | 'medium' | 'large';
   weight?: number;

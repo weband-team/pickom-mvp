@@ -20,6 +20,12 @@ import BottomNavigation from '@/components/common/BottomNavigation';
 import { ThemeToggle } from '@/components/common/ThemeToggle';
 import { handleMe } from '@/app/api/auth';
 import { updateUser } from '@/app/api/user';
+import dynamic from 'next/dynamic';
+
+const LocationPicker = dynamic(() => import('@/components/LocationPicker'), {
+  ssr: false,
+  loading: () => <Box sx={{ height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><CircularProgress /></Box>
+});
 
 interface EditFormData {
   name: string;
@@ -135,6 +141,16 @@ export default function EditProfilePage() {
     }
 
     // Clear messages when user starts typing
+    setError('');
+    setSuccess('');
+  };
+
+  const handleLocationSelect = (lat: number, lng: number) => {
+    setFormData({
+      ...formData,
+      locationLat: lat.toString(),
+      locationLng: lng.toString(),
+    });
     setError('');
     setSuccess('');
   };
@@ -374,58 +390,20 @@ export default function EditProfilePage() {
                       }}
                     />
 
-                    <Typography variant="subtitle2" sx={{ mt: 1, mb: -1, color: 'text.secondary' }}>
-                      Location Coordinates
-                    </Typography>
+                    <Box sx={{ mt: 2, mb: 1 }}>
+                      <Typography variant="subtitle2" sx={{ mb: 2, color: 'text.secondary' }}>
+                        Your Location
+                      </Typography>
 
-                    <TextField
-                      label="Latitude"
-                      variant="outlined"
-                      fullWidth
-                      type="number"
-                      value={formData.locationLat}
-                      onChange={handleInputChange('locationLat')}
-                      disabled={saving}
-                      placeholder="52.2297"
-                      inputProps={{ step: 'any' }}
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          backgroundColor: 'background.paper',
+                      <LocationPicker
+                        onLocationSelect={handleLocationSelect}
+                        initialPosition={
+                          formData.locationLat && formData.locationLng
+                            ? { lat: parseFloat(formData.locationLat), lng: parseFloat(formData.locationLng) }
+                            : undefined
                         }
-                      }}
-                    />
-
-                    <TextField
-                      label="Longitude"
-                      variant="outlined"
-                      fullWidth
-                      type="number"
-                      value={formData.locationLng}
-                      onChange={handleInputChange('locationLng')}
-                      disabled={saving}
-                      placeholder="21.0122"
-                      inputProps={{ step: 'any' }}
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          backgroundColor: 'background.paper',
-                        }
-                      }}
-                    />
-
-                    <TextField
-                      label="Place ID (optional)"
-                      variant="outlined"
-                      fullWidth
-                      value={formData.locationPlaceId}
-                      onChange={handleInputChange('locationPlaceId')}
-                      disabled={saving}
-                      placeholder="ChIJAZ-GmmbOHkcR_NPqiCq-8HI"
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          backgroundColor: 'background.paper',
-                        }
-                      }}
-                    />
+                      />
+                    </Box>
 
                     {/* Save Button */}
                     <Button

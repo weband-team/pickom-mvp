@@ -4,7 +4,7 @@ export class AddRecipientPhoneToDelivery1760651878867 implements MigrationInterf
     name = 'AddRecipientPhoneToDelivery1760651878867'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`ALTER TABLE "deliveries" ADD "recipient_phone" character varying(20)`);
+        await queryRunner.query(`ALTER TABLE "deliveries" ADD IF NOT EXISTS "recipient_phone" character varying(20)`);
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {

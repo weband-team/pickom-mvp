@@ -7,10 +7,20 @@ export interface DeliveryDto {
   recipientConfirmed?: boolean;
   title: string;
   description?: string | null;
-  fromAddress: string;
-  fromCity?: string | null;
-  toAddress: string;
-  toCity?: string | null;
+  fromLocation: {
+    lat: number;
+    lng: number;
+    address: string;
+    city?: string;
+    placeId?: string;
+  } | null;
+  toLocation: {
+    lat: number;
+    lng: number;
+    address: string;
+    city?: string;
+    placeId?: string;
+  } | null;
   deliveryType?: 'within-city' | 'inter-city';
   price: number;
   size: 'small' | 'medium' | 'large';

@@ -4,8 +4,17 @@ export class AddRecipientIdToChatSession1760652580193 implements MigrationInterf
     name = 'AddRecipientIdToChatSession1760652580193'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`ALTER TABLE "chat_sessions" ADD "recipient_id" integer`);
-        await queryRunner.query(`ALTER TABLE "chat_sessions" ADD CONSTRAINT "FK_chat_sessions_recipient" FOREIGN KEY ("recipient_id") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "chat_sessions" ADD IF NOT EXISTS "recipient_id" integer`);
+        // Check if constraint already exists
+        const hasConstraint = await queryRunner.query(`
+            SELECT constraint_name
+            FROM information_schema.table_constraints
+            WHERE table_name = 'chat_sessions'
+            AND constraint_name = 'FK_chat_sessions_recipient'
+        `);
+        if (!hasConstraint || hasConstraint.length === 0) {
+            await queryRunner.query(`ALTER TABLE "chat_sessions" ADD CONSTRAINT "FK_chat_sessions_recipient" FOREIGN KEY ("recipient_id") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        }
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {

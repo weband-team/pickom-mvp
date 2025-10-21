@@ -39,17 +39,23 @@ export class Delivery {
   @Column({ type: 'text', nullable: true })
   description: string | null;
 
-  @Column({ name: 'from_address' })
-  fromAddress: string;
+  @Column({ type: 'jsonb', name: 'from_location', nullable: true })
+  fromLocation: {
+    lat: number;
+    lng: number;
+    address: string;
+    city?: string;
+    placeId?: string;
+  } | null;
 
-  @Column({ type: 'text', name: 'from_city', nullable: true })
-  fromCity: string | null;
-
-  @Column({ name: 'to_address' })
-  toAddress: string;
-
-  @Column({ type: 'text', name: 'to_city', nullable: true })
-  toCity: string | null;
+  @Column({ type: 'jsonb', name: 'to_location', nullable: true })
+  toLocation: {
+    lat: number;
+    lng: number;
+    address: string;
+    city?: string;
+    placeId?: string;
+  } | null;
 
   @Column({
     type: 'enum',
