@@ -21,6 +21,8 @@ import { OfferService } from 'src/offer/offer.service';
 import { TrakingService } from 'src/traking/traking.service';
 import { CreateDeliveryDto } from './dto/create-delivery.dto';
 import { UpdateDeliveryDto } from './dto/update-delivery.dto';
+import { FindReceiverDto } from 'src/user/dto/find-receiver.dto';
+import { ConfirmDeliveryDto } from './dto/confirm-delivery.dto';
 
 @Controller('delivery')
 export class DeliveryController {
@@ -44,6 +46,24 @@ export class DeliveryController {
         ...picker,
         price: picker.basePrice || 15.0, // Use picker's base price, default to 15.00 zł
       }));
+  }
+
+  // Найти получателя по email или UID
+  @Post('find-receiver')
+  @UseGuards(FirebaseAuthGuard)
+  async findReceiver(@Body() dto: FindReceiverDto) {
+    const user = await this.userService.findByEmailOrUid(dto.emailOrUid);
+
+    if (!user) {
+      return null;
+    }
+
+    return {
+      uid: user.uid,
+      name: user.name,
+      email: user.email,
+      avatarUrl: user.avatarUrl,
+    };
   }
 
   // Создать запрос на доставку (POST /delivery/requests)
@@ -184,5 +204,40 @@ export class DeliveryController {
       throw new NotFoundException('Delivery not found or access denied');
     }
     return result;
+  }
+
+  // Confirm receipt of delivery by receiver
+  @Post(':id/confirm')
+  @UseGuards(FirebaseAuthGuard)
+  async confirmDelivery(
+    @Param('id') id: string,
+    @Req() req: ReqWithUser,
+    @Body() dto: ConfirmDeliveryDto,
+  ) {
+    const { uid } = req.user as { uid: string };
+    return await this.deliveryService.confirmDeliveryByReceiver(
+      parseInt(id),
+      uid,
+      dto,
+    );
+  }
+
+  // Get incoming deliveries for receiver
+  @Get('incoming')
+  @UseGuards(FirebaseAuthGuard)
+  async getIncomingDeliveries(@Req() req: ReqWithUser) {
+    const { uid } = req.user as { uid: string };
+    const user = await this.userService.findOne(uid);
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Find all deliveries where user is recipient
+    const deliveries = await this.deliveryService.getIncomingDeliveries(
+      user.id,
+    );
+
+    return deliveries;
   }
 }

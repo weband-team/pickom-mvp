@@ -393,6 +393,86 @@ export class DeliveryService {
     return await this.entityToDto(updatedDelivery!);
   }
 
+  async getIncomingDeliveries(userId: number): Promise<DeliveryDto[]> {
+    const deliveries = await this.deliveryRepository.find({
+      where: { recipientId: userId },
+      relations: ['sender', 'picker', 'recipient'],
+      order: { createdAt: 'DESC' },
+    });
+
+    return Promise.all(
+      deliveries.map((delivery) =>
+        this.toDto(
+          delivery,
+          delivery.sender.uid,
+          delivery.picker?.uid,
+          delivery.recipient?.uid,
+        ),
+      ),
+    );
+  }
+
+  async confirmDeliveryByReceiver(
+    deliveryId: number,
+    receiverUid: string,
+    dto: any, // ConfirmDeliveryDto
+  ): Promise<DeliveryDto> {
+    // Get delivery
+    const delivery = await this.deliveryRepository.findOne({
+      where: { id: deliveryId },
+      relations: ['sender', 'picker', 'recipient'],
+    });
+
+    if (!delivery) {
+      throw new Error('Delivery not found');
+    }
+
+    // Validate receiver
+    const receiver = (await this.userService.findOne(
+      receiverUid,
+    )) as UserEntity;
+    if (!receiver || delivery.recipientId !== receiver.id) {
+      throw new Error('Only the recipient can confirm this delivery');
+    }
+
+    // Validate status
+    if (delivery.status !== 'picked_up') {
+      throw new Error('Delivery must be picked up before confirmation');
+    }
+
+    // Handle issue report
+    if (dto.reportIssue) {
+      delivery.status = 'cancelled';
+      delivery.notes = `Issue reported by receiver: ${dto.issueDescription}`;
+      // TODO: Notify picker and sender about issue
+    } else {
+      // Confirm delivery
+      delivery.status = 'delivered';
+      delivery.recipientConfirmed = true;
+      if (dto.notes) {
+        delivery.notes = dto.notes;
+      }
+
+      // Notify picker
+      if (delivery.picker) {
+        await this.notificationService.notifyPickerConfirmed(
+          delivery.picker.uid,
+          delivery.id,
+          receiver.name,
+        );
+      }
+    }
+
+    const saved = await this.deliveryRepository.save(delivery);
+
+    return this.toDto(
+      saved,
+      delivery.sender.uid,
+      delivery.picker?.uid,
+      delivery.recipient?.uid,
+    );
+  }
+
   async getAllDeliveredDeliveryRequests(
     uid: string,
     role: string,

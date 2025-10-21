@@ -33,6 +33,8 @@ export class Notification {
       'new_message',
       'recipient_confirmed',
       'recipient_rejected',
+      'delivery_picked_up',
+      'delivery_confirmed',
     ],
   })
   type:
@@ -43,7 +45,9 @@ export class Notification {
     | 'incoming_delivery'
     | 'new_message'
     | 'recipient_confirmed'
-    | 'recipient_rejected';
+    | 'recipient_rejected'
+    | 'delivery_picked_up'
+    | 'delivery_confirmed';
 
   @Column({ type: 'boolean', default: false })
   read: boolean;

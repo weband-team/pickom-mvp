@@ -14,7 +14,7 @@ import {
 } from '../../components/ui';
 import { DeliveryMethodType } from '../../types/delivery';
 import BottomNavigation from '../../components/common/BottomNavigation';
-import { getMyDeliveryRequests } from '../api/delivery';
+import { getMyDeliveryRequests, getIncomingDeliveries } from '../api/delivery';
 import { useNavigationBadges } from '../../hooks/useNavigationBadges';
 import dynamic from 'next/dynamic';
 
@@ -158,6 +158,12 @@ function deliveryFormReducer(state: DeliveryFormState, action: DeliveryFormActio
 }
 
 interface MyDeliveriesTabProps {
+  deliveries: DeliveryRequest[];
+  loading: boolean;
+  onRefresh: () => void;
+}
+
+interface IncomingDeliveriesTabProps {
   deliveries: DeliveryRequest[];
   loading: boolean;
   onRefresh: () => void;
@@ -378,13 +384,146 @@ function MyDeliveriesTab({ deliveries, loading, onRefresh }: MyDeliveriesTabProp
   );
 }
 
+function IncomingDeliveriesTab({ deliveries, loading, onRefresh }: IncomingDeliveriesTabProps) {
+  const router = useRouter();
+
+  const pendingDeliveries = deliveries.filter(d => d.status === 'pending' && !d.recipientConfirmed);
+  const acceptedDeliveries = deliveries.filter(d => d.recipientConfirmed === true && d.status !== 'delivered');
+  const completedDeliveries = deliveries.filter(d => d.status === 'delivered');
+
+  const handleConfirm = async (id: number, confirmed: boolean) => {
+    try {
+      const { confirmRecipient } = await import('../api/delivery');
+      await confirmRecipient(id, confirmed);
+      alert(confirmed ? 'Delivery accepted!' : 'Delivery rejected');
+      onRefresh();
+    } catch (err) {
+      console.error('Failed to confirm delivery:', err);
+      alert('Failed to process confirmation');
+    }
+  };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  return (
+    <Box>
+      {/* Pending Confirmation Section */}
+      {pendingDeliveries.length > 0 && (
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>
+            Pending Confirmation ({pendingDeliveries.length})
+          </Typography>
+          {pendingDeliveries.map(delivery => (
+            <Card key={delivery.id} sx={{ mb: 2, p: 2 }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
+                {delivery.title}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {delivery.fromLocation?.address || 'N/A'} → {delivery.toLocation?.address || 'N/A'}
+              </Typography>
+              <Typography variant="body2" sx={{ mt: 1 }}>
+                Size: {delivery.size} | Price: {delivery.price} zł
+              </Typography>
+              <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
+                <Button
+                  size="small"
+                  variant="contained"
+                  color="success"
+                  onClick={() => handleConfirm(delivery.id, true)}
+                >
+                  Accept
+                </Button>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  color="error"
+                  onClick={() => handleConfirm(delivery.id, false)}
+                >
+                  Reject
+                </Button>
+              </Stack>
+            </Card>
+          ))}
+        </Box>
+      )}
+
+      {/* Accepted Section */}
+      {acceptedDeliveries.length > 0 && (
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>
+            Active ({acceptedDeliveries.length})
+          </Typography>
+          {acceptedDeliveries.map(delivery => (
+            <Card key={delivery.id} sx={{ mb: 2, p: 2 }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
+                {delivery.title}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {delivery.fromLocation?.address || 'N/A'} → {delivery.toLocation?.address || 'N/A'}
+              </Typography>
+              <Chip
+                label={delivery.status === 'picked_up' ? 'In Transit' : delivery.status}
+                size="small"
+                color="primary"
+                sx={{ mt: 1 }}
+              />
+            </Card>
+          ))}
+        </Box>
+      )}
+
+      {/* Completed Section */}
+      {completedDeliveries.length > 0 && (
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>
+            Delivered ({completedDeliveries.length})
+          </Typography>
+          {completedDeliveries.map(delivery => (
+            <Card key={delivery.id} sx={{ mb: 2, p: 2 }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
+                {delivery.title}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {delivery.fromLocation?.address || 'N/A'} → {delivery.toLocation?.address || 'N/A'}
+              </Typography>
+              <Chip
+                label="Delivered"
+                size="small"
+                color="success"
+                sx={{ mt: 1 }}
+              />
+            </Card>
+          ))}
+        </Box>
+      )}
+
+      {/* Empty State */}
+      {deliveries.length === 0 && (
+        <Box sx={{ textAlign: 'center', py: 4 }}>
+          <Typography color="text.secondary">
+            No incoming deliveries
+          </Typography>
+        </Box>
+      )}
+    </Box>
+  );
+}
+
 export default function SendPackagePage() {
   const router = useRouter();
   const [state, dispatch] = useReducer(deliveryFormReducer, initialState);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [activeTab, setActiveTab] = useState<'create' | 'manage'>('create');
+  const [activeTab, setActiveTab] = useState<'create' | 'manage' | 'incoming'>('create');
   const [deliveries, setDeliveries] = useState<DeliveryRequest[]>([]);
+  const [incomingDeliveries, setIncomingDeliveries] = useState<DeliveryRequest[]>([]);
   const [loadingDeliveries, setLoadingDeliveries] = useState(false);
+  const [loadingIncoming, setLoadingIncoming] = useState(false);
 
   // Get navigation badge counts
   const { unreadChats, unreadNotifications, activeOrders } = useNavigationBadges();
@@ -395,12 +534,16 @@ export default function SendPackagePage() {
     const tab = params.get('tab');
     if (tab === 'manage') {
       setActiveTab('manage');
+    } else if (tab === 'incoming') {
+      setActiveTab('incoming');
     }
   }, []);
 
   useEffect(() => {
     if (activeTab === 'manage') {
       loadDeliveries();
+    } else if (activeTab === 'incoming') {
+      loadIncomingDeliveries();
     }
   }, [activeTab]);
 
@@ -413,6 +556,18 @@ export default function SendPackagePage() {
       console.error('Failed to load deliveries:', err);
     } finally {
       setLoadingDeliveries(false);
+    }
+  };
+
+  const loadIncomingDeliveries = async () => {
+    setLoadingIncoming(true);
+    try {
+      const response = await getIncomingDeliveries();
+      setIncomingDeliveries(response.data);
+    } catch (err) {
+      console.error('Failed to load incoming deliveries:', err);
+    } finally {
+      setLoadingIncoming(false);
     }
   };
 
@@ -558,8 +713,9 @@ export default function SendPackagePage() {
               variant="fullWidth"
               sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}
             >
-              <Tab value="create" label="Create New" />
-              <Tab value="manage" label="My Deliveries" />
+              <Tab value="create" label="Create" />
+              <Tab value="manage" label="Sent" />
+              <Tab value="incoming" label="Incoming" />
             </Tabs>
 
             {/* Tab Content: Create */}
@@ -888,6 +1044,15 @@ export default function SendPackagePage() {
             deliveries={deliveries}
             loading={loadingDeliveries}
             onRefresh={loadDeliveries}
+          />
+        )}
+
+        {/* Tab Content: Incoming */}
+        {activeTab === 'incoming' && (
+          <IncomingDeliveriesTab
+            deliveries={incomingDeliveries}
+            loading={loadingIncoming}
+            onRefresh={loadIncomingDeliveries}
           />
         )}
           </Box>

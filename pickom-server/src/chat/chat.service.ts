@@ -456,6 +456,62 @@ export class ChatService {
   }
 
   /**
+   * Get unified chat sessions for picker (both sender and receiver chats)
+   */
+  async getUnifiedSessionsForPicker(
+    deliveryId: number,
+    pickerUid: string,
+  ): Promise<{
+    senderChat: ChatSessionDto | null;
+    receiverChat: ChatSessionDto | null;
+  }> {
+    const picker = await this.userService.findOne(pickerUid);
+    if (!picker) {
+      throw new NotFoundException('Picker not found');
+    }
+
+    if (picker.role !== 'picker') {
+      throw new ForbiddenException('User is not a picker');
+    }
+
+    // Find both chat sessions for this delivery
+    const chats = await this.chatSessionRepository.find({
+      where: {
+        deliveryId,
+        pickerId: picker.id,
+      },
+      relations: [
+        'sender',
+        'picker',
+        'recipient',
+        'messages',
+        'messages.sender',
+        'delivery',
+      ],
+      order: { updatedAt: 'DESC' },
+    });
+
+    // Separate sender and receiver chats
+    let senderChat: ChatSessionDto | null = null;
+    let receiverChat: ChatSessionDto | null = null;
+
+    for (const chat of chats) {
+      if (chat.senderId !== null && chat.recipientId === null) {
+        // This is the sender chat
+        senderChat = await this.transformChatSession(chat, picker.id, true);
+      } else if (chat.senderId === null && chat.recipientId !== null) {
+        // This is the receiver chat
+        receiverChat = await this.transformChatSession(chat, picker.id, true);
+      }
+    }
+
+    return {
+      senderChat,
+      receiverChat,
+    };
+  }
+
+  /**
    * Transform Message entity to DTO
    */
   private transformMessage(message: Message, sender: any): MessageDto {

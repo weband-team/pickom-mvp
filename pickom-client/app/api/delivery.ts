@@ -146,3 +146,47 @@ export const confirmRecipient = async (
 ): Promise<AxiosResponse<DeliveryRequest>> => {
   return protectedFetch.put(`/delivery/requests/${id}/confirm-recipient`, { confirmed });
 };
+
+/**
+ * Find receiver by email or Firebase UID
+ * Requires authentication
+ */
+export interface ReceiverInfo {
+  uid: string;
+  name: string;
+  email: string;
+  avatarUrl?: string;
+}
+
+export const findReceiver = async (
+  emailOrUid: string
+): Promise<AxiosResponse<ReceiverInfo | null>> => {
+  return protectedFetch.post('/delivery/find-receiver', { emailOrUid });
+};
+
+/**
+ * Get incoming deliveries for receiver
+ * Requires authentication (receiver role)
+ */
+export const getIncomingDeliveries = async (): Promise<AxiosResponse<DeliveryRequest[]>> => {
+  return protectedFetch.get('/delivery/incoming');
+};
+
+/**
+ * Confirm delivery by receiver
+ * Requires authentication (receiver role)
+ */
+export interface ConfirmDeliveryData {
+  confirmed: boolean;
+  notes?: string;
+  photoUrl?: string;
+  reportIssue?: boolean;
+  issueDescription?: string;
+}
+
+export const confirmDeliveryByReceiver = async (
+  id: number,
+  data: ConfirmDeliveryData
+): Promise<AxiosResponse<DeliveryRequest>> => {
+  return protectedFetch.post(`/delivery/${id}/confirm`, data);
+};

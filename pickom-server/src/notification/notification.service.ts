@@ -194,4 +194,36 @@ export class NotificationService {
       related_delivery_id: deliveryId,
     });
   }
+
+  // Notify receiver when delivery is picked up
+  async notifyReceiverPickedUp(
+    recipientUid: string,
+    deliveryId: number,
+    pickerName: string,
+  ): Promise<NotificationDto> {
+    return await this.createNotification({
+      user_id: recipientUid,
+      title: 'Your delivery has been picked up',
+      message: `${pickerName} has picked up your delivery. Please confirm receipt when delivered.`,
+      type: 'delivery_picked_up',
+      read: false,
+      related_delivery_id: deliveryId,
+    });
+  }
+
+  // Notify picker when receiver confirms delivery
+  async notifyPickerConfirmed(
+    pickerUid: string,
+    deliveryId: number,
+    receiverName: string,
+  ): Promise<NotificationDto> {
+    return await this.createNotification({
+      user_id: pickerUid,
+      title: 'Delivery Confirmed',
+      message: `${receiverName} has confirmed receipt of the delivery.`,
+      type: 'delivery_confirmed',
+      read: false,
+      related_delivery_id: deliveryId,
+    });
+  }
 }

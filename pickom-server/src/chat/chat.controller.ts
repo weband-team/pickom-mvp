@@ -72,6 +72,28 @@ export class ChatController {
     return this.chatService.getChatsByDeliveryId(parseInt(deliveryId), req.user.uid);
   }
 
+  @Get('delivery/:deliveryId/unified')
+  @ApiOperation({ summary: 'Get unified chat sessions for picker (sender + receiver chats)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Unified chat sessions for picker',
+    schema: {
+      properties: {
+        senderChat: { type: 'object', nullable: true },
+        receiverChat: { type: 'object', nullable: true },
+      },
+    },
+  })
+  async getUnifiedSessionsForPicker(
+    @Req() req: any,
+    @Param('deliveryId') deliveryId: string,
+  ): Promise<{
+    senderChat: ChatSessionDto | null;
+    receiverChat: ChatSessionDto | null;
+  }> {
+    return this.chatService.getUnifiedSessionsForPicker(parseInt(deliveryId), req.user.uid);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get chat by ID with all messages' })
   @ApiResponse({

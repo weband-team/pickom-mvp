@@ -12,7 +12,9 @@ export interface NotificationDto {
     | 'incoming_delivery'
     | 'new_message'
     | 'recipient_confirmed'
-    | 'recipient_rejected';
+    | 'recipient_rejected'
+    | 'delivery_picked_up'
+    | 'delivery_confirmed';
   read: boolean;
   created_at: Date;
   related_delivery_id?: number;

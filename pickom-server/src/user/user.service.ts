@@ -100,6 +100,20 @@ export class UserService {
     );
   }
 
+  async findByEmailOrUid(emailOrUid: string): Promise<UserEntity | null> {
+    // Check if it's an email (contains @)
+    if (emailOrUid.includes('@')) {
+      return await this.userRepository.findOne({
+        where: { email: emailOrUid },
+      });
+    }
+
+    // Otherwise treat as UID
+    return await this.userRepository.findOne({
+      where: { uid: emailOrUid },
+    });
+  }
+
   async findAll(): Promise<UserEntity[]> {
     return this.userRepository.find(); // Возвращаем копию массива
   }
