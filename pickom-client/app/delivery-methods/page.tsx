@@ -171,11 +171,31 @@ interface IncomingDeliveriesTabProps {
 
 function MyDeliveriesTab({ deliveries, loading, onRefresh }: MyDeliveriesTabProps) {
   const router = useRouter();
+  const [subTab, setSubTab] = useState<'current' | 'past'>('current');
 
-  const pendingDeliveries = deliveries.filter(d => d.status === 'pending');
-  const activeDeliveries = deliveries.filter(d => ['accepted', 'picked_up'].includes(d.status));
-  const completedDeliveries = deliveries.filter(d => d.status === 'delivered');
-  const cancelledDeliveries = deliveries.filter(d => d.status === 'cancelled');
+  // Sort deliveries by newest first
+  const sortedDeliveries = [...deliveries].sort((a, b) =>
+    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+
+  // Group deliveries for sub-tabs
+  const currentDeliveries = sortedDeliveries.filter(d =>
+    ['pending', 'accepted', 'picked_up'].includes(d.status)
+  );
+  const pastDeliveries = sortedDeliveries.filter(d =>
+    ['delivered', 'cancelled'].includes(d.status)
+  );
+
+  // Helper to shorten address
+  const shortenAddress = (address: string) => {
+    if (!address) return 'N/A';
+    // Remove postal code and country, keep only street and city
+    const parts = address.split(',').map(p => p.trim());
+    if (parts.length >= 2) {
+      return `${parts[0]}, ${parts[1]}`;
+    }
+    return parts[0] || address;
+  };
 
   const handleCancel = async (id: number) => {
     if (!confirm('Are you sure you want to cancel this delivery?')) return;
@@ -192,6 +212,8 @@ function MyDeliveriesTab({ deliveries, loading, onRefresh }: MyDeliveriesTabProp
     }
   };
 
+  const displayDeliveries = subTab === 'current' ? currentDeliveries : pastDeliveries;
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
@@ -202,183 +224,95 @@ function MyDeliveriesTab({ deliveries, loading, onRefresh }: MyDeliveriesTabProp
 
   return (
     <Box>
-      {/* Pending Section */}
-      {pendingDeliveries.length > 0 && (
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>
-            Pending ({pendingDeliveries.length})
-          </Typography>
-          {pendingDeliveries.map(delivery => (
-            <Card key={delivery.id} sx={{ mb: 2, p: 2 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 'bold', flex: 1 }}>
-                  {delivery.title}
-                </Typography>
-                {delivery.deliveryType === 'inter-city' && (
-                  <Chip
-                    label="Inter-City"
-                    size="small"
-                    color="info"
-                    sx={{ fontWeight: 600, fontSize: '0.7rem' }}
-                  />
-                )}
-              </Box>
-              <Typography variant="body2" color="text.secondary">
-                {delivery.fromLocation?.address || 'N/A'} → {delivery.toLocation?.address || 'N/A'}
-              </Typography>
-              <Typography variant="body2" sx={{ mt: 1 }}>
-                Price: {delivery.price} zł | Size: {delivery.size}
-              </Typography>
-              <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
-                <Button
-                  size="small"
-                  variant="contained"
-                  onClick={() => router.push(`/delivery-methods/${delivery.id}/offers`)}
-                >
-                  View Offers
-                </Button>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  onClick={() => {
-                    // Save delivery ID to localStorage for picker selection
-                    const deliveryData = {
-                      deliveryId: delivery.id,
-                      fromLocation: delivery.fromLocation,
-                      toLocation: delivery.toLocation,
-                    };
-                    localStorage.setItem('deliveryData', JSON.stringify(deliveryData));
-                    router.push('/picker-results');
-                  }}
-                >
-                  Find Picker
-                </Button>
-                <Button
-                  size="small"
-                  color="error"
-                  variant="outlined"
-                  onClick={() => handleCancel(delivery.id)}
-                >
-                  Cancel
-                </Button>
-              </Stack>
-            </Card>
-          ))}
-        </Box>
-      )}
+      {/* Sub-tabs */}
+      <Tabs
+        value={subTab}
+        onChange={(_, newValue) => setSubTab(newValue)}
+        sx={{
+          borderBottom: 1,
+          borderColor: 'divider',
+          mb: 2,
+          minHeight: 40,
+          '& .MuiTab-root': {
+            minHeight: 40,
+            fontSize: '0.875rem',
+            textTransform: 'none',
+          },
+        }}
+      >
+        <Tab label={`Current (${currentDeliveries.length})`} value="current" />
+        <Tab label={`Past (${pastDeliveries.length})`} value="past" />
+      </Tabs>
 
-      {/* Active Section */}
-      {activeDeliveries.length > 0 && (
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>
-            Active ({activeDeliveries.length})
-          </Typography>
-          {activeDeliveries.map(delivery => (
-            <Card key={delivery.id} sx={{ mb: 2, p: 2 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 'bold', flex: 1 }}>
-                  {delivery.title}
-                </Typography>
-                {delivery.deliveryType === 'inter-city' && (
-                  <Chip
-                    label="Inter-City"
-                    size="small"
-                    color="info"
-                    sx={{ fontWeight: 600, fontSize: '0.7rem' }}
-                  />
-                )}
-              </Box>
-              <Typography variant="body2" color="text.secondary">
-                {delivery.fromLocation?.address || 'N/A'} → {delivery.toLocation?.address || 'N/A'}
-              </Typography>
-              <Chip
-                label={delivery.status}
-                size="small"
-                color="primary"
-                sx={{ mt: 1 }}
-              />
-            </Card>
-          ))}
-        </Box>
-      )}
-
-      {/* Completed Section */}
-      {completedDeliveries.length > 0 && (
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>
-            Completed ({completedDeliveries.length})
-          </Typography>
-          {completedDeliveries.map(delivery => (
-            <Card key={delivery.id} sx={{ mb: 2, p: 2 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 'bold', flex: 1 }}>
-                  {delivery.title}
-                </Typography>
-                {delivery.deliveryType === 'inter-city' && (
-                  <Chip
-                    label="Inter-City"
-                    size="small"
-                    color="info"
-                    sx={{ fontWeight: 600, fontSize: '0.7rem' }}
-                  />
-                )}
-              </Box>
-              <Typography variant="body2" color="text.secondary">
-                {delivery.fromLocation?.address || 'N/A'} → {delivery.toLocation?.address || 'N/A'}
-              </Typography>
-              <Chip
-                label="Completed"
-                size="small"
-                color="success"
-                sx={{ mt: 1 }}
-              />
-            </Card>
-          ))}
-        </Box>
-      )}
-
-      {/* Cancelled Section */}
-      {cancelledDeliveries.length > 0 && (
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>
-            Cancelled ({cancelledDeliveries.length})
-          </Typography>
-          {cancelledDeliveries.map(delivery => (
-            <Card key={delivery.id} sx={{ mb: 2, p: 2 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 'bold', flex: 1 }}>
-                  {delivery.title}
-                </Typography>
-                {delivery.deliveryType === 'inter-city' && (
-                  <Chip
-                    label="Inter-City"
-                    size="small"
-                    color="info"
-                    sx={{ fontWeight: 600, fontSize: '0.7rem' }}
-                  />
-                )}
-              </Box>
-              <Typography variant="body2" color="text.secondary">
-                {delivery.fromLocation?.address || 'N/A'} → {delivery.toLocation?.address || 'N/A'}
-              </Typography>
-              <Chip
-                label="Cancelled"
-                size="small"
-                color="error"
-                sx={{ mt: 1 }}
-              />
-            </Card>
-          ))}
-        </Box>
-      )}
-
-      {/* Empty State */}
-      {deliveries.length === 0 && (
+      {/* Delivery Cards */}
+      {displayDeliveries.length === 0 ? (
         <Box sx={{ textAlign: 'center', py: 4 }}>
           <Typography color="text.secondary">
-            No deliveries yet. Create your first delivery!
+            {subTab === 'current' ? 'No current deliveries' : 'No past deliveries'}
           </Typography>
         </Box>
+      ) : (
+        displayDeliveries.map(delivery => (
+          <Card
+            key={delivery.id}
+            sx={{
+              mb: 2,
+              p: 2,
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              '&:hover': {
+                boxShadow: 4,
+                transform: 'translateY(-2px)',
+              },
+            }}
+            onClick={() => router.push(`/delivery-details/${delivery.id}`)}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, mb: 1 }}>
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 0.5 }}>
+                  {delivery.title}
+                </Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                  {new Date(delivery.createdAt).toLocaleDateString('en-US')}
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                {delivery.deliveryType === 'inter-city' && (
+                  <Chip
+                    label="Inter-City"
+                    size="small"
+                    color="info"
+                    sx={{ height: 20, fontSize: '0.7rem' }}
+                  />
+                )}
+                <Chip
+                  label={delivery.status.replace('_', ' ')}
+                  size="small"
+                  color={
+                    delivery.status === 'delivered' ? 'success' :
+                    delivery.status === 'cancelled' ? 'error' :
+                    delivery.status === 'pending' ? 'warning' : 'primary'
+                  }
+                  sx={{ height: 20, fontSize: '0.7rem', textTransform: 'capitalize' }}
+                />
+              </Box>
+            </Box>
+
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              {shortenAddress(delivery.fromLocation?.address || '')} →{' '}
+              {shortenAddress(delivery.toLocation?.address || '')}
+            </Typography>
+
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                {delivery.price} zł
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {delivery.size}
+              </Typography>
+            </Box>
+          </Card>
+        ))
       )}
     </Box>
   );
