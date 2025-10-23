@@ -446,8 +446,8 @@ export default function DeliveryDetailsPage({ params }: { params: Promise<{ id: 
             <Box
               sx={{
                 flex: 1,
-                overflow: 'auto',
-                pb: 20,
+                overflowY: 'auto',
+                pb: 2,
               }}
             >
               {/* Route Details */}
@@ -588,16 +588,12 @@ export default function DeliveryDetailsPage({ params }: { params: Promise<{ id: 
             {/* Action Buttons */}
             <Box
               sx={{
-                position: 'absolute',
-                bottom: 0,
-                left: 0,
-                right: 0,
                 p: 2,
                 backgroundColor: 'background.paper',
                 borderTop: 1,
                 borderColor: 'divider',
-                boxShadow: 3,
-                pb: 10,
+                boxShadow: '0 -2px 8px rgba(0,0,0,0.1)',
+                pb: 8,
               }}
             >
               <Stack spacing={1.5}>
