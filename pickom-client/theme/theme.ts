@@ -54,7 +54,7 @@ export const createPickomTheme = (mode: ThemeMode): Theme => {
           root: {
             textTransform: 'none',
             fontWeight: 500,
-            borderRadius: 24,
+            borderRadius: 8,
             padding: '12px 24px',
             minHeight: 44,
           },

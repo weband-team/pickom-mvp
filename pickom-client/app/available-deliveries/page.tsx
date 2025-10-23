@@ -516,6 +516,9 @@ export default function AvailableDeliveriesPage() {
                 borderBottom: 1,
                 borderColor: 'divider',
                 minHeight: 48,
+                '& .MuiTabs-flexContainer': {
+                  pl: 0,
+                },
                 '& .MuiTab-root': {
                   minHeight: 48,
                   fontSize: '0.75rem',
