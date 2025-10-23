@@ -120,20 +120,6 @@ export default function PickerResultsPage() {
     setFilteredPickers(filtered);
   }, [allPickers]);
 
-  // State for sort
-  const [sortBy, setSortBy] = useState<'price' | 'duration' | 'trust' | 'rating' | 'distance'>('price');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
-
-  // Handle sort by price
-  const handleSortByPrice = () => {
-    const newOrder = sortBy === 'price' && sortOrder === 'asc' ? 'desc' : 'asc';
-    setSortBy('price');
-    setSortOrder(newOrder);
-    handleFiltersChange({
-      sortBy: 'price',
-      sortOrder: newOrder
-    });
-  };
 
   // Load more pickers with realistic loading delay
   const loadMore = useCallback(() => {
@@ -322,24 +308,14 @@ export default function PickerResultsPage() {
           {/* Filters */}
           <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
             <Box sx={{ p: 2 }}>
-              <Stack direction="row" spacing={2}>
-                <Button
-                  variant={showFilters ? 'contained' : 'outlined'}
-                  onClick={() => setShowFilters(!showFilters)}
-                  size="small"
-                  sx={{ flex: 1 }}
-                >
-                  Filters
-                </Button>
-                <Button
-                  variant={sortBy === 'price' ? 'contained' : 'outlined'}
-                  size="small"
-                  sx={{ flex: 1 }}
-                  onClick={handleSortByPrice}
-                >
-                  Price {sortBy === 'price' && (sortOrder === 'asc' ? '↑' : '↓')}
-                </Button>
-              </Stack>
+              <Button
+                variant={showFilters ? 'contained' : 'outlined'}
+                onClick={() => setShowFilters(!showFilters)}
+                size="small"
+                fullWidth
+              >
+                Filters & Sorting
+              </Button>
             </Box>
 
             {/* Full Filters */}
