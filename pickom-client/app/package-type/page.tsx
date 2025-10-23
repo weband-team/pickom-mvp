@@ -6,26 +6,33 @@ import { Box, Stack, Typography } from '@mui/material';
 import {
     Button,
     TextInput,
-    Select,
     MobileContainer,
     PickomLogo
 } from '../../components/ui'
 import { PackageTypeEnum } from '@/types/package';
-import { ReceiverSelector } from '@/components/order/ReceiverSelector';
 
 export default function PackageTypePage(){
     const router = useRouter();
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
-    const [size, setSize] = useState<'small' | 'medium' | 'large' | ''>('');
     const [price, setPrice] = useState('');
     const [weight, setWeight] = useState('');
     const [notes, setNotes] = useState('');
     const [otherDescription, setOtherDescription] = useState('');
-    const [recipientId, setRecipientId] = useState('');
-    const [recipientPhone, setRecipientPhone] = useState('');
+    const [recipientEmailOrId, setRecipientEmailOrId] = useState('');
     const [selectedType, setSelectedType] = useState<PackageTypeEnum | null>(null);
     const [isSearching, setIsSearching] = useState(false);
+
+    // Map package type to size
+    const getSizeFromType = (): 'small' | 'medium' | 'large' => {
+        if (selectedType === PackageTypeEnum.DOCUMENT || selectedType === PackageTypeEnum.SMALL_PARCEL) {
+            return 'small';
+        }
+        if (selectedType === PackageTypeEnum.LARGE_PARCEL) {
+            return 'large';
+        }
+        return 'medium'; // OTHER
+    };
     return (
         <Box sx={{
             minHeight: '100vh',
@@ -204,18 +211,6 @@ export default function PackageTypePage(){
                                 fullWidth
                             />
 
-                            <Select
-                                label="Package Size"
-                                value={size}
-                                onChange={(val) => setSize(val as any)}
-                                options={[
-                                    { value: 'small', label: 'Small (< 5kg)' },
-                                    { value: 'medium', label: 'Medium (5-20kg)' },
-                                    { value: 'large', label: 'Large (> 20kg)' },
-                                ]}
-                                placeholder="Select size"
-                            />
-
                             <TextInput
                                 label="Price (zł)"
                                 type="number"
@@ -263,12 +258,20 @@ export default function PackageTypePage(){
                         </Box>
                     )}
 
-                    <ReceiverSelector
-                        recipientId={recipientId}
-                        recipientPhone={recipientPhone}
-                        onRecipientIdChange={setRecipientId}
-                        onRecipientPhoneChange={setRecipientPhone}
-                    />
+                    {/* Receiver Section */}
+                    <Box sx={{ mb: 3 }}>
+                        <Typography variant="h6" sx={{ mb: 2 }}>
+                            Receiver Information
+                        </Typography>
+                        <TextInput
+                            label="Receiver Email or User ID"
+                            value={recipientEmailOrId}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setRecipientEmailOrId(e.target.value)}
+                            placeholder="Enter receiver's email or ID"
+                            fullWidth
+                            helperText="We'll verify if this user exists in the system"
+                        />
+                    </Box>
 
                     {/* Navigation buttons */}
                     <Stack direction="row" justifyContent="space-between" sx={{ mt: 2 }}>
@@ -283,7 +286,8 @@ export default function PackageTypePage(){
                                     // Load existing delivery data from localStorage
                                     const existingData = localStorage.getItem('deliveryData');
                                     if (!existingData) {
-                                        alert('Delivery information not found. Please start from the beginning.');
+                                        const toast = (await import('react-hot-toast')).default;
+                                        toast.error('Delivery information not found. Please start from the beginning.');
                                         router.push('/delivery-methods');
                                         return;
                                     }
@@ -292,7 +296,8 @@ export default function PackageTypePage(){
 
                                     // Check if we have location data
                                     if (!deliveryMethodData.fromLocation || !deliveryMethodData.toLocation) {
-                                        alert('Location information not found. Please start from the beginning.');
+                                        const toast = (await import('react-hot-toast')).default;
+                                        toast.error('Location information not found. Please start from the beginning.');
                                         router.push('/delivery-methods');
                                         return;
                                     }
@@ -308,6 +313,10 @@ export default function PackageTypePage(){
 
                                     // Create delivery request
                                     const { createDeliveryRequest } = await import('../api/delivery');
+                                    const toast = (await import('react-hot-toast')).default;
+
+                                    const toastId = toast.loading('Creating delivery...');
+
                                     const response = await createDeliveryRequest({
                                         title,
                                         description: description || undefined,
@@ -315,14 +324,16 @@ export default function PackageTypePage(){
                                         toLocation: deliveryMethodData.toLocation,
                                         deliveryType,
                                         price: parseFloat(price),
-                                        size: size as 'small' | 'medium' | 'large',
+                                        size: getSizeFromType(),
                                         weight: weight ? parseFloat(weight) : undefined,
                                         notes: notes || undefined,
-                                        recipientId: recipientId || undefined,
-                                        recipientPhone: recipientPhone || undefined,
+                                        recipientId: recipientEmailOrId || undefined,
+                                        recipientPhone: undefined,
                                     });
 
                                     const deliveryId = response.data.id;
+
+                                    toast.success('Delivery created successfully!', { id: toastId });
 
                                     // Save delivery ID for searching-pickers and picker-results
                                     const completeDeliveryData = {
@@ -331,11 +342,12 @@ export default function PackageTypePage(){
                                         packageType: selectedType,
                                         title,
                                         description: description || undefined,
-                                        size,
+                                        size: getSizeFromType(),
                                         price: parseFloat(price),
                                         weight: weight ? parseFloat(weight) : undefined,
                                         notes: notes || undefined,
                                         otherDescription: selectedType === PackageTypeEnum.OTHER ? otherDescription : undefined,
+                                        recipientEmailOrId: recipientEmailOrId || undefined,
                                     };
 
                                     localStorage.setItem('deliveryData', JSON.stringify(completeDeliveryData));
@@ -344,7 +356,9 @@ export default function PackageTypePage(){
                                     router.push('/searching-pickers');
                                 } catch (error: any) {
                                     console.error('Failed to create delivery:', error);
-                                    alert(error.response?.data?.message || 'Failed to create delivery. Please try again.');
+                                    const toast = (await import('react-hot-toast')).default;
+                                    const errorMessage = error.response?.data?.message || 'Failed to create delivery. Please try again.';
+                                    toast.error(errorMessage);
                                     setIsSearching(false);
                                 }
                             }}
