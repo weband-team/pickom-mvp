@@ -209,7 +209,7 @@ export default function DeliveryDetailsPage({ params }: { params: Promise<{ id: 
 
   const handleBack = () => {
     if (userRole === 'sender') {
-      router.push('/orders');
+      router.push('/delivery-methods?tab=manage');
     } else {
       router.push('/available-deliveries');
     }
@@ -283,7 +283,7 @@ export default function DeliveryDetailsPage({ params }: { params: Promise<{ id: 
       await updateDeliveryRequestStatus(delivery.id, 'cancelled');
       alert('Delivery cancelled successfully');
       setShowCancelDialog(false);
-      router.push('/orders');
+      router.push('/delivery-methods?tab=manage');
     } catch (err: any) {
       console.error('Failed to cancel delivery:', err);
       alert('Failed to cancel delivery. Please try again.');
@@ -606,7 +606,7 @@ export default function DeliveryDetailsPage({ params }: { params: Promise<{ id: 
                   <>
                     <Button
                       variant="outlined"
-                      onClick={() => router.push(`/orders/${delivery.id}/offers`)}
+                      onClick={() => router.push(`/delivery-methods/${delivery.id}/offers`)}
                       fullWidth
                       startIcon={<LocalOffer />}
                     >

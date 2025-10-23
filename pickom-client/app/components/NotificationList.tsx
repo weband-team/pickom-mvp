@@ -2,7 +2,7 @@
 
 import { useNotifications } from '../hooks/useNotifications';
 import { formatDistanceToNow } from 'date-fns';
-import { ru } from 'date-fns/locale';
+import { enUS } from 'date-fns/locale';
 
 interface NotificationItemProps {
   notification: {
@@ -39,7 +39,7 @@ const NotificationItem = ({ notification, onMarkAsRead }: NotificationItemProps)
 
   const timeAgo = formatDistanceToNow(new Date(notification.created_at), {
     addSuffix: true,
-    locale: ru
+    locale: enUS
   });
 
   return (

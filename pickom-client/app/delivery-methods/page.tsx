@@ -233,7 +233,7 @@ function MyDeliveriesTab({ deliveries, loading, onRefresh }: MyDeliveriesTabProp
                 <Button
                   size="small"
                   variant="contained"
-                  onClick={() => router.push(`/orders/${delivery.id}/offers`)}
+                  onClick={() => router.push(`/delivery-methods/${delivery.id}/offers`)}
                 >
                   View Offers
                 </Button>

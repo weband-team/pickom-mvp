@@ -32,7 +32,7 @@ export const useNotifications = () => {
       setNotifications(notificationsData);
       setUnreadCount(unreadCountData);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Ошибка загрузки уведомлений';
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load notifications';
       setError(errorMessage);
       console.error('Error fetching notifications:', err);
     } finally {
@@ -58,7 +58,7 @@ export const useNotifications = () => {
       setUnreadCount(prev => Math.max(0, prev - 1));
 
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Ошибка отметки уведомления';
+      const errorMessage = err instanceof Error ? err.message : 'Failed to mark notification as read';
       toast.error(errorMessage);
       console.error('Error marking notification as read:', err);
     }
@@ -75,9 +75,9 @@ export const useNotifications = () => {
       );
       setUnreadCount(0);
 
-      toast.success('Все уведомления отмечены как прочитанные');
+      toast.success('All notifications marked as read');
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Ошибка отметки уведомлений';
+      const errorMessage = err instanceof Error ? err.message : 'Failed to mark all as read';
       toast.error(errorMessage);
       console.error('Error marking all notifications as read:', err);
     }
@@ -95,10 +95,10 @@ export const useNotifications = () => {
       setNotifications(prev => [newNotification, ...prev]);
       setUnreadCount(prev => prev + 1);
 
-      toast.success('Уведомление о предложении создано');
+      toast.success('Offer notification created');
       return newNotification;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Ошибка создания уведомления';
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create notification';
       toast.error(errorMessage);
       console.error('Error creating offer received notification:', err);
       throw err;
@@ -112,10 +112,10 @@ export const useNotifications = () => {
       setNotifications(prev => [newNotification, ...prev]);
       setUnreadCount(prev => prev + 1);
 
-      toast.success('Уведомление о принятии предложения создано');
+      toast.success('Offer accepted notification created');
       return newNotification;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Ошибка создания уведомления';
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create notification';
       toast.error(errorMessage);
       console.error('Error creating offer accepted notification:', err);
       throw err;
@@ -129,10 +129,10 @@ export const useNotifications = () => {
       setNotifications(prev => [newNotification, ...prev]);
       setUnreadCount(prev => prev + 1);
 
-      toast.success('Уведомление о входящей доставке создано');
+      toast.success('Incoming delivery notification created');
       return newNotification;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Ошибка создания уведомления';
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create notification';
       toast.error(errorMessage);
       console.error('Error creating incoming delivery notification:', err);
       throw err;
@@ -146,10 +146,10 @@ export const useNotifications = () => {
       setNotifications(prev => [newNotification, ...prev]);
       setUnreadCount(prev => prev + 1);
 
-      toast.success('Уведомление об обновлении статуса создано');
+      toast.success('Status update notification created');
       return newNotification;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Ошибка создания уведомления';
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create notification';
       toast.error(errorMessage);
       console.error('Error creating status update notification:', err);
       throw err;
@@ -163,10 +163,10 @@ export const useNotifications = () => {
       setNotifications(prev => [newNotification, ...prev]);
       setUnreadCount(prev => prev + 1);
 
-      toast.success('Уведомление создано');
+      toast.success('Notification created');
       return newNotification;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Ошибка создания уведомления';
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create notification';
       toast.error(errorMessage);
       console.error('Error creating custom notification:', err);
       throw err;

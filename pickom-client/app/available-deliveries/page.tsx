@@ -483,10 +483,10 @@ export default function AvailableDeliveriesPage() {
                                 {trip.fromCity} → {trip.toCity}
                               </Typography>
                               <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                                Depart: {new Date(trip.departureDateTime).toLocaleString()}
+                                Depart: {new Date(trip.departureDateTime).toLocaleString('en-US')}
                               </Typography>
                               <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                                Arrive: {new Date(trip.arrivalDateTime).toLocaleString()}
+                                Arrive: {new Date(trip.arrivalDateTime).toLocaleString('en-US')}
                               </Typography>
                             </Box>
                             <MuiButton
@@ -651,7 +651,7 @@ export default function AvailableDeliveriesPage() {
                           {Number(delivery.price || 0).toFixed(2)} zl
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
-                          {new Date(delivery.createdAt).toLocaleDateString()}
+                          {new Date(delivery.createdAt).toLocaleDateString('en-US')}
                         </Typography>
                       </Box>
 

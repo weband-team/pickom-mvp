@@ -55,16 +55,16 @@ export default function NotificationsPage() {
         if (isRecipient) {
           router.push(`/delivery-details/${notification.related_delivery_id}`);
         } else if (notification.type === 'offer_received') {
-          router.push(`/orders/${notification.related_delivery_id}/offers`);
+          router.push(`/delivery-methods/${notification.related_delivery_id}/offers`);
         } else if (currentUserRole === 'sender') {
           router.push(`/delivery-details/${notification.related_delivery_id}`);
         } else {
-          router.push(`/orders/${notification.related_delivery_id}`);
+          router.push(`/delivery-details/${notification.related_delivery_id}`);
         }
       } catch (err) {
         console.error('Failed to fetch delivery:', err);
-        // Fallback to orders page
-        router.push(`/orders/${notification.related_delivery_id}`);
+        // Fallback to delivery-details page
+        router.push(`/delivery-details/${notification.related_delivery_id}`);
       }
     }
   };

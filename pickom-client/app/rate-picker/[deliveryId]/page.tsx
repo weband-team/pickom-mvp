@@ -74,7 +74,7 @@ export default function RatePickerPage({ params }: { params: Promise<{ deliveryI
       });
 
       alert('Rating submitted successfully!');
-      router.push('/orders');
+      router.push('/delivery-methods?tab=manage');
     } catch (err: any) {
       console.error('Failed to submit rating:', err);
       if (err.response?.data?.message) {
@@ -153,7 +153,7 @@ export default function RatePickerPage({ params }: { params: Promise<{ deliveryI
                 borderColor: 'divider',
               }}
             >
-              <IconButton onClick={() => router.push('/orders')} size="small">
+              <IconButton onClick={() => router.push('/delivery-methods?tab=manage')} size="small">
                 <ArrowBack />
               </IconButton>
               <Typography variant="h6" sx={{ fontWeight: 600 }}>
