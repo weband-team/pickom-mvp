@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Box, Typography, Tabs, Tab, CircularProgress, Alert, Chip, Accordion, AccordionSummary, AccordionDetails, TextField, Button as MuiButton, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
-import { LocalShipping, ExpandMore, AddCircleOutline, DirectionsCar, LocationCity, PersonSearch, Mail } from '@mui/icons-material';
+import { Box, Typography, Tabs, Tab, CircularProgress, Alert, Chip, Accordion, AccordionSummary, AccordionDetails, TextField, Button as MuiButton, SwipeableDrawer, IconButton } from '@mui/material';
+import { LocalShipping, ExpandMore, AddCircleOutline, DirectionsCar, LocationCity, PersonSearch, Mail, Close } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
 import { MobileContainer } from '@/components/ui/layout/MobileContainer';
 import BottomNavigation from '@/components/common/BottomNavigation';
@@ -737,17 +737,38 @@ export default function AvailableDeliveriesPage() {
         />
 
         {/* Offer Modal */}
-        <Dialog
+        <SwipeableDrawer
+          anchor="bottom"
           open={showOfferModal}
           onClose={() => !submittingOffer && setShowOfferModal(false)}
-          maxWidth="sm"
-          fullWidth
+          onOpen={() => {}}
+          disableSwipeToOpen
+          PaperProps={{
+            sx: {
+              maxHeight: '90vh',
+              maxWidth: '450px',
+              margin: '0 auto',
+              borderTopLeftRadius: 16,
+              borderTopRightRadius: 16,
+              backgroundColor: 'background.paper',
+            },
+          }}
         >
-          <DialogTitle>Make an Offer</DialogTitle>
-          <DialogContent>
+          {/* Header */}
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 3, pt: 3, pb: 2 }}>
+            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+              Make an Offer
+            </Typography>
+            <IconButton onClick={() => setShowOfferModal(false)} size="small" disabled={submittingOffer}>
+              <Close />
+            </IconButton>
+          </Box>
+
+          {/* Content */}
+          <Box sx={{ px: 3, pb: 3 }}>
             {selectedDelivery && (
-              <Box sx={{ pt: 1 }}>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              <Box>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                   From: {selectedDelivery.fromAddress}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
@@ -774,26 +795,32 @@ export default function AvailableDeliveriesPage() {
                   onChange={(e) => setOfferMessage(e.target.value)}
                   placeholder="Add a message to the sender..."
                   disabled={submittingOffer}
+                  sx={{ mb: 3 }}
                 />
+
+                {/* Action Buttons */}
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                  <MuiButton
+                    onClick={() => setShowOfferModal(false)}
+                    disabled={submittingOffer}
+                    variant="outlined"
+                    fullWidth
+                  >
+                    Cancel
+                  </MuiButton>
+                  <MuiButton
+                    onClick={handleSubmitOffer}
+                    variant="contained"
+                    disabled={submittingOffer || offerPrice <= 0}
+                    fullWidth
+                  >
+                    {submittingOffer ? 'Submitting...' : 'Submit Offer'}
+                  </MuiButton>
+                </Box>
               </Box>
             )}
-          </DialogContent>
-          <DialogActions>
-            <MuiButton
-              onClick={() => setShowOfferModal(false)}
-              disabled={submittingOffer}
-            >
-              Cancel
-            </MuiButton>
-            <MuiButton
-              onClick={handleSubmitOffer}
-              variant="contained"
-              disabled={submittingOffer || offerPrice <= 0}
-            >
-              {submittingOffer ? 'Submitting...' : 'Submit Offer'}
-            </MuiButton>
-          </DialogActions>
-        </Dialog>
+          </Box>
+        </SwipeableDrawer>
       </Box>
     </Box>
   );

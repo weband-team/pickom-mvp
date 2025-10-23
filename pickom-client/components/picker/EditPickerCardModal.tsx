@@ -112,6 +112,8 @@ export default function EditPickerCardModal({
       PaperProps={{
         sx: {
           maxHeight: '90vh',
+          maxWidth: '450px',
+          margin: '0 auto',
           borderTopLeftRadius: 16,
           borderTopRightRadius: 16,
           backgroundColor: 'background.paper',
