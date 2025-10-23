@@ -244,7 +244,7 @@ export default function PickerResultsPage() {
     <Box
       sx={{
         minHeight: '100vh',
-        backgroundColor: 'background.default',
+        backgroundColor: '#f5f5f5',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

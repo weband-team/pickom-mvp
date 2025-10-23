@@ -365,7 +365,7 @@ export default function DeliveryDetailsPage({ params }: { params: Promise<{ id: 
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          bgcolor: 'background.default',
+          bgcolor: '#f5f5f5',
         }}
       >
         <CircularProgress />
@@ -381,7 +381,7 @@ export default function DeliveryDetailsPage({ params }: { params: Promise<{ id: 
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          bgcolor: 'background.default',
+          bgcolor: '#f5f5f5',
           p: 2,
         }}
       >
@@ -403,7 +403,7 @@ export default function DeliveryDetailsPage({ params }: { params: Promise<{ id: 
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        bgcolor: 'background.default',
+        bgcolor: '#f5f5f5',
         p: 2,
       }}
     >

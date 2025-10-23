@@ -39,7 +39,7 @@ export default function PackageTypePage(){
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: 'background.default',
+            backgroundColor: '#f5f5f5',
             p: 2,
         }}>
             <MobileContainer showFrame={false}>
