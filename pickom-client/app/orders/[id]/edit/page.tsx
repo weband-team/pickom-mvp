@@ -17,22 +17,8 @@ import { useRouter } from 'next/navigation';
 import { MobileContainer } from '@/components/ui/layout/MobileContainer';
 import { Button, TextInput, Select } from '@/components/ui';
 import BottomNavigation from '@/components/common/BottomNavigation';
-import { getDeliveryRequestById, updateDeliveryRequest } from '@/app/api/delivery';
+import { getDeliveryRequestById, updateDeliveryRequest, type DeliveryRequest } from '@/app/api/delivery';
 import { getCurrentUser } from '@/app/api/user';
-
-interface DeliveryRequest {
-  id: number;
-  senderId: string;
-  title: string;
-  description?: string;
-  fromAddress: string;
-  toAddress: string;
-  price: number;
-  size: 'small' | 'medium' | 'large';
-  weight?: number;
-  notes?: string;
-  status: 'pending' | 'accepted' | 'picked_up' | 'delivered' | 'cancelled';
-}
 
 export default function EditDeliveryPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
@@ -86,8 +72,8 @@ export default function EditDeliveryPage({ params }: { params: Promise<{ id: str
         // Populate form fields
         setTitle(deliveryData.title || '');
         setDescription(deliveryData.description || '');
-        setFromAddress(deliveryData.fromAddress || '');
-        setToAddress(deliveryData.toAddress || '');
+        setFromAddress(deliveryData.fromLocation?.address || '');
+        setToAddress(deliveryData.toLocation?.address || '');
         setPrice(deliveryData.price || 0);
         setSize(deliveryData.size || 'small');
         setWeight(deliveryData.weight || 0);
@@ -113,8 +99,18 @@ export default function EditDeliveryPage({ params }: { params: Promise<{ id: str
       await updateDeliveryRequest(deliveryId, {
         title,
         description,
-        fromAddress,
-        toAddress,
+        fromLocation: fromAddress ? {
+          lat: delivery.fromLocation?.lat || 0,
+          lng: delivery.fromLocation?.lng || 0,
+          address: fromAddress,
+          city: delivery.fromLocation?.city
+        } : undefined,
+        toLocation: toAddress ? {
+          lat: delivery.toLocation?.lat || 0,
+          lng: delivery.toLocation?.lng || 0,
+          address: toAddress,
+          city: delivery.toLocation?.city
+        } : undefined,
         price,
         size,
         weight,
@@ -302,7 +298,7 @@ export default function EditDeliveryPage({ params }: { params: Promise<{ id: str
                       <Select
                         label="Package Size"
                         value={size}
-                        onChange={(e) => setSize(e.target.value as 'small' | 'medium' | 'large')}
+                        onChange={(value) => setSize(value as 'small' | 'medium' | 'large')}
                         options={[
                           { value: 'small', label: 'Small' },
                           { value: 'medium', label: 'Medium' },

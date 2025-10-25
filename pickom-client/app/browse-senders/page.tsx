@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { Box, Typography, Stack, IconButton, Alert, Card, CardContent, Avatar, Chip } from '@mui/material';
-import { ArrowBack, Star, VerifiedUser, LocalShipping, Email, Phone } from '@mui/icons-material';
+import { ArrowBack, Star, LocalShipping } from '@mui/icons-material';
 import {
   MobileContainer,
   PickomLogo,
@@ -13,12 +13,23 @@ import { UserAvatar } from '@/components/profile/UserAvatar';
 import BottomNavigation from '../../components/common/BottomNavigation';
 import { theme } from '../../styles/theme';
 import { useRouter } from 'next/navigation';
-import { getMyDeliveryRequests } from '../api/delivery';
-import { mockSenders, type Sender } from '@/data/mockSenders';
+import { getMyDeliveryRequests, type DeliveryRequest as ApiDeliveryRequest } from '../api/delivery';
 
+interface SenderInfo {
+  uid: string;
+  id: number;
+  name: string;
+  email: string;
+  phone?: string;
+  avatarUrl?: string;
+  rating?: number;
+}
+
+// Local interface for mapped delivery data
 interface DeliveryRequest {
   id: number;
   senderId: string;
+  sender?: SenderInfo;
   from: string;
   to: string;
   price: number;
@@ -26,9 +37,23 @@ interface DeliveryRequest {
   packageDescription?: string;
   status: 'pending' | 'accepted' | 'picked_up' | 'delivered' | 'cancelled';
   createdAt: string;
+  fromLocation?: {
+    address: string;
+    city?: string;
+  };
+  toLocation?: {
+    address: string;
+    city?: string;
+  };
 }
 
-interface SenderWithOrders extends Sender {
+interface SenderWithOrders {
+  id: string;
+  fullName: string;
+  email: string;
+  avatarUrl?: string;
+  rating: number;
+  totalOrders: number;
   activeOrders: DeliveryRequest[];
 }
 
@@ -46,35 +71,68 @@ export default function BrowseSendersPage() {
 
       try {
         const response = await getMyDeliveryRequests();
-        const deliveries: DeliveryRequest[] = response.data;
+        const deliveries: ApiDeliveryRequest[] = response.data;
 
-        // Filter only pending deliveries
-        const pendingDeliveries = deliveries.filter(d => d.status === 'pending');
+        // Filter only pending deliveries that have sender information
+        const pendingDeliveries = deliveries.filter(d => d.status === 'pending' && d.sender);
 
-        // Group deliveries by sender
-        const senderMap = new Map<string, DeliveryRequest[]>();
+        // Group deliveries by sender UID
+        const senderMap = new Map<string, { sender: SenderInfo; deliveries: DeliveryRequest[] }>();
+
         pendingDeliveries.forEach(delivery => {
-          const existing = senderMap.get(delivery.senderId) || [];
-          senderMap.set(delivery.senderId, [...existing, delivery]);
-        });
+          if (!delivery.sender) return; // Type guard
 
-        // Create SenderWithOrders array
-        const sendersData: SenderWithOrders[] = [];
-        senderMap.forEach((orders, senderId) => {
-          const sender = mockSenders[senderId];
-          if (sender) {
-            sendersData.push({
-              ...sender,
-              activeOrders: orders,
+          const senderUid = delivery.sender.uid;
+          const existing = senderMap.get(senderUid);
+
+          // Map delivery to include proper from/to fields
+          const mappedDelivery: DeliveryRequest = {
+            id: delivery.id,
+            senderId: delivery.senderId || '',
+            sender: delivery.sender,
+            from: delivery.fromLocation?.address || 'Unknown',
+            to: delivery.toLocation?.address || 'Unknown',
+            price: delivery.price,
+            deliveryType: delivery.deliveryType,
+            packageDescription: delivery.description || undefined,
+            status: delivery.status,
+            createdAt: delivery.createdAt,
+            fromLocation: delivery.fromLocation ? {
+              address: delivery.fromLocation.address,
+              city: delivery.fromLocation.city,
+            } : undefined,
+            toLocation: delivery.toLocation ? {
+              address: delivery.toLocation.address,
+              city: delivery.toLocation.city,
+            } : undefined,
+          };
+
+          if (existing) {
+            existing.deliveries.push(mappedDelivery);
+          } else {
+            senderMap.set(senderUid, {
+              sender: delivery.sender,
+              deliveries: [mappedDelivery],
             });
           }
         });
 
-        // Sort by total orders (most active first)
-        sendersData.sort((a, b) => b.totalOrders - a.totalOrders);
+        // Create SenderWithOrders array
+        const sendersData: SenderWithOrders[] = Array.from(senderMap.values()).map(({ sender, deliveries }) => ({
+          id: sender.uid,
+          fullName: sender.name,
+          email: sender.email,
+          avatarUrl: sender.avatarUrl,
+          rating: typeof sender.rating === 'number' ? sender.rating : parseFloat(sender.rating || '0'),
+          totalOrders: deliveries.length, // Count current active orders
+          activeOrders: deliveries,
+        }));
+
+        // Sort by number of active orders (most active first)
+        sendersData.sort((a, b) => b.activeOrders.length - a.activeOrders.length);
 
         setSendersWithOrders(sendersData);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Failed to fetch senders:', err);
         setError('Failed to load senders. Please try again.');
       } finally {
@@ -197,39 +255,15 @@ export default function BrowseSendersPage() {
                           </Avatar>
 
                           <Box sx={{ flex: 1 }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
-                              <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                                {sender.fullName}
-                              </Typography>
-                              {sender.isPhoneVerified && sender.isEmailVerified && (
-                                <VerifiedUser sx={{ fontSize: 16, color: 'primary.main' }} />
-                              )}
-                            </Box>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 0.5 }}>
+                              {sender.fullName}
+                            </Typography>
 
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                               <Star sx={{ fontSize: 16, color: 'warning.main' }} />
                               <Typography variant="body2" color="text.secondary">
                                 {sender.rating.toFixed(1)} ({sender.totalOrders} orders)
                               </Typography>
-                            </Box>
-
-                            <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-                              {sender.isPhoneVerified && (
-                                <Chip
-                                  icon={<Phone sx={{ fontSize: 12 }} />}
-                                  label="Phone"
-                                  size="small"
-                                  sx={{ height: 20, fontSize: '0.7rem' }}
-                                />
-                              )}
-                              {sender.isEmailVerified && (
-                                <Chip
-                                  icon={<Email sx={{ fontSize: 12 }} />}
-                                  label="Email"
-                                  size="small"
-                                  sx={{ height: 20, fontSize: '0.7rem' }}
-                                />
-                              )}
                             </Box>
                           </Box>
                         </Stack>

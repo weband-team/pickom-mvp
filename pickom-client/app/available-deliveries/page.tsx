@@ -6,7 +6,7 @@ import { LocalShipping, ExpandMore, AddCircleOutline, DirectionsCar, LocationCit
 import { useRouter } from 'next/navigation';
 import { MobileContainer } from '@/components/ui/layout/MobileContainer';
 import BottomNavigation from '@/components/common/BottomNavigation';
-import { getMyDeliveryRequests, getDeliveryRequestById } from '../api/delivery';
+import { getMyDeliveryRequests, getDeliveryRequestById, type DeliveryRequest as ApiDeliveryRequest } from '../api/delivery';
 import { getCurrentUser, updateOnlineStatus } from '../api/user';
 import { notificationsAPI, type Notification } from '../api/notifications';
 import MyPickerCard from '@/components/picker/MyPickerCard';
@@ -14,17 +14,10 @@ import PickerCardModal from '@/components/picker/PickerCardModal';
 import EditPickerCardModal from '@/components/picker/EditPickerCardModal';
 import { getPickerSettings, savePickerSettings, toggleOnlineStatus, type PickerCardSettings } from '@/data/mockPickerSettings';
 import type { Picker } from '@/types/picker';
+import { UserType } from '@/types/auth';
 
-interface DeliveryRequest {
-  id: number;
-  senderId: string;
-  fromAddress: string;
-  toAddress: string;
-  price: number;
-  deliveryType?: 'within-city' | 'inter-city';
-  status: 'pending' | 'accepted' | 'picked_up' | 'delivered' | 'cancelled';
-  createdAt: string;
-}
+// Use API type instead of local interface
+type DeliveryRequest = ApiDeliveryRequest;
 
 interface PlannedTrip {
   id: string;
@@ -42,6 +35,8 @@ export default function AvailableDeliveriesPage() {
   const [error, setError] = useState<string>('');
   const [selectedTab, setSelectedTab] = useState<'available' | 'active' | 'history' | 'invitations'>('available');
   const [currentUserId, setCurrentUserId] = useState<string>('');
+  const [currentPicker, setCurrentPicker] = useState<Picker | null>(null);
+  const [loadingPicker, setLoadingPicker] = useState(true);
   const [invitations, setInvitations] = useState<DeliveryRequest[]>([]);
   const [loadingInvitations, setLoadingInvitations] = useState(false);
 
@@ -73,34 +68,42 @@ export default function AvailableDeliveriesPage() {
   const [offerMessage, setOfferMessage] = useState<string>('');
   const [submittingOffer, setSubmittingOffer] = useState(false);
 
-  // Mock picker data - in real app this would come from user profile
-  const currentPicker: Picker = {
-    id: 'current-user',
-    fullName: 'John Doe',
-    email: 'john@example.com',
-    avatarUrl: '',
-    rating: 4.7,
-    isVerified: true,
-    isOnline: pickerSettings.isOnline,
-    isPhoneVerified: true,
-    isEmailVerified: true,
-    price: pickerSettings.price,
-    duration: 30,
-    trustLevel: 85,
-    reviewCount: 42,
-    distance: 0,
-    vehicle: pickerSettings.vehicle,
-    completedDeliveries: 127,
-    deliveryCount: 127,
-    description: pickerSettings.bio,
-  };
-
   // Load current user UID on mount and sync online status
   useEffect(() => {
     const loadCurrentUser = async () => {
+      setLoadingPicker(true);
       try {
         const { user } = await getCurrentUser();
         setCurrentUserId(user.uid);
+
+        // Map User to Picker type
+        const pickerData: Picker = {
+          id: user.uid,
+          fullName: user.name,
+          email: user.email,
+          age: 0, // TODO: Add to backend User entity
+          country: '', // TODO: Add to backend User entity
+          city: '', // TODO: Add to backend User entity
+          phoneNumber: user.phone || '',
+          avatarUrl: user.avatarUrl || '',
+          rating: user.rating || 0,
+          isVerified: true,
+          isOnline: pickerSettings.isOnline,
+          isPhoneVerified: !!user.phone,
+          isEmailVerified: true,
+          userType: UserType.PICKER,
+          price: pickerSettings.price,
+          duration: 30, // TODO: Add to backend
+          trustLevel: Math.round((user.rating || 0) * 20), // Convert 0-5 rating to 0-100
+          reviewCount: user.totalRatings || 0,
+          distance: 0,
+          vehicle: pickerSettings.vehicle,
+          completedDeliveries: user.completedDeliveries || 0,
+          deliveryCount: user.completedDeliveries || 0,
+          description: pickerSettings.bio,
+        };
+
+        setCurrentPicker(pickerData);
 
         // Sync local online status with backend on mount
         const localOnlineStatus = pickerSettings.isOnline;
@@ -110,11 +113,14 @@ export default function AvailableDeliveriesPage() {
         }
       } catch (err) {
         console.error('Failed to load current user:', err);
+        setError('Failed to load user profile');
+      } finally {
+        setLoadingPicker(false);
       }
     };
 
     loadCurrentUser();
-  }, []);
+  }, [pickerSettings]);
 
   useEffect(() => {
     const fetchDeliveries = async () => {
@@ -381,14 +387,20 @@ export default function AvailableDeliveriesPage() {
 
             {/* My Picker Card Widget */}
             <Box sx={{ px: 2, pt: 2 }}>
-              <MyPickerCard
-                isOnline={pickerSettings.isOnline}
-                price={pickerSettings.price}
-                rating={currentPicker.rating}
-                onToggleOnline={handlePickerOnlineToggle}
-                onViewCard={handleViewCard}
-                onEdit={handleEditCard}
-              />
+              {loadingPicker ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+                  <CircularProgress size={24} />
+                </Box>
+              ) : currentPicker ? (
+                <MyPickerCard
+                  isOnline={pickerSettings.isOnline}
+                  price={pickerSettings.price}
+                  rating={currentPicker.rating}
+                  onToggleOnline={handlePickerOnlineToggle}
+                  onViewCard={handleViewCard}
+                  onEdit={handleEditCard}
+                />
+              ) : null}
             </Box>
 
             {/* Plan a Trip Section */}
@@ -633,7 +645,7 @@ export default function AvailableDeliveriesPage() {
                           From
                         </Typography>
                         <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                          {delivery.fromAddress}
+                          {delivery.fromLocation?.address || 'N/A'}
                         </Typography>
                       </Box>
 
@@ -642,7 +654,7 @@ export default function AvailableDeliveriesPage() {
                           To
                         </Typography>
                         <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                          {delivery.toAddress}
+                          {delivery.toLocation?.address || 'N/A'}
                         </Typography>
                       </Box>
 
@@ -719,15 +731,17 @@ export default function AvailableDeliveriesPage() {
         <BottomNavigation />
 
         {/* Modals */}
-        <PickerCardModal
-          open={showViewCardModal}
-          onClose={() => setShowViewCardModal(false)}
-          onEdit={() => {
-            setShowViewCardModal(false);
-            setShowEditCardModal(true);
-          }}
-          picker={currentPicker}
-        />
+        {currentPicker && (
+          <PickerCardModal
+            open={showViewCardModal}
+            onClose={() => setShowViewCardModal(false)}
+            onEdit={() => {
+              setShowViewCardModal(false);
+              setShowEditCardModal(true);
+            }}
+            picker={currentPicker}
+          />
+        )}
 
         <EditPickerCardModal
           open={showEditCardModal}
@@ -748,10 +762,10 @@ export default function AvailableDeliveriesPage() {
             {selectedDelivery && (
               <Box sx={{ pt: 1 }}>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  From: {selectedDelivery.fromAddress}
+                  From: {selectedDelivery.fromLocation?.address || 'N/A'}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                  To: {selectedDelivery.toAddress}
+                  To: {selectedDelivery.toLocation?.address || 'N/A'}
                 </Typography>
 
                 <TextField

@@ -43,7 +43,7 @@ function BottomNavigation({
     });
 
     useEffect(() => {
-        if (!userRole) {
+        if (!userRole && pathname) {
             let newRole: 'picker' | 'sender' | null = null;
 
             if (pathname.startsWith('/available-deliveries')) {
@@ -62,6 +62,7 @@ function BottomNavigation({
     const effectiveRole = userRole || detectedRole;
 
     const currentValue = useMemo((): NavigationValue => {
+        if (!pathname) return 0;
         if (pathname.startsWith('/delivery-methods') || pathname.startsWith('/orders') || pathname.startsWith('/available-deliveries')) return 0;
         if (pathname.startsWith('/chat')) return 1;
         if (pathname.startsWith('/notifications')) return 2;
@@ -71,7 +72,7 @@ function BottomNavigation({
 
     const [value, setValue] = useState<NavigationValue>(currentValue);
 
-    const handleChange = useCallback((event: React.SyntheticEvent, newValue: NavigationValue) => {
+    const handleChange = useCallback((_event: React.SyntheticEvent, newValue: NavigationValue) => {
         setValue(newValue)
 
         switch (newValue) {

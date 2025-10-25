@@ -1,3 +1,16 @@
+// User info for relations in DeliveryDto
+export interface UserInfo {
+  uid: string;
+  id: number;
+  name: string;
+  email: string;
+  phone?: string;
+  avatarUrl?: string;
+  rating?: number;
+  isPhoneVerified?: boolean;
+  isEmailVerified?: boolean;
+}
+
 // DTO для возврата данных о доставке клиенту
 // Использует Firebase UID для идентификации пользователей
 export interface DeliveryDto {
@@ -12,6 +25,15 @@ export interface DeliveryDto {
 
   // Firebase UID получателя (опционально)
   recipientId?: string | null;
+
+  // Sender object with full info
+  sender?: UserInfo | null;
+
+  // Picker object with full info
+  picker?: UserInfo | null;
+
+  // Recipient object with full info
+  recipient?: UserInfo | null;
 
   // Название посылки
   title: string;

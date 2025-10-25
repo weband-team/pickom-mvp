@@ -1,14 +1,15 @@
 'use client';
 
-import { use, useState } from 'react';
-import { Box, Typography, IconButton, Chip, Stack, Divider } from '@mui/material';
+import { use, useState, useEffect } from 'react';
+import { Box, Typography, IconButton, Chip, Stack, Divider, CircularProgress, Alert } from '@mui/material';
 import { ArrowBack, LocationOn, CalendarToday, LocalShipping, Refresh } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
 import { MobileContainer } from '@/components/ui/layout/MobileContainer';
 import { UserAvatar, Button } from '@/components/ui';
 import BottomNavigation from '@/components/common/BottomNavigation';
-import { mockOrders } from '@/data/mockOrders';
+import { getDeliveryRequestById, updateDeliveryRequest, type DeliveryRequest } from '@/app/api/delivery';
 import { Order, OrderStatus, getStatusColor, getStatusLabel, canContactPicker, canCancelOrder, canReviewOrder } from '@/types/order';
+import { PackageTypeEnum } from '@/types/package';
 import { format } from 'date-fns';
 import { CancelOrderDialog } from '@/components/order/CancelOrderDialog';
 import { ReviewDialog } from '@/components/order/ReviewDialog';
@@ -16,33 +17,97 @@ import { toast } from 'react-hot-toast';
 
 interface OrderDetailsPageProps {
   params: Promise<{
-    orderId: string;
+    id: string;
   }>;
 }
 
+// Map backend delivery to frontend Order type
+const mapDeliveryToOrder = (delivery: DeliveryRequest): Order => {
+  // Map size to PackageTypeEnum
+  const sizeToPackageType = (size: 'small' | 'medium' | 'large'): PackageTypeEnum => {
+    switch (size) {
+      case 'small': return PackageTypeEnum.SMALL_PARCEL;
+      case 'large': return PackageTypeEnum.LARGE_PARCEL;
+      default: return PackageTypeEnum.LARGE_PARCEL;
+    }
+  };
+
+  return {
+    id: delivery.id.toString(),
+    trackingNumber: `PICK-${delivery.id.toString().padStart(6, '0')}`,
+    status: delivery.status === 'delivered' ? OrderStatus.COMPLETED :
+            delivery.status === 'cancelled' ? OrderStatus.CANCELLED :
+            delivery.status === 'picked_up' ? OrderStatus.ACTIVE :
+            delivery.status === 'accepted' ? OrderStatus.ACTIVE :
+            OrderStatus.PENDING,
+    deliveryMethod: delivery.deliveryType === 'inter-city' ? 'inter-city' : 'within-city',
+    packageType: sizeToPackageType(delivery.size),
+    pickup: {
+      address: delivery.fromLocation?.address || 'Address not available',
+      city: delivery.fromLocation?.city,
+      country: 'Poland',
+    },
+    dropoff: {
+      address: delivery.toLocation?.address || 'Address not available',
+      city: delivery.toLocation?.city,
+      country: 'Poland',
+    },
+    createdAt: new Date(delivery.createdAt),
+    pickupDateTime: new Date(delivery.createdAt), // Use created date as pickup time for now
+    deliveredAt: delivery.status === 'delivered' ? new Date(delivery.updatedAt) : undefined,
+    cancelledAt: delivery.status === 'cancelled' ? new Date(delivery.updatedAt) : undefined,
+    price: delivery.price,
+    currency: 'PLN',
+    picker: delivery.picker ? {
+      id: delivery.picker.uid || delivery.picker.id?.toString() || '',
+      fullName: delivery.picker.name,
+      avatarUrl: delivery.picker.avatarUrl,
+      rating: delivery.picker.rating || 0,
+      phone: delivery.picker.phone,
+    } : undefined,
+    notes: delivery.notes || undefined,
+    packageDescription: delivery.description || undefined,
+    review: undefined, // Reviews would come from ratings table
+  };
+};
+
 export default function OrderDetailsPage({ params }: OrderDetailsPageProps) {
   const router = useRouter();
-  const { orderId } = use(params);
+  const { id } = use(params);
 
-  const initialOrder = mockOrders.find(o => o.id === orderId);
-  const [order, setOrder] = useState<Order | undefined>(initialOrder);
+  const [order, setOrder] = useState<Order | undefined>(undefined);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string>('');
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
 
-  if (!order) {
-    return (
-      <Box sx={{ p: 3 }}>
-        <Typography>Order not found</Typography>
-      </Box>
-    );
-  }
+  // Fetch order from backend
+  useEffect(() => {
+    const fetchOrder = async () => {
+      setLoading(true);
+      setError('');
+
+      try {
+        const response = await getDeliveryRequestById(parseInt(id));
+        const mappedOrder = mapDeliveryToOrder(response.data);
+        setOrder(mappedOrder);
+      } catch (err: unknown) {
+        console.error('Failed to fetch order:', err);
+        setError('Failed to load order details. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrder();
+  }, [id]);
 
   const handleBackClick = () => {
     router.back();
   };
 
   const handleContactPicker = () => {
-    if (order.picker) {
+    if (order?.picker) {
       router.push(`/chat/${order.picker.id}`);
     }
   };
@@ -51,15 +116,23 @@ export default function OrderDetailsPage({ params }: OrderDetailsPageProps) {
     setCancelDialogOpen(true);
   };
 
-  const handleCancelOrderConfirm = () => {
-    setOrder({
-      ...order,
-      status: OrderStatus.CANCELLED,
-      cancelledAt: new Date(),
-    });
-    setCancelDialogOpen(false);
-    toast.success('Order cancelled successfully');
-    setTimeout(() => router.push('/orders'), 1500);
+  const handleCancelOrderConfirm = async () => {
+    if (!order) return;
+
+    try {
+      await updateDeliveryRequest(parseInt(order.id), { status: 'cancelled' });
+      setOrder({
+        ...order,
+        status: OrderStatus.CANCELLED,
+        cancelledAt: new Date(),
+      });
+      setCancelDialogOpen(false);
+      toast.success('Order cancelled successfully');
+      setTimeout(() => router.push('/orders'), 1500);
+    } catch (err) {
+      console.error('Failed to cancel order:', err);
+      toast.error('Failed to cancel order. Please try again.');
+    }
   };
 
   const handleLeaveReviewClick = () => {
@@ -67,14 +140,17 @@ export default function OrderDetailsPage({ params }: OrderDetailsPageProps) {
   };
 
   const handleReviewSubmit = (rating: number, comment: string) => {
-    setOrder({
-      ...order,
-      review: {
-        rating,
-        comment,
-        createdAt: new Date(),
-      },
-    });
+    // TODO: Implement review submission to backend
+    if (order) {
+      setOrder({
+        ...order,
+        review: {
+          rating,
+          comment,
+          createdAt: new Date(),
+        },
+      });
+    }
     setReviewDialogOpen(false);
     toast.success('Review submitted successfully');
   };
@@ -83,6 +159,43 @@ export default function OrderDetailsPage({ params }: OrderDetailsPageProps) {
     toast.success('Redirecting to create new order...');
     setTimeout(() => router.push('/delivery-methods'), 1000);
   };
+
+  // Loading state
+  if (loading) {
+    return (
+      <Box
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#f5f5f5',
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  // Error state
+  if (error || !order) {
+    return (
+      <Box
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#f5f5f5',
+          p: 2,
+        }}
+      >
+        <Alert severity="error" sx={{ maxWidth: 400 }}>
+          {error || 'Order not found'}
+        </Alert>
+      </Box>
+    );
+  }
 
   return (
     <Box

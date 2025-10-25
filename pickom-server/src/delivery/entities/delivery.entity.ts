@@ -12,6 +12,7 @@ import { User } from '../../user/entities/user.entity';
 import { Offer } from '../../offer/entities/offer.entity';
 import { Payment } from '../../payment/entities/payment.entity';
 import { Rating } from '../../rating/entities/rating.entity';
+import { DeliveryTracking } from '../../tracking/entities/tracking.entity';
 
 @Entity('deliveries')
 export class Delivery {
@@ -111,4 +112,7 @@ export class Delivery {
 
   @OneToMany(() => Rating, (rating) => rating.delivery)
   ratings: Rating[];
+
+  @OneToMany(() => DeliveryTracking, (tracking) => tracking.delivery)
+  tracking: DeliveryTracking[];
 }

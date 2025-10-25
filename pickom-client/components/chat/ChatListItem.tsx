@@ -1,7 +1,7 @@
 'use client';
 
 import { Box, Typography, Avatar } from '@mui/material';
-import { ChatSession } from '@/types/chat';
+import { ChatSession } from '@/app/api/chat';
 
 interface ChatListItemProps {
   chatSession: ChatSession;

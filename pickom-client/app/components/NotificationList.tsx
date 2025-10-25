@@ -1,18 +1,12 @@
 'use client';
 
 import { useNotifications } from '../hooks/useNotifications';
+import { type Notification } from '../api/notifications';
 import { formatDistanceToNow } from 'date-fns';
 import { ru } from 'date-fns/locale';
 
 interface NotificationItemProps {
-  notification: {
-    id: number;
-    title: string;
-    message: string;
-    type: 'offer_received' | 'offer_accepted' | 'status_update' | 'incoming_delivery';
-    read: boolean;
-    created_at: string;
-  };
+  notification: Notification;
   onMarkAsRead: (id: number) => void;
 }
 
@@ -23,6 +17,7 @@ const NotificationItem = ({ notification, onMarkAsRead }: NotificationItemProps)
       case 'offer_accepted': return '✅';
       case 'status_update': return '📦';
       case 'incoming_delivery': return '📥';
+      case 'new_delivery': return '🚚';
       default: return '🔔';
     }
   };
@@ -33,6 +28,7 @@ const NotificationItem = ({ notification, onMarkAsRead }: NotificationItemProps)
       case 'offer_accepted': return 'bg-green-50 border-green-200';
       case 'status_update': return 'bg-orange-50 border-orange-200';
       case 'incoming_delivery': return 'bg-purple-50 border-purple-200';
+      case 'new_delivery': return 'bg-yellow-50 border-yellow-200';
       default: return 'bg-gray-50 border-gray-200';
     }
   };

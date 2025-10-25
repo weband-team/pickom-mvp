@@ -25,8 +25,6 @@ const nextConfig: NextConfig = {
     }
     return config;
   },
-  // Disable SWC minifier to avoid worker issues
-  swcMinify: false,
 };
 
 export default nextConfig;

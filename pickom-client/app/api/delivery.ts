@@ -30,11 +30,24 @@ export interface CreateDeliveryRequest {
   status?: 'pending' | 'accepted' | 'picked_up' | 'delivered' | 'cancelled';
 }
 
+export interface UserInfo {
+  uid: string;
+  id: number;
+  name: string;
+  email: string;
+  phone?: string;
+  avatarUrl?: string;
+  rating?: number;
+}
+
 export interface DeliveryRequest {
   id: number;
-  senderId: string;
-  pickerId?: string;
-  recipientId?: string;
+  senderId: string | null;
+  pickerId?: string | null;
+  recipientId?: string | null;
+  sender?: UserInfo | null;
+  picker?: UserInfo | null;
+  recipient?: UserInfo | null;
   title: string;
   description?: string;
   fromLocation: Location | null;

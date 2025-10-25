@@ -3,7 +3,7 @@ import { AuthModule } from './auth/auth.module';
 import { AppController } from './app.controller';
 import { DeliveryModule } from './delivery/delivery.module';
 import { OfferModule } from './offer/offer.module';
-import { TrakingModule } from './traking/traking.module';
+import { TrackingModule } from './tracking/tracking.module';
 import { DatabaseModule } from './config/database.module';
 import { UserModule } from './user/user.module';
 import { NotificationModule } from './notification/notification.module';
@@ -18,7 +18,7 @@ import { PaymentModule } from './payment/payment.module';
     UserModule,
     DeliveryModule,
     OfferModule,
-    TrakingModule,
+    TrackingModule,
     NotificationModule,
     ChatModule,
     RatingModule,

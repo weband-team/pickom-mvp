@@ -8,8 +8,8 @@ import { MobileContainer } from '@/components/ui/layout/MobileContainer';
 import { PickomLogo } from '@/components/ui';
 import { TextInput } from '@/components/ui';
 import { ChatRoll, ChatMessage } from '@/components';
-import { getChatById, sendMessage, markMessagesAsRead } from '@/app/api/chat';
-import { ChatSession as ChatSessionType, Message } from '@/types/chat';
+import { getChatById, sendMessage, markMessagesAsRead, ChatSession as ChatSessionType } from '@/app/api/chat';
+import { Message } from '@/types/chat';
 import { getCurrentUser } from '@/app/api/user';
 
 interface ChatPageClientProps {

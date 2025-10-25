@@ -6,9 +6,8 @@ import { MobileContainer } from '@/components/ui/layout/MobileContainer';
 import { PickomLogo } from '@/components/ui';
 import { ChatListItem } from '@/components/chat/ChatListItem';
 import BottomNavigation from '@/components/common/BottomNavigation';
-import { getMyChats } from '@/app/api/chat';
+import { getMyChats, ChatSession } from '@/app/api/chat';
 import { useState, useEffect, useMemo } from 'react';
-import { ChatSession } from '@/types/chat';
 
 export default function ChatsPage() {
   const router = useRouter();
@@ -128,7 +127,7 @@ export default function ChatsPage() {
                 >
                   💬
                 </Typography>
-                <PickomLogo variant="full" sx={{ fontSize: '1.5rem' }} />
+                <PickomLogo variant="full" size="medium" />
               </Box>
 
               <Typography
@@ -225,7 +224,7 @@ export default function ChatsPage() {
               >
                 Chats
               </Typography>
-              <PickomLogo variant="icon" sx={{ fontSize: '1.5rem' }} />
+              <PickomLogo variant="icon" size="medium" />
             </Box>
 
             {/* Chat list */}

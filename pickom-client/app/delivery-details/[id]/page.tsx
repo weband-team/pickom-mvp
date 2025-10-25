@@ -110,6 +110,9 @@ export default function DeliveryDetailsPage({ params }: { params: Promise<{ id: 
         setDelivery(deliveryData as any);
 
         // Fetch sender data
+        if (!deliveryData.senderId) {
+          throw new Error('Sender ID is missing');
+        }
         const senderResponse = await getUser(deliveryData.senderId);
         const senderUser = senderResponse.user;
 
@@ -121,7 +124,7 @@ export default function DeliveryDetailsPage({ params }: { params: Promise<{ id: 
           totalOrders: 45,
           isPhoneVerified: senderUser.phone ? true : false,
           isEmailVerified: true,
-          memberSince: senderUser.createdAt,
+          memberSince: new Date(senderUser.createdAt).toISOString(),
           phone: senderUser.phone,
           email: senderUser.email,
         };

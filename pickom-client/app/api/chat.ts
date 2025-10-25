@@ -24,6 +24,7 @@ export interface ChatSession {
   messages?: Message[];
   lastMessage?: Message;
   unreadCount?: number;
+  status?: 'active' | 'price_confirmed' | 'completed' | 'cancelled';
 }
 
 export interface CreateChatRequest {

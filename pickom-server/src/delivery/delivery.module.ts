@@ -5,7 +5,6 @@ import { DeliveryService } from './delivery.service';
 import { Delivery } from './entities/delivery.entity';
 import { UserModule } from 'src/user/user.module';
 import { OfferModule } from 'src/offer/offer.module';
-import { TrakingModule } from 'src/traking/traking.module';
 import { NotificationModule } from 'src/notification/notification.module';
 import { AuthModule } from 'src/auth/auth.module';
 
@@ -14,7 +13,6 @@ import { AuthModule } from 'src/auth/auth.module';
     TypeOrmModule.forFeature([Delivery]),
     UserModule,
     OfferModule,
-    TrakingModule,
     NotificationModule,
     AuthModule,
   ],

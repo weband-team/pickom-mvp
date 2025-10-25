@@ -18,7 +18,6 @@ import {
 } from 'src/auth/guards/firebase-auth.guard';
 import { UserService } from 'src/user/user.service';
 import { OfferService } from 'src/offer/offer.service';
-import { TrakingService } from 'src/traking/traking.service';
 import { CreateDeliveryDto } from './dto/create-delivery.dto';
 import { UpdateDeliveryDto } from './dto/update-delivery.dto';
 
@@ -28,7 +27,6 @@ export class DeliveryController {
     private readonly deliveryService: DeliveryService,
     private readonly userService: UserService,
     private readonly offerService: OfferService,
-    private readonly trakingService: TrakingService,
   ) {}
 
   // Получить всех курьеров (GET /pickers)

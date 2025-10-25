@@ -14,7 +14,7 @@ import {
 } from '../../components/ui';
 import { DeliveryMethodType } from '../../types/delivery';
 import BottomNavigation from '../../components/common/BottomNavigation';
-import { getMyDeliveryRequests } from '../api/delivery';
+import { getMyDeliveryRequests, type DeliveryRequest as ApiDeliveryRequest } from '../api/delivery';
 import { useNavigationBadges } from '../../hooks/useNavigationBadges';
 import dynamic from 'next/dynamic';
 
@@ -23,23 +23,6 @@ const DualLocationPicker = dynamic(() => import('@/components/DualLocationPicker
   ssr: false,
   loading: () => <Box sx={{ height: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><CircularProgress /></Box>
 });
-
-interface DeliveryRequest {
-  id: number;
-  senderId: string;
-  pickerId?: string;
-  title: string;
-  description?: string;
-  fromLocation: LocationData | null;
-  toLocation: LocationData | null;
-  deliveryType?: 'within-city' | 'inter-city';
-  price: number;
-  size: 'small' | 'medium' | 'large';
-  weight?: number;
-  notes?: string;
-  status: 'pending' | 'accepted' | 'picked_up' | 'delivered' | 'cancelled';
-  createdAt: string;
-}
 
 interface LocationData {
   lat: number;
@@ -83,7 +66,7 @@ type DeliveryFormAction =
   | { type: 'SET_NOTES'; payload: string }
   | { type: 'SET_WITHIN_CITY_FIELD'; field: keyof DeliveryFormState['withinCity']; value: LocationData | Date | null }
   | { type: 'SET_INTER_CITY_FIELD'; field: keyof DeliveryFormState['interCity']; value: LocationData | Date | null }
-  | { type: 'SET_INTERNATIONAL_FIELD'; field: keyof DeliveryFormState['international']; value: string | Date | null | number }
+  | { type: 'SET_INTERNATIONAL_FIELD'; field: keyof DeliveryFormState['international']; value: LocationData | string | Date | null | number }
   | { type: 'RESET' };
 
 const initialState: DeliveryFormState = {
@@ -150,7 +133,7 @@ function deliveryFormReducer(state: DeliveryFormState, action: DeliveryFormActio
 }
 
 interface MyDeliveriesTabProps {
-  deliveries: DeliveryRequest[];
+  deliveries: ApiDeliveryRequest[];
   loading: boolean;
   onRefresh: () => void;
 }
@@ -375,7 +358,7 @@ export default function SendPackagePage() {
   const [state, dispatch] = useReducer(deliveryFormReducer, initialState);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState<'create' | 'manage'>('create');
-  const [deliveries, setDeliveries] = useState<DeliveryRequest[]>([]);
+  const [deliveries, setDeliveries] = useState<ApiDeliveryRequest[]>([]);
   const [loadingDeliveries, setLoadingDeliveries] = useState(false);
 
   // Get navigation badge counts

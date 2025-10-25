@@ -82,6 +82,9 @@ export default function ActiveDeliveryPage({ params }: { params: Promise<{ id: s
         setDelivery(deliveryData as any);
 
         // Fetch sender data
+        if (!deliveryData.senderId) {
+          throw new Error('Sender ID is missing');
+        }
         const senderResponse = await getUser(deliveryData.senderId);
         const senderUser = senderResponse.user;
 
@@ -93,7 +96,7 @@ export default function ActiveDeliveryPage({ params }: { params: Promise<{ id: s
           totalOrders: 45, // TODO: Get from backend
           isPhoneVerified: senderUser.phone ? true : false,
           isEmailVerified: true,
-          memberSince: senderUser.createdAt,
+          memberSince: new Date(senderUser.createdAt).toISOString(),
           phone: senderUser.phone,
           email: senderUser.email,
         };
