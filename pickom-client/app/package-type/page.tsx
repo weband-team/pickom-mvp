@@ -264,12 +264,13 @@ export default function PackageTypePage(){
                             Receiver Information
                         </Typography>
                         <TextInput
-                            label="Receiver Email or User ID"
+                            label="Receiver Email"
+                            type="email"
                             value={recipientEmailOrId}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setRecipientEmailOrId(e.target.value)}
-                            placeholder="Enter receiver's email or ID"
+                            placeholder="receiver@example.com"
                             fullWidth
-                            helperText="We'll verify if this user exists in the system"
+                            helperText="Enter the email of the person who will receive the package"
                         />
                     </Box>
 
@@ -283,6 +284,14 @@ export default function PackageTypePage(){
                                 setIsSearching(true);
 
                                 try {
+                                    // Validate email if provided
+                                    if (recipientEmailOrId && !recipientEmailOrId.includes('@')) {
+                                        const toast = (await import('react-hot-toast')).default;
+                                        toast.error('Please enter a valid email address for the receiver');
+                                        setIsSearching(false);
+                                        return;
+                                    }
+
                                     // Load existing delivery data from localStorage
                                     const existingData = localStorage.getItem('deliveryData');
                                     if (!existingData) {
@@ -362,9 +371,9 @@ export default function PackageTypePage(){
                                     setIsSearching(false);
                                 }
                             }}
-                            disabled={!selectedType || !title || !size || !price || (selectedType === PackageTypeEnum.OTHER && !otherDescription) || isSearching}
+                            disabled={!selectedType || !title || !price || (selectedType === PackageTypeEnum.OTHER && !otherDescription) || isSearching}
                             loading={isSearching}
-                            variant={selectedType && title && size && price ? "contained" : "outlined"}
+                            variant={selectedType && title && price ? "contained" : "outlined"}
                             sx={{
                                 '&.Mui-disabled': {
                                     backgroundColor: 'action.disabled',

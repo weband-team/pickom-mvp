@@ -258,14 +258,11 @@ function MyDeliveriesTab({ deliveries, loading, onRefresh }: MyDeliveriesTabProp
             sx={{
               mb: 2,
               p: 2,
-              cursor: 'pointer',
               transition: 'all 0.2s',
               '&:hover': {
                 boxShadow: 4,
-                transform: 'translateY(-2px)',
               },
             }}
-            onClick={() => router.push(`/delivery-details/${delivery.id}`)}
           >
             <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, mb: 1 }}>
               <Box sx={{ flex: 1 }}>
@@ -303,7 +300,7 @@ function MyDeliveriesTab({ deliveries, loading, onRefresh }: MyDeliveriesTabProp
               {shortenAddress(delivery.toLocation?.address || '')}
             </Typography>
 
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
               <Typography variant="body2" sx={{ fontWeight: 600 }}>
                 {delivery.price} zł
               </Typography>
@@ -311,6 +308,36 @@ function MyDeliveriesTab({ deliveries, loading, onRefresh }: MyDeliveriesTabProp
                 {delivery.size}
               </Typography>
             </Box>
+
+            {/* Action Buttons */}
+            <Stack direction="row" spacing={1}>
+              <Button
+                size="small"
+                variant="outlined"
+                fullWidth
+                onClick={() => router.push(`/delivery-details/${delivery.id}`)}
+              >
+                View Offers
+              </Button>
+              <Button
+                size="small"
+                variant="contained"
+                fullWidth
+                onClick={() => {
+                  // Save delivery data for search pickers flow
+                  localStorage.setItem('searchPickersDeliveryId', delivery.id.toString());
+                  localStorage.setItem('deliveryData', JSON.stringify({
+                    deliveryId: delivery.id,
+                    fromLocation: delivery.fromLocation,
+                    toLocation: delivery.toLocation,
+                    deliveryType: delivery.deliveryType || 'within-city',
+                  }));
+                  router.push('/select-traveler');
+                }}
+              >
+                Search Pickers
+              </Button>
+            </Stack>
           </Card>
         ))
       )}

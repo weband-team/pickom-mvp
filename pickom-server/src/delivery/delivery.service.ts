@@ -54,12 +54,19 @@ export class DeliveryService {
 
     let recipient: UserEntity | null = null;
     if (createDto.recipientId) {
-      const recipientData = await this.userService.findOne(
+      // Validate that it's an email
+      if (!createDto.recipientId.includes('@')) {
+        throw new Error(
+          `Invalid recipient email. Please provide a valid email address.`,
+        );
+      }
+
+      const recipientData = await this.userService.findByEmailOrUid(
         createDto.recipientId,
       );
       if (!recipientData) {
         throw new Error(
-          `Recipient not found. Please provide a valid Firebase UID, not a numeric ID.`,
+          `Recipient with email "${createDto.recipientId}" not found in the system.`,
         );
       }
       recipient = recipientData as UserEntity;
@@ -85,9 +92,9 @@ export class DeliveryService {
     const savedDelivery = await this.deliveryRepository.save(delivery);
 
     // Если указан получатель, создаем уведомление о входящей доставке
-    if (createDto.recipientId) {
+    if (recipient) {
       await this.notificationService.notifyIncomingDelivery(
-        createDto.recipientId,
+        recipient.uid,
         savedDelivery.id,
         sender.name,
       );
@@ -98,7 +105,7 @@ export class DeliveryService {
       savedDelivery,
       senderUid,
       createDto.pickerId,
-      createDto.recipientId,
+      recipient?.uid,
     );
   }
 

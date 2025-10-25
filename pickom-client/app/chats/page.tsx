@@ -6,12 +6,14 @@ import { MobileContainer } from '@/components/ui/layout/MobileContainer';
 import { PickomLogo } from '@/components/ui';
 import { ChatListItem } from '@/components/chat/ChatListItem';
 import BottomNavigation from '@/components/common/BottomNavigation';
+import { useNavigationBadges } from '../hooks/useNavigationBadges';
 import { getMyChats } from '@/app/api/chat';
 import { useState, useEffect, useMemo } from 'react';
 import { ChatSession } from '@/types/chat';
 
 export default function ChatsPage() {
   const router = useRouter();
+  const { unreadChats, unreadNotifications, activeOrders } = useNavigationBadges();
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
@@ -176,7 +178,11 @@ export default function ChatsPage() {
               </Button>
             </Box>
           </MobileContainer>
-          <BottomNavigation unreadChatsCount={0} />
+          <BottomNavigation
+            unreadChatsCount={unreadChats}
+            unreadNotificationsCount={unreadNotifications}
+            activeOrdersCount={activeOrders}
+          />
         </Box>
       </Box>
     );
@@ -245,7 +251,11 @@ export default function ChatsPage() {
             </Box>
           </Box>
         </MobileContainer>
-        <BottomNavigation unreadChatsCount={unreadCount} />
+        <BottomNavigation
+          unreadChatsCount={unreadCount}
+          unreadNotificationsCount={unreadNotifications}
+          activeOrdersCount={activeOrders}
+        />
       </Box>
     </Box>
   );

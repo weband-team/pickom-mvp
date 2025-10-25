@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import { ThemeProvider, GlobalStyles } from '@mui/material/styles';
+import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
+import GlobalStyles from '@mui/material/GlobalStyles';
 import { ThemeModeProvider, useThemeMode } from '../../contexts/ThemeContext';
 import { createPickomTheme } from '../../theme/theme';
 import { ToastProvider } from './ToastProvider';

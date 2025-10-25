@@ -37,9 +37,9 @@ export const LoadingIndicator: React.FC<LoadingIndicatorProps> = ({
               variant={variant}
               value={value}
               sx={{
-                backgroundColor: '#f5f5f5',
+                backgroundColor: 'action.disabledBackground',
                 '& .MuiLinearProgress-bar': {
-                  backgroundColor: '#000000',
+                  backgroundColor: 'primary.main',
                 },
               }}
             />
@@ -60,7 +60,6 @@ export const LoadingIndicator: React.FC<LoadingIndicatorProps> = ({
                 variant="text"
                 sx={{
                   fontSize: size === 'small' ? '0.875rem' : size === 'large' ? '1.25rem' : '1rem',
-                  backgroundColor: '#f5f5f5',
                 }}
               />
             ))}
@@ -76,7 +75,7 @@ export const LoadingIndicator: React.FC<LoadingIndicatorProps> = ({
                 sx={{
                   width: progressSize / 4,
                   height: progressSize / 4,
-                  backgroundColor: '#000000',
+                  backgroundColor: 'primary.main',
                   borderRadius: '50%',
                   animation: 'dotPulse 1.4s ease-in-out infinite',
                   animationDelay: `${index * 0.16}s`,
@@ -108,7 +107,7 @@ export const LoadingIndicator: React.FC<LoadingIndicatorProps> = ({
               value={value}
               size={progressSize}
               sx={{
-                color: '#000000',
+                color: 'primary.main',
               }}
             />
             {text && (
@@ -133,7 +132,8 @@ export const LoadingIndicator: React.FC<LoadingIndicatorProps> = ({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: 'rgba(255, 255, 255, 0.8)',
+          backgroundColor: 'background.default',
+          opacity: 0.95,
           zIndex: 9999,
         }}
       >

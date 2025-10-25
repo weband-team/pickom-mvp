@@ -12,11 +12,13 @@ import { ProfileHeader } from '@/components/profile/ProfileHeader';
 import { ProfileStats } from '@/components/profile/ProfileStats';
 import { UserType } from '@/types/auth';
 import BottomNavigation from '../../components/common/BottomNavigation';
+import { useNavigationBadges } from '../hooks/useNavigationBadges';
 import { ThemeToggle } from '../../components/common/ThemeToggle';
 import { handleMe } from '../api/auth';
 
 export default function ProfilePage() {
   const router = useRouter();
+  const { unreadChats, unreadNotifications, activeOrders } = useNavigationBadges();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
@@ -239,7 +241,11 @@ export default function ProfilePage() {
             </Box>
           </Box>
         </MobileContainer>
-        <BottomNavigation />
+        <BottomNavigation
+          unreadChatsCount={unreadChats}
+          unreadNotificationsCount={unreadNotifications}
+          activeOrdersCount={activeOrders}
+        />
       </Box>
     </Box>
   );

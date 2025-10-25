@@ -133,8 +133,8 @@ export class NotificationService {
   ): Promise<NotificationDto> {
     return await this.createNotification({
       user_id: senderId,
-      title: 'Новое предложение',
-      message: `Курьер ${pickerName} предложил доставить вашу посылку за ${price} BYN`,
+      title: 'New Offer',
+      message: `Courier ${pickerName} offered to deliver your package for ${price} zl`,
       type: 'offer_received',
       read: false,
       related_delivery_id: deliveryId,
@@ -148,8 +148,9 @@ export class NotificationService {
   ): Promise<NotificationDto> {
     return await this.createNotification({
       user_id: senderId,
-      title: 'Предложение принято',
-      message: 'Ваше предложение принято. Курьер забирает посылку.',
+      title: 'Offer Accepted',
+      message:
+        'Your offer has been accepted. The courier is picking up the package.',
       type: 'offer_accepted',
       read: false,
       related_delivery_id: deliveryId,
@@ -164,8 +165,8 @@ export class NotificationService {
   ): Promise<NotificationDto> {
     return await this.createNotification({
       user_id: recipientId,
-      title: 'Вам отправили посылку',
-      message: `${senderName} хочет отправить вам посылку. Пожалуйста, подтвердите получение.`,
+      title: "You've Been Sent a Package",
+      message: `${senderName} wants to send you a package. Please confirm receipt.`,
       type: 'incoming_delivery',
       read: false,
       related_delivery_id: deliveryId,
@@ -180,14 +181,14 @@ export class NotificationService {
     message: string,
   ): Promise<NotificationDto> {
     const statusTitles: Record<string, string> = {
-      picked_up: 'Посылка забрана',
-      delivered: 'Посылка доставлена',
-      cancelled: 'Доставка отменена',
+      picked_up: 'Package Picked Up',
+      delivered: 'Package Delivered',
+      cancelled: 'Delivery Cancelled',
     };
 
     return await this.createNotification({
       user_id: userId,
-      title: statusTitles[status] || 'Обновление статуса',
+      title: statusTitles[status] || 'Status Update',
       message,
       type: 'status_update',
       read: false,

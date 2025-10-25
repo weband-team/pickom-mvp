@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { MobileContainer } from '@/components/ui/layout/MobileContainer';
 import BottomNavigation from '@/components/common/BottomNavigation';
 import { useNotifications } from '../hooks/useNotifications';
+import { useNavigationBadges } from '../hooks/useNavigationBadges';
 import { formatDistanceToNow } from 'date-fns';
 import { enUS } from 'date-fns/locale';
 import { useState, useEffect } from 'react';
@@ -23,6 +24,7 @@ export default function NotificationsPage() {
     markAsRead,
     markAllAsRead
   } = useNotifications();
+  const { unreadChats, unreadNotifications, activeOrders } = useNavigationBadges();
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [currentUserRole, setCurrentUserRole] = useState<string>('');
 
@@ -251,7 +253,11 @@ export default function NotificationsPage() {
             </Box>
           </Box>
         </MobileContainer>
-        <BottomNavigation unreadNotificationsCount={unreadCount} />
+        <BottomNavigation
+          unreadChatsCount={unreadChats}
+          unreadNotificationsCount={unreadCount}
+          activeOrdersCount={activeOrders}
+        />
       </Box>
     </Box>
   );
