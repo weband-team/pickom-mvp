@@ -737,6 +737,8 @@ export default function DeliveryDetailsPage({ params }: { params: Promise<{ id: 
           PaperProps={{
             sx: {
               maxHeight: '90vh',
+              maxWidth: '375px',
+              margin: '0 auto',
               borderTopLeftRadius: 16,
               borderTopRightRadius: 16,
               backgroundColor: 'background.paper',

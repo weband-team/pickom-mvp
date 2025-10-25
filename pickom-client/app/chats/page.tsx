@@ -6,7 +6,7 @@ import { MobileContainer } from '@/components/ui/layout/MobileContainer';
 import { PickomLogo } from '@/components/ui';
 import { ChatListItem } from '@/components/chat/ChatListItem';
 import BottomNavigation from '@/components/common/BottomNavigation';
-import { useNavigationBadges } from '../hooks/useNavigationBadges';
+import { useNavigationBadges } from '@/hooks/useNavigationBadges';
 import { getMyChats } from '@/app/api/chat';
 import { useState, useEffect, useMemo } from 'react';
 import { ChatSession } from '@/types/chat';

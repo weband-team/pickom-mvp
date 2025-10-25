@@ -132,8 +132,7 @@ export const LoadingIndicator: React.FC<LoadingIndicatorProps> = ({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: 'background.default',
-          opacity: 0.95,
+          bgcolor: 'background.default',
           zIndex: 9999,
         }}
       >

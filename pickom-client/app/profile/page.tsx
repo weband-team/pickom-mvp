@@ -12,7 +12,7 @@ import { ProfileHeader } from '@/components/profile/ProfileHeader';
 import { ProfileStats } from '@/components/profile/ProfileStats';
 import { UserType } from '@/types/auth';
 import BottomNavigation from '../../components/common/BottomNavigation';
-import { useNavigationBadges } from '../hooks/useNavigationBadges';
+import { useNavigationBadges } from '@/hooks/useNavigationBadges';
 import { ThemeToggle } from '../../components/common/ThemeToggle';
 import { handleMe } from '../api/auth';
 

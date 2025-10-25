@@ -5,8 +5,8 @@ import { ArrowBack, Notifications as NotificationsIcon } from '@mui/icons-materi
 import { useRouter } from 'next/navigation';
 import { MobileContainer } from '@/components/ui/layout/MobileContainer';
 import BottomNavigation from '@/components/common/BottomNavigation';
-import { useNotifications } from '../hooks/useNotifications';
-import { useNavigationBadges } from '../hooks/useNavigationBadges';
+import { useNotifications } from '@/hooks/useNotifications';
+import { useNavigationBadges } from '@/hooks/useNavigationBadges';
 import { formatDistanceToNow } from 'date-fns';
 import { enUS } from 'date-fns/locale';
 import { useState, useEffect } from 'react';

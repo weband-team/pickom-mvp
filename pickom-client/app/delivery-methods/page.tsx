@@ -315,7 +315,7 @@ function MyDeliveriesTab({ deliveries, loading, onRefresh }: MyDeliveriesTabProp
                 size="small"
                 variant="outlined"
                 fullWidth
-                onClick={() => router.push(`/delivery-details/${delivery.id}`)}
+                onClick={() => router.push(`/delivery-methods/${delivery.id}/offers`)}
               >
                 View Offers
               </Button>
@@ -332,7 +332,7 @@ function MyDeliveriesTab({ deliveries, loading, onRefresh }: MyDeliveriesTabProp
                     toLocation: delivery.toLocation,
                     deliveryType: delivery.deliveryType || 'within-city',
                   }));
-                  router.push('/select-traveler');
+                  router.push('/picker-results');
                 }}
               >
                 Search Pickers
