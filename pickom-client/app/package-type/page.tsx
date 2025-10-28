@@ -10,6 +10,7 @@ import {
     PickomLogo
 } from '../../components/ui'
 import { PackageTypeEnum } from '@/types/package';
+import { ReceiverSelector } from '@/components/order/ReceiverSelector';
 
 export default function PackageTypePage(){
     const router = useRouter();
@@ -19,7 +20,8 @@ export default function PackageTypePage(){
     const [weight, setWeight] = useState('');
     const [notes, setNotes] = useState('');
     const [otherDescription, setOtherDescription] = useState('');
-    const [recipientEmailOrId, setRecipientEmailOrId] = useState('');
+    const [recipientId, setRecipientId] = useState('');
+    const [recipientPhone, setRecipientPhone] = useState('');
     const [selectedType, setSelectedType] = useState<PackageTypeEnum | null>(null);
     const [isSearching, setIsSearching] = useState(false);
 
@@ -259,20 +261,12 @@ export default function PackageTypePage(){
                     )}
 
                     {/* Receiver Section */}
-                    <Box sx={{ mb: 3 }}>
-                        <Typography variant="h6" sx={{ mb: 2 }}>
-                            Receiver Information
-                        </Typography>
-                        <TextInput
-                            label="Receiver Email"
-                            type="email"
-                            value={recipientEmailOrId}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setRecipientEmailOrId(e.target.value)}
-                            placeholder="receiver@example.com"
-                            fullWidth
-                            helperText="Enter the email of the person who will receive the package"
-                        />
-                    </Box>
+                    <ReceiverSelector
+                        recipientId={recipientId}
+                        recipientPhone={recipientPhone}
+                        onRecipientIdChange={setRecipientId}
+                        onRecipientPhoneChange={setRecipientPhone}
+                    />
 
                     {/* Navigation buttons */}
                     <Stack direction="row" justifyContent="space-between" sx={{ mt: 2 }}>
@@ -284,14 +278,6 @@ export default function PackageTypePage(){
                                 setIsSearching(true);
 
                                 try {
-                                    // Validate email if provided
-                                    if (recipientEmailOrId && !recipientEmailOrId.includes('@')) {
-                                        const toast = (await import('react-hot-toast')).default;
-                                        toast.error('Please enter a valid email address for the receiver');
-                                        setIsSearching(false);
-                                        return;
-                                    }
-
                                     // Load existing delivery data from localStorage
                                     const existingData = localStorage.getItem('deliveryData');
                                     if (!existingData) {
@@ -336,8 +322,8 @@ export default function PackageTypePage(){
                                         size: getSizeFromType(),
                                         weight: weight ? parseFloat(weight) : undefined,
                                         notes: notes || undefined,
-                                        recipientId: recipientEmailOrId || undefined,
-                                        recipientPhone: undefined,
+                                        recipientEmail: recipientId || undefined,
+                                        recipientPhone: recipientPhone || undefined,
                                     });
 
                                     const deliveryId = response.data.id;
@@ -356,7 +342,8 @@ export default function PackageTypePage(){
                                         weight: weight ? parseFloat(weight) : undefined,
                                         notes: notes || undefined,
                                         otherDescription: selectedType === PackageTypeEnum.OTHER ? otherDescription : undefined,
-                                        recipientEmailOrId: recipientEmailOrId || undefined,
+                                        recipientEmail: recipientId || undefined,
+                                        recipientPhone: recipientPhone || undefined,
                                     };
 
                                     localStorage.setItem('deliveryData', JSON.stringify(completeDeliveryData));

@@ -27,7 +27,7 @@ export interface CreateDeliveryRequest {
   weight?: number;
   notes?: string;
   pickerId?: string;
-  recipientId?: string;
+  recipientEmail?: string;
   recipientPhone?: string;
   status?: 'pending' | 'accepted' | 'picked_up' | 'delivered' | 'cancelled';
 }
@@ -148,7 +148,7 @@ export const confirmRecipient = async (
 };
 
 /**
- * Find receiver by email or Firebase UID
+ * Find receiver by email
  * Requires authentication
  */
 export interface ReceiverInfo {
@@ -159,9 +159,9 @@ export interface ReceiverInfo {
 }
 
 export const findReceiver = async (
-  emailOrUid: string
+  email: string
 ): Promise<AxiosResponse<ReceiverInfo | null>> => {
-  return protectedFetch.post('/delivery/find-receiver', { emailOrUid });
+  return protectedFetch.post('/delivery/find-receiver', { email });
 };
 
 /**

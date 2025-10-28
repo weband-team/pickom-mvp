@@ -10,9 +10,11 @@ import { handleMe } from '../api/auth';
 import { getUserBalance } from '../api/user';
 import { getCompletedDeliveries, getCancelledDeliveries } from '../api/delivery';
 import { User } from '../api/dto/user';
+import { useNavigationBadges } from '@/hooks/useNavigationBadges';
 
 export default function EarningsPage() {
   const router = useRouter();
+  const { unreadChats, unreadNotifications } = useNavigationBadges();
   const [user, setUser] = useState<User | null>(null);
   const [balance, setBalance] = useState<number>(0);
   const [completedCount, setCompletedCount] = useState<number>(0);
@@ -208,7 +210,10 @@ export default function EarningsPage() {
             </Card>
           </Box>
         </MobileContainer>
-        <BottomNavigation />
+        <BottomNavigation
+          unreadChatsCount={unreadChats}
+          unreadNotificationsCount={unreadNotifications}
+        />
       </Box>
     </Box>
   );

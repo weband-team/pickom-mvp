@@ -14,6 +14,7 @@ import PickerCardModal from '@/components/picker/PickerCardModal';
 import EditPickerCardModal from '@/components/picker/EditPickerCardModal';
 import { getPickerSettings, savePickerSettings, toggleOnlineStatus, type PickerCardSettings } from '@/data/mockPickerSettings';
 import type { Picker } from '@/types/picker';
+import { useNavigationBadges } from '@/hooks/useNavigationBadges';
 
 interface DeliveryRequest {
   id: number;
@@ -37,6 +38,7 @@ interface PlannedTrip {
 
 export default function AvailableDeliveriesPage() {
   const router = useRouter();
+  const { unreadChats, unreadNotifications } = useNavigationBadges();
   const [deliveries, setDeliveries] = useState<DeliveryRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
@@ -519,12 +521,20 @@ export default function AvailableDeliveriesPage() {
                 '& .MuiTabs-flexContainer': {
                   pl: 0,
                 },
+                '& .MuiTabs-scroller': {
+                  ml: 0,
+                },
                 '& .MuiTab-root': {
                   minHeight: 48,
                   fontSize: '0.75rem',
                   fontWeight: 500,
                   textTransform: 'none',
                   minWidth: 80,
+                  pl: 2,
+                  pr: 2,
+                  '&:first-of-type': {
+                    pl: 0,
+                  },
                 },
               }}
             >
@@ -719,7 +729,10 @@ export default function AvailableDeliveriesPage() {
             </Box>
           </Box>
         </MobileContainer>
-        <BottomNavigation />
+        <BottomNavigation
+          unreadChatsCount={unreadChats}
+          unreadNotificationsCount={unreadNotifications}
+        />
 
         {/* Modals */}
         <PickerCardModal

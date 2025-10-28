@@ -46,7 +46,10 @@ export class UpdatePaymentTable1728489100000 implements MigrationInterface {
     `);
 
     // Add stripe_payment_intent_id if not exists
-    const hasStripePaymentIntentId = await queryRunner.hasColumn('payments', 'stripe_payment_intent_id');
+    const hasStripePaymentIntentId = await queryRunner.hasColumn(
+      'payments',
+      'stripe_payment_intent_id',
+    );
     if (!hasStripePaymentIntentId) {
       await queryRunner.addColumn(
         'payments',
@@ -61,7 +64,10 @@ export class UpdatePaymentTable1728489100000 implements MigrationInterface {
     }
 
     // Add stripe_client_secret if not exists
-    const hasStripeClientSecret = await queryRunner.hasColumn('payments', 'stripe_client_secret');
+    const hasStripeClientSecret = await queryRunner.hasColumn(
+      'payments',
+      'stripe_client_secret',
+    );
     if (!hasStripeClientSecret) {
       await queryRunner.addColumn(
         'payments',
@@ -90,7 +96,10 @@ export class UpdatePaymentTable1728489100000 implements MigrationInterface {
     }
 
     // Add description if not exists
-    const hasDescription = await queryRunner.hasColumn('payments', 'description');
+    const hasDescription = await queryRunner.hasColumn(
+      'payments',
+      'description',
+    );
     if (!hasDescription) {
       await queryRunner.addColumn(
         'payments',

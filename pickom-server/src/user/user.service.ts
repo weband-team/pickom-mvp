@@ -92,7 +92,7 @@ export class UserService {
     };
   }
 
-  async findOneByEmail(email: string): Promise<UserDto | null> {
+  async findOneByEmail(email: string): Promise<UserEntity | null> {
     return (
       this.userRepository.findOne({
         where: { email },
@@ -191,7 +191,8 @@ export class UserService {
     // Обновляем только разрешенные поля в Firebase (без email)
     const firebaseUpdateData: any = {};
     if (updateData.name) firebaseUpdateData.displayName = updateData.name;
-    if (updateData.avatarUrl) firebaseUpdateData.photoURL = updateData.avatarUrl;
+    if (updateData.avatarUrl)
+      firebaseUpdateData.photoURL = updateData.avatarUrl;
 
     // Добавляем телефон только если он в формате E.164 (начинается с +)
     if (updateData.phone) {
@@ -199,7 +200,10 @@ export class UserService {
       if (phoneStr.startsWith('+') && phoneStr.length >= 10) {
         firebaseUpdateData.phoneNumber = phoneStr;
       } else {
-        console.warn('Phone number not in E.164 format, skipping Firebase update:', phoneStr);
+        console.warn(
+          'Phone number not in E.164 format, skipping Firebase update:',
+          phoneStr,
+        );
       }
     }
 

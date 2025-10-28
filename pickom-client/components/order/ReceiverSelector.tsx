@@ -12,7 +12,7 @@ interface ReceiverSelectorProps {
   onRecipientPhoneChange: (value: string) => void;
 }
 
-type ReceiverType = 'none' | 'userId' | 'phone';
+type ReceiverType = 'none' | 'email' | 'phone';
 
 export function ReceiverSelector({
   recipientId,
@@ -21,7 +21,7 @@ export function ReceiverSelector({
   onRecipientPhoneChange,
 }: ReceiverSelectorProps) {
   const [receiverType, setReceiverType] = useState<ReceiverType>(() => {
-    if (recipientId) return 'userId';
+    if (recipientId) return 'email';
     if (recipientPhone) return 'phone';
     return 'none';
   });
@@ -49,7 +49,7 @@ export function ReceiverSelector({
 
       if (response.data) {
         setFoundReceiver(response.data);
-        onRecipientIdChange(response.data.uid);
+        onRecipientIdChange(response.data.email);
         setSearchError(null);
       } else {
         setFoundReceiver(null);
@@ -101,7 +101,7 @@ export function ReceiverSelector({
     if (newType === 'none') {
       onRecipientIdChange('');
       onRecipientPhoneChange('');
-    } else if (newType === 'userId') {
+    } else if (newType === 'email') {
       onRecipientPhoneChange('');
     } else if (newType === 'phone') {
       onRecipientIdChange('');
@@ -124,21 +124,21 @@ export function ReceiverSelector({
         <ToggleButton value="none">
           No Receiver
         </ToggleButton>
-        <ToggleButton value="userId">
-          Email / ID
+        <ToggleButton value="email">
+          Email
         </ToggleButton>
         <ToggleButton value="phone">
           Phone Number
         </ToggleButton>
       </ToggleButtonGroup>
 
-      {receiverType === 'userId' && (
+      {receiverType === 'email' && (
         <Stack spacing={2}>
           <TextInput
-            label="Search by Email or User ID"
+            label="Search by Email"
             value={searchInput}
             onChange={handleSearchInputChange}
-            placeholder="Enter email or user ID"
+            placeholder="receiver@example.com"
             fullWidth
           />
 

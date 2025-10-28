@@ -48,11 +48,11 @@ export class DeliveryController {
       }));
   }
 
-  // Найти получателя по email или UID
+  // Найти получателя по email
   @Post('find-receiver')
   @UseGuards(FirebaseAuthGuard)
   async findReceiver(@Body() dto: FindReceiverDto) {
-    const user = await this.userService.findByEmailOrUid(dto.emailOrUid);
+    const user = await this.userService.findOneByEmail(dto.email);
 
     if (!user) {
       return null;

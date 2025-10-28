@@ -228,6 +228,7 @@ function MyDeliveriesTab({ deliveries, loading, onRefresh }: MyDeliveriesTabProp
       <Tabs
         value={subTab}
         onChange={(_, newValue) => setSubTab(newValue)}
+        variant="fullWidth"
         sx={{
           borderBottom: 1,
           borderColor: 'divider',
@@ -236,7 +237,7 @@ function MyDeliveriesTab({ deliveries, loading, onRefresh }: MyDeliveriesTabProp
           '& .MuiTab-root': {
             minHeight: 40,
             fontSize: '0.875rem',
-            textTransform: 'none',
+            textTransform: 'uppercase',
           },
         }}
       >

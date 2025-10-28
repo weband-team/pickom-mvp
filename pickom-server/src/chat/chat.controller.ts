@@ -69,11 +69,16 @@ export class ChatController {
     @Req() req: any,
     @Param('deliveryId') deliveryId: string,
   ): Promise<ChatSessionDto[]> {
-    return this.chatService.getChatsByDeliveryId(parseInt(deliveryId), req.user.uid);
+    return this.chatService.getChatsByDeliveryId(
+      parseInt(deliveryId),
+      req.user.uid,
+    );
   }
 
   @Get('delivery/:deliveryId/unified')
-  @ApiOperation({ summary: 'Get unified chat sessions for picker (sender + receiver chats)' })
+  @ApiOperation({
+    summary: 'Get unified chat sessions for picker (sender + receiver chats)',
+  })
   @ApiResponse({
     status: 200,
     description: 'Unified chat sessions for picker',
@@ -91,7 +96,10 @@ export class ChatController {
     senderChat: ChatSessionDto | null;
     receiverChat: ChatSessionDto | null;
   }> {
-    return this.chatService.getUnifiedSessionsForPicker(parseInt(deliveryId), req.user.uid);
+    return this.chatService.getUnifiedSessionsForPicker(
+      parseInt(deliveryId),
+      req.user.uid,
+    );
   }
 
   @Get(':id')

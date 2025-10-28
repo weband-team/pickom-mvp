@@ -93,7 +93,7 @@ export default function ActiveDeliveryPage({ params }: { params: Promise<{ id: s
           totalOrders: 45, // TODO: Get from backend
           isPhoneVerified: senderUser.phone ? true : false,
           isEmailVerified: true,
-          memberSince: senderUser.createdAt,
+          memberSince: senderUser.createdAt.toISOString(),
           phone: senderUser.phone,
           email: senderUser.email,
         };

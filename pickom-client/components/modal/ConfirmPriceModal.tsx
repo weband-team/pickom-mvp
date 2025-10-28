@@ -1,5 +1,9 @@
 'use client';
 
+import { Dialog, DialogContent, DialogActions, Box, Typography } from '@mui/material';
+import { Warning as WarningIcon } from '@mui/icons-material';
+import { Button } from '../ui';
+
 interface ConfirmPriceModalProps {
   isOpen: boolean;
   price: number;
@@ -8,43 +12,94 @@ interface ConfirmPriceModalProps {
 }
 
 export function ConfirmPriceModal({ isOpen, price, onConfirm, onCancel }: ConfirmPriceModalProps) {
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-sm w-full p-6">
-        <div className="text-center">
-          <div className="mb-4">
-            <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.732 15.5c-.77.833.192 2.5 1.732 2.5z" />
-              </svg>
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">You sure?</h3>
-            <p className="text-gray-600 mb-4">
-              Do you want to confirm the agreed price of <span className="font-bold text-orange-600">{price} zł</span>?
-            </p>
-            <p className="text-sm text-gray-500">
-              This action cannot be undone.
-            </p>
-          </div>
+    <Dialog
+      open={isOpen}
+      onClose={onCancel}
+      disablePortal={true}
+      sx={{
+        '& .MuiDialog-container': {
+          alignItems: 'flex-end',
+        },
+        '& .MuiDialog-paper': {
+          maxWidth: '375px',
+          width: '100%',
+          margin: 0,
+          marginBottom: 0,
+          borderRadius: '16px 16px 0 0',
+          backgroundColor: 'background.paper',
+        },
+      }}
+    >
+      <DialogContent sx={{ textAlign: 'center', pt: 4, pb: 2 }}>
+        {/* Warning Icon Circle */}
+        <Box
+          sx={{
+            width: 64,
+            height: 64,
+            bgcolor: 'warning.light',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            mx: 'auto',
+            mb: 3,
+          }}
+        >
+          <WarningIcon sx={{ fontSize: 32, color: 'warning.dark' }} />
+        </Box>
 
-          <div className="flex space-x-3">
-            <button
-              onClick={onCancel}
-              className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 transition-colors"
-            >
-              No, Cancel
-            </button>
-            <button
-              onClick={onConfirm}
-              className="flex-1 px-4 py-2 text-sm font-medium text-white bg-orange-600 border border-transparent rounded-md hover:bg-orange-700 transition-colors"
-            >
-              Yes, Confirm
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+        {/* Title */}
+        <Typography variant="h6" fontWeight="bold" color="text.primary" sx={{ mb: 2 }}>
+          You sure?
+        </Typography>
+
+        {/* Message */}
+        <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+          Do you want to confirm the agreed price of{' '}
+          <Typography component="span" fontWeight="bold" color="warning.dark">
+            {price} zł
+          </Typography>
+          ?
+        </Typography>
+
+        {/* Warning Text */}
+        <Typography variant="body2" color="text.secondary">
+          This action cannot be undone.
+        </Typography>
+      </DialogContent>
+
+      <DialogActions sx={{ p: 3, pt: 0, gap: 2, flexDirection: 'row' }}>
+        <Button
+          onClick={onCancel}
+          variant="outlined"
+          fullWidth
+          sx={{
+            color: 'text.primary',
+            borderColor: 'divider',
+            '&:hover': {
+              borderColor: 'text.secondary',
+              bgcolor: 'action.hover',
+            },
+          }}
+        >
+          No, Cancel
+        </Button>
+        <Button
+          onClick={onConfirm}
+          variant="contained"
+          fullWidth
+          sx={{
+            bgcolor: 'warning.main',
+            color: 'white',
+            '&:hover': {
+              bgcolor: 'warning.dark',
+            },
+          }}
+        >
+          Yes, Confirm
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
 }

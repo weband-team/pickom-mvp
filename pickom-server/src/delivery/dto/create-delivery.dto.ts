@@ -77,7 +77,7 @@ export class CreateDeliveryDto {
 
   @IsString()
   @IsOptional()
-  recipientId?: string;
+  recipientEmail?: string;
 
   @IsString()
   @IsOptional()

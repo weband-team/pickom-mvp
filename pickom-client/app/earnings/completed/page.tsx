@@ -18,7 +18,11 @@ export default function CompletedDeliveriesPage() {
     const fetchDeliveries = async () => {
       try {
         const response = await getCompletedDeliveries();
-        setDeliveries(response.data || []);
+        // Sort by newest first (most recent at top)
+        const sortedDeliveries = (response.data || []).sort((a, b) => {
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        });
+        setDeliveries(sortedDeliveries);
       } catch (err) {
         console.error('Failed to fetch completed deliveries:', err);
         setError('Failed to load completed deliveries.');

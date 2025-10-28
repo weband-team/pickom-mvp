@@ -45,7 +45,6 @@ export default function PickerCardComponent({
           sx={{
             width: variant === 'full' ? 64 : 48,
             height: variant === 'full' ? 64 : 48,
-            bgcolor: 'secondary.main',
             fontSize: variant === 'full' ? '1.5rem' : '1.2rem'
           }}
         >

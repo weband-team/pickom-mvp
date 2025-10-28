@@ -57,7 +57,11 @@ export class ChatService {
     // If deliveryId is provided, check if either user is the recipient
     let delivery: any = null;
     if (deliveryId) {
-      delivery = await this.deliveryService.getDeliveryRequestById(deliveryId, currentUser.uid, currentUser.role);
+      delivery = await this.deliveryService.getDeliveryRequestById(
+        deliveryId,
+        currentUser.uid,
+        currentUser.role,
+      );
     }
 
     // Determine roles based on actual delivery data, not just user.role
@@ -207,7 +211,9 @@ export class ChatService {
     );
 
     return Promise.all(
-      participatingChats.map((chat) => this.transformChatSession(chat, currentUser.id, true)),
+      participatingChats.map((chat) =>
+        this.transformChatSession(chat, currentUser.id, true),
+      ),
     );
   }
 

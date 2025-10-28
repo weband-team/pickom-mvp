@@ -38,8 +38,8 @@ export class DeliveryService {
       throw new Error('Sender not found');
     }
 
-    if (createDto.recipientId && createDto.recipientPhone) {
-      throw new Error('Cannot specify both recipientId and recipientPhone');
+    if (createDto.recipientEmail && createDto.recipientPhone) {
+      throw new Error('Cannot specify both recipientEmail and recipientPhone');
     }
 
     let picker: UserEntity | null = null;
@@ -53,23 +53,23 @@ export class DeliveryService {
     }
 
     let recipient: UserEntity | null = null;
-    if (createDto.recipientId) {
+    if (createDto.recipientEmail) {
       // Validate that it's an email
-      if (!createDto.recipientId.includes('@')) {
+      if (!createDto.recipientEmail.includes('@')) {
         throw new Error(
           `Invalid recipient email. Please provide a valid email address.`,
         );
       }
 
-      const recipientData = await this.userService.findByEmailOrUid(
-        createDto.recipientId,
+      const recipientData = await this.userService.findOneByEmail(
+        createDto.recipientEmail,
       );
       if (!recipientData) {
         throw new Error(
-          `Recipient with email "${createDto.recipientId}" not found in the system.`,
+          `Recipient with email "${createDto.recipientEmail}" not found in the system.`,
         );
       }
-      recipient = recipientData as UserEntity;
+      recipient = recipientData;
     }
 
     const delivery = new Delivery();
@@ -126,10 +126,7 @@ export class DeliveryService {
     if (role === 'sender') {
       // Show deliveries where user is sender OR recipient
       deliveries = await this.deliveryRepository.find({
-        where: [
-          { senderId: user.id },
-          { recipientId: user.id },
-        ],
+        where: [{ senderId: user.id }, { recipientId: user.id }],
         relations: ['sender', 'picker', 'recipient'],
         order: { createdAt: 'DESC' },
       });
@@ -153,7 +150,9 @@ export class DeliveryService {
     }
 
     // Преобразовать в DTO
-    return Promise.all(deliveries.map((delivery) => this.entityToDto(delivery)));
+    return Promise.all(
+      deliveries.map((delivery) => this.entityToDto(delivery)),
+    );
   }
 
   // Получить запрос по ID
@@ -254,11 +253,14 @@ export class DeliveryService {
 
       // Create chat between picker and receiver (if receiver exists)
       if (delivery.recipient) {
-        console.log('[DeliveryService] Creating chat between picker and receiver', {
-          pickerUid: user.uid,
-          recipientUid: delivery.recipient.uid,
-          deliveryId: delivery.id,
-        });
+        console.log(
+          '[DeliveryService] Creating chat between picker and receiver',
+          {
+            pickerUid: user.uid,
+            recipientUid: delivery.recipient.uid,
+            deliveryId: delivery.id,
+          },
+        );
         const receiverChat = await this.chatService.createChat(user.uid, {
           participantId: delivery.recipient.uid,
           deliveryId: delivery.id,
@@ -502,7 +504,9 @@ export class DeliveryService {
       });
     }
 
-    return Promise.all(deliveries.map((delivery) => this.entityToDto(delivery)));
+    return Promise.all(
+      deliveries.map((delivery) => this.entityToDto(delivery)),
+    );
   }
 
   async getAllCancelledDeliveryRequests(
@@ -527,7 +531,9 @@ export class DeliveryService {
       });
     }
 
-    return Promise.all(deliveries.map((delivery) => this.entityToDto(delivery)));
+    return Promise.all(
+      deliveries.map((delivery) => this.entityToDto(delivery)),
+    );
   }
 
   // Confirm or reject delivery by recipient
