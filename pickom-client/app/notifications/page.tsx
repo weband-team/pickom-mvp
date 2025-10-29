@@ -25,7 +25,7 @@ export default function NotificationsPage() {
     markAllAsRead
   } = useNotifications();
   const { unreadChats, unreadNotifications, activeOrders } = useNavigationBadges();
-  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUserRole, setCurrentUserRole] = useState<string>('');
 
   useEffect(() => {
@@ -33,7 +33,7 @@ export default function NotificationsPage() {
       try {
         const response = await getCurrentUser();
         setCurrentUserRole(response.user.role);
-        setCurrentUserId(response.user.id);
+        setCurrentUserId(response.user.uid);
       } catch (err) {
         console.error('Failed to fetch current user:', err);
       }

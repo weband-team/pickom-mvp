@@ -117,7 +117,7 @@ export const ChatListItem: React.FC<ChatListItemProps> = ({
               ml: 1,
             }}
           >
-            {getRelativeTime(lastMessage.createdAt)}
+            {getRelativeTime(lastMessage?.createdAt ?? new Date())}
           </Typography>
         </Box>
 

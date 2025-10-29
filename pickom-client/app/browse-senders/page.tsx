@@ -15,18 +15,8 @@ import { theme } from '../../styles/theme';
 import { useRouter } from 'next/navigation';
 import { getMyDeliveryRequests } from '../api/delivery';
 import { mockSenders, type Sender } from '@/data/mockSenders';
+import { DeliveryRequest } from '../api/delivery'; 
 
-interface DeliveryRequest {
-  id: number;
-  senderId: string;
-  from: string;
-  to: string;
-  price: number;
-  deliveryType?: 'within-city' | 'inter-city';
-  packageDescription?: string;
-  status: 'pending' | 'accepted' | 'picked_up' | 'delivered' | 'cancelled';
-  createdAt: string;
-}
 
 interface SenderWithOrders extends Sender {
   activeOrders: DeliveryRequest[];
@@ -272,7 +262,7 @@ export default function BrowseSendersPage() {
                                   #{order.id}
                                 </Typography>
                                 <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '0.875rem' }}>
-                                  {order.from} → {order.to}
+                                  {order.fromLocation?.address} → {order.toLocation?.address}
                                 </Typography>
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 0.5 }}>
                                   <Typography variant="subtitle2" sx={{ color: 'primary.main', fontWeight: 'bold' }}>

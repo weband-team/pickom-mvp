@@ -118,12 +118,12 @@ export default function OrderDetailsPage({ params }: OrderDetailsPageProps) {
           deliveryMethod: 'within-city' as any,
           packageType: 'SMALL_PARCEL' as any,
           pickup: {
-            address: req.fromAddress,
-            city: req.fromCity,
+            address: req.fromLocation?.address,
+            city: req.fromLocation?.city,
           },
           dropoff: {
-            address: req.toAddress,
-            city: req.toCity,
+            address: req.toLocation?.address,
+            city: req.toLocation?.city,
           },
           createdAt: new Date(req.createdAt),
           pickupDateTime: new Date(req.createdAt),

@@ -17,6 +17,7 @@ import BottomNavigation from '../../components/common/BottomNavigation';
 import { getMyDeliveryRequests, getIncomingDeliveries } from '../api/delivery';
 import { useNavigationBadges } from '../../hooks/useNavigationBadges';
 import dynamic from 'next/dynamic';
+import { DeliveryRequest } from '../api/delivery';
 
 const DualLocationPicker = dynamic(() => import('@/components/DualLocationPicker'), {
   ssr: false,
@@ -31,22 +32,7 @@ interface LocationData {
   country?: string;
 }
 
-interface DeliveryRequest {
-  id: number;
-  senderId: string;
-  pickerId?: string;
-  title: string;
-  description?: string;
-  fromLocation: LocationData | null;
-  toLocation: LocationData | null;
-  deliveryType?: 'within-city' | 'inter-city';
-  price: number;
-  size: 'small' | 'medium' | 'large';
-  weight?: number;
-  notes?: string;
-  status: 'pending' | 'accepted' | 'picked_up' | 'delivered' | 'cancelled';
-  createdAt: string;
-}
+
 
 interface DeliveryFormState {
   selectedMethod: DeliveryMethodType | '';

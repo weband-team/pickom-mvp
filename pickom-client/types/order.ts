@@ -9,7 +9,7 @@ export enum OrderStatus {
 }
 
 export interface OrderAddress {
-  address: string;
+  address: string | undefined;
   city?: string;
   country?: string;
 }

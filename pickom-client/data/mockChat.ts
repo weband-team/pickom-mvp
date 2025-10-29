@@ -56,7 +56,9 @@ export const mockChatSession: ChatSession = {
   customerId: 'customer-1',
   deliveryInfo: mockDeliveryInfo,
   messages: mockMessages,
-  status: 'active'
+  status: 'active',
+  createdAt: new Date(),
+  updatedAt: new Date(),
 };
 
 // Mock data for multiple chat sessions
@@ -65,6 +67,8 @@ export const mockChatSessions: ChatSession[] = [
     id: 'chat-1',
     pickerId: 'picker-1',
     customerId: 'customer-1',
+    createdAt: new Date(),
+    updatedAt: new Date(),
     deliveryInfo: {
       pickupAddress: "Warszawa Central Station",
       dropoffAddress: "Krakowskie Przedmieście 5",
@@ -87,6 +91,8 @@ export const mockChatSessions: ChatSession[] = [
     id: 'chat-2',
     pickerId: 'picker-2',
     customerId: 'customer-1',
+    createdAt: new Date(),
+    updatedAt: new Date(),
     deliveryInfo: {
       pickupAddress: "Galeria Mokotów",
       dropoffAddress: "ul. Nowy Świat 28",
@@ -109,6 +115,8 @@ export const mockChatSessions: ChatSession[] = [
     id: 'chat-3',
     pickerId: 'picker-3',
     customerId: 'customer-1',
+    createdAt: new Date(),
+    updatedAt: new Date(),
     deliveryInfo: {
       pickupAddress: "Airport Chopin",
       dropoffAddress: "Plac Zamkowy 4",
@@ -131,6 +139,8 @@ export const mockChatSessions: ChatSession[] = [
     id: 'chat-4',
     pickerId: 'picker-4',
     customerId: 'customer-1',
+    createdAt: new Date(),
+    updatedAt: new Date(),
     deliveryInfo: {
       pickupAddress: "PKP Warszawa Zachodnia",
       dropoffAddress: "Metro Centrum",
@@ -161,6 +171,8 @@ export const mockChatSessions: ChatSession[] = [
     id: 'chat-5',
     pickerId: 'picker-5',
     customerId: 'customer-1',
+    createdAt: new Date(),
+    updatedAt: new Date(),
     deliveryInfo: {
       pickupAddress: "Złote Tarasy",
       dropoffAddress: "Dworzec Gdański",
@@ -183,6 +195,8 @@ export const mockChatSessions: ChatSession[] = [
     id: 'chat-6',
     pickerId: 'picker-6',
     customerId: 'customer-1',
+    createdAt: new Date(),
+    updatedAt: new Date(),
     deliveryInfo: {
       pickupAddress: "Blue City Shopping Center",
       dropoffAddress: "University of Warsaw",

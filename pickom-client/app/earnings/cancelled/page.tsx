@@ -107,12 +107,12 @@ export default function CancelledDeliveriesPage() {
 
                       <Box sx={{ mb: 2 }}>
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
-                          From: {delivery.fromAddress}
-                          {delivery.fromCity && `, ${delivery.fromCity}`}
+                          From: {delivery.fromLocation?.address}
+                          {delivery.fromLocation?.city && `, ${delivery.fromLocation.city}`}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                          To: {delivery.toAddress}
-                          {delivery.toCity && `, ${delivery.toCity}`}
+                          To: {delivery.toLocation?.address}
+                          {delivery.toLocation?.city && `, ${delivery.toLocation.city}`}
                         </Typography>
                       </Box>
 

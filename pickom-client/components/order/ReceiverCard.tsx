@@ -12,8 +12,8 @@ export interface ReceiverData {
     fullName: string;
     avatarUrl?: string;
     rating: number;
-    isPhoneVerified: boolean;
-    isEmailVerified: boolean;
+    isPhoneVerified: boolean | undefined;
+    isEmailVerified: boolean | undefined;
   };
 }
 

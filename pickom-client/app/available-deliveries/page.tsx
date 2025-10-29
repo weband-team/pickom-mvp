@@ -15,17 +15,18 @@ import EditPickerCardModal from '@/components/picker/EditPickerCardModal';
 import { getPickerSettings, savePickerSettings, toggleOnlineStatus, type PickerCardSettings } from '@/data/mockPickerSettings';
 import type { Picker } from '@/types/picker';
 import { useNavigationBadges } from '@/hooks/useNavigationBadges';
-
-interface DeliveryRequest {
-  id: number;
-  senderId: string;
-  fromAddress: string;
-  toAddress: string;
-  price: number;
-  deliveryType?: 'within-city' | 'inter-city';
-  status: 'pending' | 'accepted' | 'picked_up' | 'delivered' | 'cancelled';
-  createdAt: string;
-}
+import { UserType } from '@/types/auth';
+import { DeliveryRequest } from '../api/delivery'; 
+// interface DeliveryRequest {
+//   id: number;
+//   senderId: string;
+//   fromLocation: Location | null;
+//   toLocation: Location | null;
+//   price: number;
+//   deliveryType?: 'within-city' | 'inter-city';
+//   status: 'pending' | 'accepted' | 'picked_up' | 'delivered' | 'cancelled';
+//   createdAt: string;
+// }
 
 interface PlannedTrip {
   id: string;
@@ -95,6 +96,10 @@ export default function AvailableDeliveriesPage() {
     completedDeliveries: 127,
     deliveryCount: 127,
     description: pickerSettings.bio,
+    age: 19,
+    country: 'Poland',
+    city: 'Warsaw',
+    userType: UserType.PICKER,
   };
 
   // Load current user UID on mount and sync online status
@@ -646,7 +651,7 @@ export default function AvailableDeliveriesPage() {
                           From
                         </Typography>
                         <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                          {delivery.fromAddress}
+                          {delivery.fromLocation?.address}
                         </Typography>
                       </Box>
 
@@ -655,7 +660,7 @@ export default function AvailableDeliveriesPage() {
                           To
                         </Typography>
                         <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                          {delivery.toAddress}
+                          {delivery.toLocation?.address}
                         </Typography>
                       </Box>
 
@@ -786,10 +791,10 @@ export default function AvailableDeliveriesPage() {
             {selectedDelivery && (
               <Box>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                  From: {selectedDelivery.fromAddress}
+                  From: {selectedDelivery.toLocation?.address}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                  To: {selectedDelivery.toAddress}
+                  To: {selectedDelivery.toLocation?.address}
                 </Typography>
 
                 <TextField

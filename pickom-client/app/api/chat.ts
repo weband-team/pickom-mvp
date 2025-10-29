@@ -10,13 +10,15 @@ export interface Message {
   attachments?: string[];
   read: boolean;
   createdAt: Date;
+  timestamp: Date;
+  isFromPicker: boolean;
 }
 
 export interface ChatSession {
   id: string;
   deliveryId?: number;
-  senderId: string | null;
-  senderName: string | null;
+  senderId?: string ;
+  senderName?: string;
   pickerId: string;
   pickerName: string;
   recipientId?: string | null;

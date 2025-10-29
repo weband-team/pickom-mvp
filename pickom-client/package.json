@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:fast": "next build --no-lint",
     "start": "next start",
     "lint": "next lint",
     "storybook": "storybook dev -p 6006",

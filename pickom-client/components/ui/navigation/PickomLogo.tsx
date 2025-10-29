@@ -1,10 +1,12 @@
 import React from 'react';
 import { Box, Typography, SvgIcon } from '@mui/material';
+import { SxProps, Theme } from "@mui/material/styles";
 
 export interface PickomLogoProps {
   size?: 'small' | 'medium' | 'large';
   variant?: 'icon' | 'text' | 'full';
   color?: 'black' | 'white';
+  sx?: SxProps<Theme>;
 }
 
 const sizeMap = {

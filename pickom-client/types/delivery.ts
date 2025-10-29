@@ -52,17 +52,37 @@ export type DeliveryRequestType = 'within-city' | 'inter-city';
 export type DeliveryStatus = 'pending' | 'accepted' | 'picked_up' | 'in_transit' | 'delivered' | 'cancelled';
 
 export interface DeliveryRequest {
+  // id: number;
+  // senderId: string;
+  // senderName?: string;
+  // senderRating?: number;
+  // fromLocation: Location | null;
+  // toLocation: Location | null;
+  // price: number;
+  // deliveryType?: DeliveryRequestType; // Optional - can be undefined if not set yet
+  // packageType?: string; // References PackageTypeEnum from package.ts
+  // packageDescription?: string;
+  // status: DeliveryStatus;
+  // createdAt: string;
   id: number;
-  senderId: string;
-  senderName?: string;
-  senderRating?: number;
-  from: string;
-  to: string;
-  price: number;
-  deliveryType?: DeliveryRequestType; // Optional - can be undefined if not set yet
-  packageType?: string; // References PackageTypeEnum from package.ts
-  packageDescription?: string;
-  status: DeliveryStatus;
-  createdAt: string;
+    senderId: string;
+    pickerId?: string;
+    recipientId?: string;
+    recipientPhone?: string;
+    recipientConfirmed?: boolean;
+    title: string;
+    description?: string;
+    fromLocation: Location | null;
+    toLocation: Location | null;
+    deliveryType?: 'within-city' | 'inter-city' | 'international';
+    price: number;
+    size: 'small' | 'medium' | 'large';
+    weight?: number;
+    notes?: string;
+    status: 'pending' | 'accepted' | 'picked_up' | 'delivered' | 'cancelled';
+    createdAt: string;
+    updatedAt: string;
+    senderName?: string;
+    senderRating?: number;
 }
 

@@ -11,9 +11,10 @@ export interface SenderCardData {
   totalOrders: number;
   isPhoneVerified: boolean;
   isEmailVerified: boolean;
-  memberSince: string;
+  memberSince: Date;
   phone?: string;
   email?: string;
+  
 }
 
 interface SenderCardProps {
