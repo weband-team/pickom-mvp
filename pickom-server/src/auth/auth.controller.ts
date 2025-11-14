@@ -21,7 +21,6 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { FirebaseAuthGuard, ReqWithUser } from './guards/firebase-auth.guard';
-import { admin } from './firebase-admin.module';
 import { AuthService } from './auth.service';
 import { LoginBodyDto, LoginResponseDto } from './dto/login.dto';
 import {

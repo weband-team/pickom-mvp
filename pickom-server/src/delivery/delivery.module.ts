@@ -14,8 +14,8 @@ import { ChatModule } from 'src/chat/chat.module';
   imports: [
     TypeOrmModule.forFeature([Delivery]),
     UserModule,
-    OfferModule,
-    TrakingModule,
+    forwardRef(() => OfferModule),
+    forwardRef(() => TrakingModule),
     NotificationModule,
     AuthModule,
     forwardRef(() => ChatModule),

@@ -2,7 +2,13 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class User {
   @ApiProperty({
-    description: 'Уникальный идентификатор пользователя',
+    description: 'Числовой ID пользователя в базе данных',
+    example: 1,
+  })
+  id: number;
+
+  @ApiProperty({
+    description: 'Уникальный идентификатор пользователя (Firebase UID)',
     example: 'user_123456789',
   })
   uid: string;

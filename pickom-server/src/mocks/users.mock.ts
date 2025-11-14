@@ -2,6 +2,7 @@ import { User } from 'src/user/types/user.type';
 
 export const MOCK_USERS: User[] = [
   {
+    id: 1,
     uid: '1',
     name: 'Alice',
     email: 'alice@example.com',
@@ -13,6 +14,7 @@ export const MOCK_USERS: User[] = [
     phone: '+79999999999',
   },
   {
+    id: 2,
     uid: '2',
     name: 'Bob',
     email: 'bob@example.com',
@@ -24,6 +26,7 @@ export const MOCK_USERS: User[] = [
     phone: '+79999999999',
   },
   {
+    id: 3,
     uid: '3',
     name: 'Charlie',
     email: 'charlie@example.com',

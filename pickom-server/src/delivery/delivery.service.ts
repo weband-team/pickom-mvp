@@ -10,6 +10,7 @@ import { User } from 'src/user/types/user.type';
 import { User as UserEntity } from 'src/user/entities/user.entity';
 import { NotificationService } from 'src/notification/notification.service';
 import { ChatService } from 'src/chat/chat.service';
+import { TrakingService } from 'src/traking/traking.service';
 
 @Injectable()
 export class DeliveryService {
@@ -20,6 +21,8 @@ export class DeliveryService {
     private readonly notificationService: NotificationService,
     @Inject(forwardRef(() => ChatService))
     private readonly chatService: ChatService,
+    @Inject(forwardRef(() => TrakingService))
+    private readonly trackingService: TrakingService,
   ) {}
 
   // Получить всех курьеров (role: 'picker')
@@ -225,13 +228,20 @@ export class DeliveryService {
     delivery.status = status;
     await this.deliveryRepository.save(delivery);
 
-    if (status === 'accepted') {
-      if (delivery.sender) {
-        await this.userService.subtractFromBalance(
-          delivery.sender.uid,
-          Number(delivery.price),
-        );
+    // Update tracking status if tracking exists
+    try {
+      const tracking = await this.trackingService.getTrackingByDeliveryId(delivery.id);
+      if (tracking) {
+        await this.trackingService.updateStatus(delivery.id, status);
+        console.log('[DeliveryService] Updated tracking status to:', status);
       }
+    } catch (error) {
+      console.error('[DeliveryService] Failed to update tracking status:', error);
+    }
+
+    if (status === 'accepted') {
+      // Note: Balance deduction and tracking creation now handled by OfferService
+      // when sender accepts an offer
 
       // Create chat between sender and picker
       console.log('[DeliveryService] Creating chat between picker and sender', {
@@ -657,5 +667,12 @@ export class DeliveryService {
       createdAt: delivery.createdAt,
       updatedAt: delivery.updatedAt,
     };
+  }
+
+  async findOne(id: number): Promise<Delivery | null> {
+    return await this.deliveryRepository.findOne({
+      where: { id },
+      relations: ['sender', 'picker', 'recipient'],
+    });
   }
 }

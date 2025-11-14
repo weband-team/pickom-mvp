@@ -1,10 +1,12 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Offer } from './entities/offer.entity';
 import { Payment } from '../payment/entities/payment.entity';
 import { NotificationService } from 'src/notification/notification.service';
 import { UserService } from 'src/user/user.service';
+import { DeliveryService } from 'src/delivery/delivery.service';
+import { TrakingService } from 'src/traking/traking.service';
 
 @Injectable()
 export class OfferService {
@@ -15,6 +17,10 @@ export class OfferService {
     private readonly paymentRepository: Repository<Payment>,
     private readonly notificationService: NotificationService,
     private readonly userService: UserService,
+    @Inject(forwardRef(() => DeliveryService))
+    private readonly deliveryService: DeliveryService,
+    @Inject(forwardRef(() => TrakingService))
+    private readonly trackingService: TrakingService,
   ) {}
 
   async createOffer(
@@ -100,11 +106,35 @@ export class OfferService {
     offer.status = status;
     const updatedOffer = await this.offerRepository.save(offer);
 
-    if (status === 'accepted' && offer.delivery?.sender) {
-      await this.notificationService.notifyOfferAccepted(
-        offer.delivery.sender.uid,
-        offer.deliveryId,
-      );
+    if (status === 'accepted') {
+      // Update delivery status to 'accepted' and assign picker
+      const delivery = await this.deliveryService.findOne(offer.deliveryId);
+      if (delivery && offer.picker) {
+        // Update delivery with picker and status
+        await this.deliveryService.updateDelivery(
+          offer.deliveryId,
+          delivery.sender.uid,
+          {
+            pickerId: offer.picker.uid,
+            status: 'accepted',
+          },
+        );
+
+        // Create tracking for real-time location updates
+        try {
+          await this.trackingService.createTracking(offer.deliveryId);
+          console.log('[OfferService] Created tracking for delivery', offer.deliveryId);
+        } catch (error) {
+          console.error('[OfferService] Failed to create tracking:', error);
+        }
+      }
+
+      if (offer.delivery?.sender) {
+        await this.notificationService.notifyOfferAccepted(
+          offer.delivery.sender.uid,
+          offer.deliveryId,
+        );
+      }
     }
 
     return updatedOffer;

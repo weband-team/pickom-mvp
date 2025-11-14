@@ -53,3 +53,17 @@ export const getUserBalance = async (uid: string): Promise<{ balance: number }> 
   const response = await protectedFetch.get(`/user/${uid}/balance`);
   return response.data;
 };
+
+export const updateUserLocation = async (
+  uid: string,
+  location: {
+    lat: number;
+    lng: number;
+    address?: string;
+    city?: string;
+    placeId?: string;
+  }
+) => {
+  const response = await protectedFetch.put(`/user/${uid}/location`, { location });
+  return response.data;
+};

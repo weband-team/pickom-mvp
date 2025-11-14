@@ -1,6 +1,13 @@
 import { AxiosResponse } from 'axios';
 import { basicFetch, protectedFetch } from './base';
 import { User, UserMeResponce } from './dto/user';
+import { auth } from '@/lib/firebase-config';
+
+export const getAuthToken = async (): Promise<string | null> => {
+  const user = auth.currentUser;
+  if (!user) return null;
+  return await user.getIdToken();
+};
 
 export const handleLogin = async (accessToken: string): Promise<AxiosResponse<User>> => {
   return basicFetch.post('/auth/login', {}, {

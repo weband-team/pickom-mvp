@@ -184,10 +184,11 @@ export default function DeliveryOffersPage({ params }: { params: Promise<{ id: s
       setCurrentUserBalance(latestBalance);
 
       // Check if user has sufficient balance
-      if (latestBalance < selectedOffer.price) {
+      const requiredAmount = Number(selectedOffer.price);
+      if (latestBalance < requiredAmount) {
         setInsufficientFundsDialog({
           open: true,
-          required: selectedOffer.price,
+          required: requiredAmount,
           current: latestBalance,
         });
         return;

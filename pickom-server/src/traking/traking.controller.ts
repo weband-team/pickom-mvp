@@ -15,8 +15,6 @@ import {
   FirebaseAuthGuard,
   ReqWithUser,
 } from 'src/auth/guards/firebase-auth.guard';
-import { DeliveryService } from 'src/delivery/delivery.service';
-import { MOCK_TRAKINGS } from 'src/mocks/traking.mock';
 import { UserService } from 'src/user/user.service';
 import { TrakingService } from './traking.service';
 
@@ -38,15 +36,49 @@ export class TrakingController {
     if (!user) {
       throw new NotFoundException('User not found');
     }
-    if (user.role !== 'sender' && user.role !== 'picker') {
-      throw new ForbiddenException('User is not a sender or picker');
+
+    // Check if user has access to this tracking (sender, picker, or receiver)
+    const hasAccess = await this.trakingService.hasAccess(deliveryId, user.id);
+    if (!hasAccess) {
+      throw new ForbiddenException('Access denied to this tracking');
     }
-    return await this.trakingService.getTraking(deliveryId);
+
+    const tracking = await this.trakingService.getTrackingByDeliveryId(deliveryId);
+    if (!tracking) {
+      throw new NotFoundException('Tracking not found');
+    }
+
+    return tracking;
   }
 
-  @Put('/:deliveryId')
+  @Put('/:deliveryId/location')
   @UseGuards(FirebaseAuthGuard)
-  async updateTrakingStatus(
+  async updateLocation(
+    @Param('deliveryId') deliveryId: number,
+    @Body() body: { lat: number; lng: number },
+    @Req() req: ReqWithUser,
+  ) {
+    const { uid } = req.user as { uid: string };
+    const user = await this.userService.findOne(uid);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Check if user is the picker
+    const tracking = await this.trakingService.getTrackingByDeliveryId(deliveryId);
+    if (!tracking || tracking.pickerId !== user.id) {
+      throw new ForbiddenException('Only the picker can update location');
+    }
+
+    return await this.trakingService.updatePickerLocation(deliveryId, {
+      lat: body.lat,
+      lng: body.lng,
+    });
+  }
+
+  @Put('/:deliveryId/status')
+  @UseGuards(FirebaseAuthGuard)
+  async updateStatus(
     @Param('deliveryId') deliveryId: number,
     @Body('status')
     status: 'pending' | 'accepted' | 'picked_up' | 'delivered' | 'cancelled',
@@ -57,12 +89,15 @@ export class TrakingController {
     if (!user) {
       throw new NotFoundException('User not found');
     }
-    if (user.role !== 'picker') {
-      throw new ForbiddenException('Only pickers can update tracking status');
+
+    // Check if user is the picker
+    const tracking = await this.trakingService.getTrackingByDeliveryId(deliveryId);
+    if (!tracking || tracking.pickerId !== user.id) {
+      throw new ForbiddenException('Only the picker can update status');
     }
 
     try {
-      return await this.trakingService.updateTrakingStatus(deliveryId, status);
+      return await this.trakingService.updateStatus(deliveryId, status);
     } catch (error) {
       throw new BadRequestException(error.message);
     }

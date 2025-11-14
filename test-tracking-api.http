@@ -1,0 +1,52 @@
+# Тест создания Tracking через API
+
+### 1. Создать доставку (как sender - Alice, uid='1')
+POST http://localhost:4242/delivery/requests
+Content-Type: application/json
+# Нужен Firebase token для Alice
+
+{
+  "title": "Test Package for Tracking",
+  "description": "Testing real-time tracking",
+  "fromLocation": {
+    "lat": 55.7558,
+    "lng": 37.6173,
+    "address": "Moscow, Red Square",
+    "city": "Moscow"
+  },
+  "toLocation": {
+    "lat": 55.7522,
+    "lng": 37.6156,
+    "address": "Moscow, Arbat Street",
+    "city": "Moscow"
+  },
+  "price": 150,
+  "size": "medium"
+}
+
+### 2. Обновить доставку - назначить picker (как sender)
+PATCH http://localhost:4242/delivery/requests/12
+Content-Type: application/json
+
+{
+  "pickerId": "2"
+}
+
+### 3. Принять доставку (как picker - Bob, uid='2')
+# Этот запрос СОЗДАСТ tracking!
+PUT http://localhost:4242/delivery/requests/12/status
+Content-Type: application/json
+# Нужен Firebase token для Bob (uid='2')
+
+{
+  "status": "accepted"
+}
+
+### 4. Проверить что tracking создан
+GET http://localhost:4242/traking/12
+# Нужен Firebase token (sender, picker, или receiver)
+
+### Результат:
+# После шага 3 в логах сервера вы увидите:
+# [DeliveryService] Created tracking for delivery 12
+# И в базе данных появится запись в таблице tracking

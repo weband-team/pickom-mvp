@@ -32,7 +32,8 @@ import { MobileContainer } from '@/components/ui/layout/MobileContainer';
 import BottomNavigation from '@/components/common/BottomNavigation';
 import SenderCard, { SenderCardData } from '@/components/sender/SenderCard';
 import { getDeliveryRequestById, updateDeliveryRequestStatus } from '@/app/api/delivery';
-import { getUser } from '@/app/api/user';
+import { getUser, getCurrentUser } from '@/app/api/user';
+import { usePickerLocationTracking } from '@/app/hooks/useWebSocketTracking';
 
 interface DeliveryRequest {
   id: number;
@@ -57,8 +58,27 @@ export default function ActiveDeliveryPage({ params }: { params: Promise<{ id: s
 
   const [delivery, setDelivery] = useState<DeliveryRequest | null>(null);
   const [sender, setSender] = useState<SenderCardData | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
+
+  // Enable WebSocket location tracking when status is 'picked_up'
+  const { isConnected } = usePickerLocationTracking({
+    deliveryId,
+    userId: currentUserId,
+    enabled: delivery?.status === 'picked_up' && !!currentUserId,
+  });
+
+  // Log connection status
+  useEffect(() => {
+    console.log('[ActiveDelivery] WebSocket connection status:', {
+      isConnected,
+      deliveryId,
+      userId: currentUserId,
+      deliveryStatus: delivery?.status,
+      enabled: delivery?.status === 'picked_up' && !!currentUserId,
+    });
+  }, [isConnected, deliveryId, currentUserId, delivery?.status]);
 
   // Status update dialog
   const [statusDialog, setStatusDialog] = useState<{
@@ -77,6 +97,10 @@ export default function ActiveDeliveryPage({ params }: { params: Promise<{ id: s
       setError('');
 
       try {
+        // Get current user for location tracking
+        const currentUserResponse = await getCurrentUser();
+        setCurrentUserId(currentUserResponse.user.id);
+
         const deliveryResponse = await getDeliveryRequestById(deliveryId);
         const deliveryData = deliveryResponse.data;
         setDelivery(deliveryData as any);
