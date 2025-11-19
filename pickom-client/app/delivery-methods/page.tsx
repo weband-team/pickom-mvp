@@ -192,8 +192,7 @@ function MyDeliveriesTab({ deliveries, loading, onRefresh }: MyDeliveriesTabProp
       await updateDeliveryRequest(id, { status: 'cancelled' });
       alert('Delivery cancelled successfully');
       onRefresh();
-    } catch (err) {
-      console.error('Failed to cancel delivery:', err);
+    } catch {
       alert('Failed to cancel delivery');
     }
   };
@@ -220,10 +219,16 @@ function MyDeliveriesTab({ deliveries, loading, onRefresh }: MyDeliveriesTabProp
           borderColor: 'divider',
           mb: 2,
           minHeight: 40,
+          width: '100%',
+          '& .MuiTabs-flexContainer': {
+            width: '100%',
+          },
           '& .MuiTab-root': {
             minHeight: 40,
             fontSize: '0.875rem',
             textTransform: 'uppercase',
+            flex: 1,
+            maxWidth: 'none',
           },
         }}
       >
@@ -296,34 +301,85 @@ function MyDeliveriesTab({ deliveries, loading, onRefresh }: MyDeliveriesTabProp
               </Typography>
             </Box>
 
-            {/* Action Buttons */}
+            {/* Action Buttons - conditional based on status */}
             <Stack direction="row" spacing={1}>
-              <Button
-                size="small"
-                variant="outlined"
-                fullWidth
-                onClick={() => router.push(`/delivery-methods/${delivery.id}/offers`)}
-              >
-                View Offers
-              </Button>
-              <Button
-                size="small"
-                variant="contained"
-                fullWidth
-                onClick={() => {
-                  // Save delivery data for search pickers flow
-                  localStorage.setItem('searchPickersDeliveryId', delivery.id.toString());
-                  localStorage.setItem('deliveryData', JSON.stringify({
-                    deliveryId: delivery.id,
-                    fromLocation: delivery.fromLocation,
-                    toLocation: delivery.toLocation,
-                    deliveryType: delivery.deliveryType || 'within-city',
-                  }));
-                  router.push('/picker-results');
-                }}
-              >
-                Search Pickers
-              </Button>
+              {delivery.status === 'pending' ? (
+                <>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    fullWidth
+                    onClick={() => router.push(`/delivery-methods/${delivery.id}/offers`)}
+                  >
+                    View Offers
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="contained"
+                    fullWidth
+                    onClick={() => {
+                      // Save delivery data for search pickers flow
+                      localStorage.setItem('searchPickersDeliveryId', delivery.id.toString());
+                      localStorage.setItem('deliveryData', JSON.stringify({
+                        deliveryId: delivery.id,
+                        fromLocation: delivery.fromLocation,
+                        toLocation: delivery.toLocation,
+                        deliveryType: delivery.deliveryType || 'within-city',
+                      }));
+                      router.push('/picker-results');
+                    }}
+                  >
+                    Search Pickers
+                  </Button>
+                </>
+              ) : (delivery.status === 'accepted' || delivery.status === 'picked_up') ? (
+                <>
+                  <Button
+                    size="small"
+                    variant="contained"
+                    fullWidth
+                    onClick={() => router.push(`/track-delivery/${delivery.id}`)}
+                  >
+                    Track Delivery
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    fullWidth
+                    onClick={() => router.push(`/delivery-details/${delivery.id}`)}
+                  >
+                    Details
+                  </Button>
+                </>
+              ) : delivery.status === 'delivered' ? (
+                <>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    fullWidth
+                    onClick={() => router.push(`/delivery-details/${delivery.id}`)}
+                  >
+                    View Details
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="contained"
+                    fullWidth
+                    onClick={() => router.push(`/rate-picker/${delivery.id}`)}
+                  >
+                    Rate Picker
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  size="small"
+                  variant="outlined"
+                  fullWidth
+                  onClick={() => router.push(`/delivery-details/${delivery.id}`)}
+                >
+                  View Details
+                </Button>
+              )}
             </Stack>
           </Card>
         ))
@@ -345,8 +401,7 @@ function IncomingDeliveriesTab({ deliveries, loading, onRefresh }: IncomingDeliv
       await confirmRecipient(id, confirmed);
       alert(confirmed ? 'Delivery accepted!' : 'Delivery rejected');
       onRefresh();
-    } catch (err) {
-      console.error('Failed to confirm delivery:', err);
+    } catch {
       alert('Failed to process confirmation');
     }
   };
@@ -500,8 +555,7 @@ export default function SendPackagePage() {
     try {
       const response = await getMyDeliveryRequests();
       setDeliveries(response.data);
-    } catch (err) {
-      console.error('Failed to load deliveries:', err);
+    } catch {
     } finally {
       setLoadingDeliveries(false);
     }
@@ -512,8 +566,7 @@ export default function SendPackagePage() {
     try {
       const response = await getIncomingDeliveries();
       setIncomingDeliveries(response.data);
-    } catch (err) {
-      console.error('Failed to load incoming deliveries:', err);
+    } catch {
     } finally {
       setLoadingIncoming(false);
     }
@@ -634,19 +687,9 @@ export default function SendPackagePage() {
   };
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#f5f5f5',
-        p: 2,
-      }}
-    >
-      <Box sx={{ position: 'relative', width: '100%', maxWidth: 375, height: 812 }}>
-        <MobileContainer showFrame={false}>
-          <Box sx={{ p: 3, pb: 10, backgroundColor: 'background.default', minHeight: '100vh' }}>
+    <>
+      <MobileContainer showFrame={false}>
+        <Box sx={{ p: 3, pb: 10, backgroundColor: 'background.default', minHeight: '100vh' }}>
             {/* Header */}
             <Box sx={{ mb: 3, display: 'flex', alignItems: 'center' }}>
               <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
@@ -659,7 +702,19 @@ export default function SendPackagePage() {
               value={activeTab}
               onChange={(_, val) => setActiveTab(val)}
               variant="fullWidth"
-              sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}
+              sx={{
+                mb: 3,
+                borderBottom: 1,
+                borderColor: 'divider',
+                width: '100%',
+                '& .MuiTabs-flexContainer': {
+                  width: '100%',
+                },
+                '& .MuiTab-root': {
+                  flex: 1,
+                  maxWidth: 'none',
+                },
+              }}
             >
               <Tab value="create" label="Create" />
               <Tab value="manage" label="Sent" />
@@ -674,7 +729,7 @@ export default function SendPackagePage() {
               <Typography variant="h6" sx={{ mb: 2 }}>
                 Choose Delivery Method
               </Typography>
-              <Stack direction="row" spacing={1} sx={{ mb: 3 }}>
+              <Stack direction="row" spacing={1} sx={{ mb: 3, width: '100%' }}>
                 {deliveryMethods.map((method) => {
                   const isFilled =
                     (method.id === 'within-city' && isWithinCityFilled) ||
@@ -688,13 +743,14 @@ export default function SendPackagePage() {
                       color="success"
                       overlap="circular"
                       anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+                      sx={{ flex: 1, minWidth: 0 }}
                     >
                       <Button
                         selected={state.selectedMethod === method.id}
                         onClick={() => dispatch({ type: 'SET_METHOD', payload: method.id })}
                         size="small"
                         sx={{
-                          flex: 1,
+                          width: '100%',
                           flexDirection: 'column',
                           py: 1.5,
                           minWidth: 0,
@@ -1003,14 +1059,13 @@ export default function SendPackagePage() {
             onRefresh={loadIncomingDeliveries}
           />
         )}
-          </Box>
-        </MobileContainer>
-        <BottomNavigation
-          unreadChatsCount={unreadChats}
-          unreadNotificationsCount={unreadNotifications}
-          activeOrdersCount={activeOrders}
-        />
-      </Box>
-    </Box>
+        </Box>
+      </MobileContainer>
+      <BottomNavigation
+        unreadChatsCount={unreadChats}
+        unreadNotificationsCount={unreadNotifications}
+        activeOrdersCount={activeOrders}
+      />
+    </>
   );
 }

@@ -6,6 +6,11 @@ interface ChatPageProps {
   }>;
 }
 
+export async function generateStaticParams() {
+  return [{ id: "1" }];
+}
+
+
 export default async function ChatPage({ params }: ChatPageProps) {
   const { id } = await params;
 

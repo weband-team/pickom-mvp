@@ -29,8 +29,7 @@ export default function NotificationActions() {
         pickerName: 'Иван Петров',
         price: 25,
       });
-    } catch (error) {
-      console.error('Error creating offer received notification:', error);
+    } catch {
     } finally {
       setIsLoading(false);
     }
@@ -43,8 +42,7 @@ export default function NotificationActions() {
         senderId: 'X43wZP2lAdNA9GyhMxxRjd4rQPg1',
         deliveryId: 1,
       });
-    } catch (error) {
-      console.error('Error creating offer accepted notification:', error);
+    } catch {
     } finally {
       setIsLoading(false);
     }
@@ -58,8 +56,7 @@ export default function NotificationActions() {
         deliveryId: 2,
         senderName: 'Анна Коваль',
       });
-    } catch (error) {
-      console.error('Error creating incoming delivery notification:', error);
+    } catch {
     } finally {
       setIsLoading(false);
     }
@@ -74,8 +71,7 @@ export default function NotificationActions() {
         status: 'picked_up',
         message: 'Курьер забрал вашу посылку и направляется к получателю.',
       });
-    } catch (error) {
-      console.error('Error creating status update notification:', error);
+    } catch {
     } finally {
       setIsLoading(false);
     }
@@ -92,8 +88,7 @@ export default function NotificationActions() {
         read: false,
         related_delivery_id: 3,
       });
-    } catch (error) {
-      console.error('Error creating custom notification:', error);
+    } catch {
     } finally {
       setIsLoading(false);
     }
@@ -112,7 +107,7 @@ export default function NotificationActions() {
           disabled={isLoading}
           className="px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          💼 Создать "Новое предложение"
+          💼 Создать &quot;Новое предложение&quot;
         </button>
 
         {/* Кнопка для создания уведомления о принятии предложения */}
@@ -121,7 +116,7 @@ export default function NotificationActions() {
           disabled={isLoading}
           className="px-4 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          ✅ Создать "Предложение принято"
+          ✅ Создать &quot;Предложение принято&quot;
         </button>
 
         {/* Кнопка для создания уведомления о входящей доставке */}
@@ -130,7 +125,7 @@ export default function NotificationActions() {
           disabled={isLoading}
           className="px-4 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          📥 Создать "Входящая доставка"
+          📥 Создать &quot;Входящая доставка&quot;
         </button>
 
         {/* Кнопка для создания уведомления об обновлении статуса */}
@@ -139,7 +134,7 @@ export default function NotificationActions() {
           disabled={isLoading}
           className="px-4 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          📦 Создать "Обновление статуса"
+          📦 Создать &quot;Обновление статуса&quot;
         </button>
 
         {/* Кнопка для создания кастомного уведомления */}

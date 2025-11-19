@@ -63,7 +63,17 @@ export interface Picker {
   avatarUrl?: string;
   rating?: number;
   phone?: string;
-  price?: number; // Added by backend
+  price?: number;
+  isOnline?: boolean;
+  totalRatings?: number;
+  completedDeliveries?: number;
+  location?: {
+    lat: number;
+    lng: number;
+    address?: string;
+  };
+  distance?: number;
+  estimatedTime?: number;
 }
 
 /**
@@ -72,6 +82,21 @@ export interface Picker {
  */
 export const getAvailablePickers = async (): Promise<AxiosResponse<Picker[]>> => {
   return basicFetch.get('/delivery/pickers');
+};
+
+/**
+ * Get nearby pickers with distance calculation
+ * Public endpoint - no auth required
+ * @param lat Latitude of search location
+ * @param lng Longitude of search location
+ * @param deliveryType Type of delivery (affects search radius)
+ */
+export const getNearbyPickers = async (
+  lat: number,
+  lng: number,
+  deliveryType: 'within-city' | 'suburban' | 'inter-city' = 'within-city'
+): Promise<AxiosResponse<Picker[]>> => {
+  return basicFetch.get(`/delivery/pickers/nearby?lat=${lat}&lng=${lng}&deliveryType=${deliveryType}`);
 };
 
 /**

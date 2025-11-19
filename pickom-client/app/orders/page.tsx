@@ -62,8 +62,7 @@ export default function OrdersPage() {
                   rating: picker.rating || 0,
                   avatarUrl: picker.avatarUrl,
                 };
-              } catch (err) {
-                console.error('Failed to fetch picker data for pickerId:', req.pickerId, err);
+              } catch {
                 // Fallback to basic picker data
                 pickerData = {
                   id: req.pickerId,
@@ -95,8 +94,7 @@ export default function OrdersPage() {
         );
 
         setOrders(mappedOrders);
-      } catch (err: any) {
-        console.error('Failed to fetch orders:', err);
+      } catch {
         setError('Failed to load orders. Please try again.');
       } finally {
         setLoading(false);
@@ -130,8 +128,7 @@ export default function OrdersPage() {
       });
       const { chatId } = response.data;
       router.push(`/chat/${chatId}`);
-    } catch (err) {
-      console.error('Failed to create chat:', err);
+    } catch {
     }
   };
 
@@ -190,18 +187,8 @@ export default function OrdersPage() {
   };
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#f5f5f5',
-        p: 2,
-      }}
-    >
-      <Box sx={{ position: 'relative', width: '100%', maxWidth: 375, height: 812 }}>
-        <MobileContainer showFrame={false}>
+    <>
+      <MobileContainer showFrame={false}>
           <Box
             sx={{
               display: 'flex',
@@ -286,9 +273,8 @@ export default function OrdersPage() {
               )}
             </Box>
           </Box>
-        </MobileContainer>
-        <BottomNavigation />
-      </Box>
-    </Box>
+      </MobileContainer>
+      <BottomNavigation />
+    </>
   );
 }

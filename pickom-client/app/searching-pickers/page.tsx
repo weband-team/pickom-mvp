@@ -14,18 +14,8 @@ export default function SearchingPickersPage() {
   };
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#f5f5f5',
-        p: 2,
-      }}
-    >
-      <Box sx={{ position: 'relative', width: '100%', maxWidth: 375, height: 812 }}>
-        <MobileContainer showFrame={false}>
+    <>
+      <MobileContainer showFrame={false}>
           <Box
             sx={{
               display: 'flex',
@@ -37,8 +27,7 @@ export default function SearchingPickersPage() {
           >
             <PickerSearchLoader onSearchComplete={handleSearchComplete} />
           </Box>
-        </MobileContainer>
-      </Box>
-    </Box>
+      </MobileContainer>
+    </>
   );
 }

@@ -24,8 +24,7 @@ export default function ChatsPage() {
       try {
         const response = await getMyChats();
         setChatSessions(response.data);
-      } catch (err: any) {
-        console.error('Failed to fetch chats:', err);
+      } catch {
         setError('Failed to load chats. Please try again.');
       } finally {
         setLoading(false);
@@ -96,18 +95,8 @@ export default function ChatsPage() {
   // Empty state
   if (sortedChatSessions.length === 0) {
     return (
-      <Box
-        sx={{
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          bgcolor: 'background.default',
-          p: 2,
-        }}
-      >
-        <Box sx={{ position: 'relative', width: '100%', maxWidth: 375, height: 812 }}>
-          <MobileContainer showFrame={false}>
+      <>
+        <MobileContainer showFrame={false}>
             <Box
               sx={{
                 display: 'flex',
@@ -177,31 +166,20 @@ export default function ChatsPage() {
                 🚀 Start a Delivery
               </Button>
             </Box>
-          </MobileContainer>
-          <BottomNavigation
-            unreadChatsCount={unreadChats}
-            unreadNotificationsCount={unreadNotifications}
-            activeOrdersCount={activeOrders}
-          />
-        </Box>
-      </Box>
+        </MobileContainer>
+        <BottomNavigation
+          unreadChatsCount={unreadChats}
+          unreadNotificationsCount={unreadNotifications}
+          activeOrdersCount={activeOrders}
+        />
+      </>
     );
   }
 
   // List of chats
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        bgcolor: 'background.default',
-        p: 2,
-      }}
-    >
-      <Box sx={{ position: 'relative', width: '100%', maxWidth: 375, height: 812 }}>
-        <MobileContainer showFrame={false}>
+    <>
+      <MobileContainer showFrame={false}>
           <Box
             sx={{
               display: 'flex',
@@ -250,13 +228,12 @@ export default function ChatsPage() {
               ))}
             </Box>
           </Box>
-        </MobileContainer>
-        <BottomNavigation
-          unreadChatsCount={unreadCount}
-          unreadNotificationsCount={unreadNotifications}
-          activeOrdersCount={activeOrders}
-        />
-      </Box>
-    </Box>
+      </MobileContainer>
+      <BottomNavigation
+        unreadChatsCount={unreadCount}
+        unreadNotificationsCount={unreadNotifications}
+        activeOrdersCount={activeOrders}
+      />
+    </>
   );
 }

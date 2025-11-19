@@ -148,8 +148,7 @@ export default function DualLocationPicker({
       if (onRouteCalculated) {
         onRouteCalculated(routeData);
       }
-    } catch (err) {
-      console.error('Route calculation error:', err);
+    } catch {
       setError('Could not calculate route. Showing straight line.');
       // Fallback to straight line
       setRouteCoordinates([
@@ -195,8 +194,7 @@ export default function DualLocationPicker({
       const country = data.address?.country || undefined;
 
       return { address, city, country };
-    } catch (error) {
-      console.error('Geocoding error:', error);
+    } catch {
       return {
         address: `${lat.toFixed(6)}, ${lng.toFixed(6)}`,
         city: undefined,
@@ -257,9 +255,8 @@ export default function DualLocationPicker({
             setToLocation(locationData);
             onToLocationSelect(locationData);
           }
-        } catch (err) {
+        } catch {
           setError('Failed to get address. Please try again.');
-          console.error(err);
         } finally {
           setLoading(false);
         }

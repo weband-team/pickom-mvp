@@ -1,10 +1,13 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Offer } from './entities/offer.entity';
 import { Payment } from '../payment/entities/payment.entity';
 import { NotificationService } from 'src/notification/notification.service';
 import { UserService } from 'src/user/user.service';
+import { DeliveryService } from 'src/delivery/delivery.service';
+import { TrakingService } from 'src/traking/traking.service';
+import { ChatService } from 'src/chat/chat.service';
 
 @Injectable()
 export class OfferService {
@@ -15,6 +18,11 @@ export class OfferService {
     private readonly paymentRepository: Repository<Payment>,
     private readonly notificationService: NotificationService,
     private readonly userService: UserService,
+    @Inject(forwardRef(() => DeliveryService))
+    private readonly deliveryService: DeliveryService,
+    private readonly trakingService: TrakingService,
+    @Inject(forwardRef(() => ChatService))
+    private readonly chatService: ChatService,
   ) {}
 
   async createOffer(
@@ -63,7 +71,7 @@ export class OfferService {
   ): Promise<Offer> {
     const offer = await this.offerRepository.findOne({
       where: { id: offerId },
-      relations: ['delivery', 'delivery.sender', 'picker'],
+      relations: ['delivery', 'delivery.sender', 'delivery.recipient', 'picker'],
     });
 
     if (!offer) {
@@ -95,19 +103,86 @@ export class OfferService {
       });
 
       await this.paymentRepository.save(payment);
+
+      // Update delivery: set picker and status to 'accepted'
+      console.log(`[OfferService] Updating delivery ${offer.deliveryId} with pickerId ${offer.picker.id}`);
+      await this.deliveryService.updateDeliveryPicker(
+        offer.deliveryId,
+        offer.picker.id,
+        'accepted'
+      );
+
+      // Create tracking record for real-time location tracking
+      console.log(`[OfferService] Creating tracking for delivery ${offer.deliveryId}`);
+      try {
+        await this.trakingService.createTracking(offer.deliveryId);
+        console.log(`[OfferService] Tracking created successfully for delivery ${offer.deliveryId}`);
+      } catch (error) {
+        console.error(`[OfferService] Error creating tracking:`, error.message);
+        // Continue even if tracking creation fails
+      }
+
+      // Create chat between sender and picker
+      console.log('[OfferService] Creating chat between picker and sender', {
+        pickerUid: offer.picker.uid,
+        senderUid: offer.delivery.sender.uid,
+        deliveryId: offer.deliveryId,
+      });
+      try {
+        await this.chatService.createChat(offer.picker.uid, {
+          participantId: offer.delivery.sender.uid,
+          deliveryId: offer.deliveryId,
+        });
+        console.log('[OfferService] Created sender chat successfully');
+      } catch (error) {
+        console.error('[OfferService] Error creating sender chat:', error.message);
+      }
+
+      // Create chat between picker and receiver (if receiver exists)
+      if (offer.delivery.recipient) {
+        console.log('[OfferService] Creating chat between picker and receiver', {
+          pickerUid: offer.picker.uid,
+          recipientUid: offer.delivery.recipient.uid,
+          deliveryId: offer.deliveryId,
+        });
+        try {
+          await this.chatService.createChat(offer.picker.uid, {
+            participantId: offer.delivery.recipient.uid,
+            deliveryId: offer.deliveryId,
+          });
+          console.log('[OfferService] Created receiver chat successfully');
+        } catch (error) {
+          console.error('[OfferService] Error creating receiver chat:', error.message);
+        }
+      }
+
+      // Notify sender that offer was accepted
+      await this.notificationService.notifyOfferAccepted(
+        offer.delivery.sender.uid,
+        offer.deliveryId,
+      );
+
+      // Reject all other pending offers for this delivery
+      await this.rejectOtherOffers(offer.deliveryId, offerId);
     }
 
     offer.status = status;
     const updatedOffer = await this.offerRepository.save(offer);
 
-    if (status === 'accepted' && offer.delivery?.sender) {
-      await this.notificationService.notifyOfferAccepted(
-        offer.delivery.sender.uid,
-        offer.deliveryId,
-      );
-    }
-
     return updatedOffer;
+  }
+
+  private async rejectOtherOffers(deliveryId: number, acceptedOfferId: number): Promise<void> {
+    const otherOffers = await this.offerRepository.find({
+      where: { deliveryId, status: 'pending' },
+    });
+
+    for (const offer of otherOffers) {
+      if (offer.id !== acceptedOfferId) {
+        offer.status = 'rejected';
+        await this.offerRepository.save(offer);
+      }
+    }
   }
 
   async getOfferById(offerId: number): Promise<Offer> {

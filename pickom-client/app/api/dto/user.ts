@@ -1,5 +1,5 @@
 export interface User {
-  
+  id: number;
   uid: string;
   email: string;
   name: string;
@@ -17,6 +17,11 @@ export interface User {
   totalOrders?: number;
   active?: boolean;
   about?: string;
+  bio?: string;
+  age?: number;
+  country?: string;
+  city?: string;
+  isVerified?: boolean;
   location?: {
     lat: number;
     lng: number;

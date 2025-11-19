@@ -66,4 +66,24 @@ export class UserController {
     const user = await this.userService.update(uid, { basePrice });
     return { user, message: 'Base price updated successfully' };
   }
+
+  @Put(':uid/location')
+  async updateLocation(
+    @Param('uid') uid: string,
+    @Body()
+    locationData: {
+      location: {
+        lat: number;
+        lng: number;
+        address?: string;
+        city?: string;
+        placeId?: string;
+      };
+    },
+  ) {
+    const user = await this.userService.update(uid, {
+      location: locationData.location,
+    });
+    return { user, message: 'Location updated successfully' };
+  }
 }

@@ -15,13 +15,36 @@ function ThemeContent({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      {/* Override body background to stay neutral, theme only applies within MobileContainer */}
+      {/* Global styles for mobile safe areas and body */}
       <GlobalStyles
-        styles={{
+        styles={(theme) => ({
+          ':root': {
+            // Safe area CSS variables for Capacitor/PWA
+            '--safe-area-top': 'env(safe-area-inset-top, 0px)',
+            '--safe-area-right': 'env(safe-area-inset-right, 0px)',
+            '--safe-area-bottom': 'env(safe-area-inset-bottom, 0px)',
+            '--safe-area-left': 'env(safe-area-inset-left, 0px)',
+          },
+          html: {
+            overscrollBehavior: 'none', // Prevent pull-to-refresh
+          },
           body: {
             backgroundColor: '#f5f5f5 !important',
+            margin: 0,
+            padding: 0,
+            width: '100vw',
+            minHeight: '100vh',
+            overflow: 'hidden',
+            position: 'fixed',
           },
-        }}
+          // MUI Dialog backdrop - respect safe areas
+          '.MuiModal-root': {
+            paddingTop: 'var(--safe-area-top)',
+            paddingBottom: 'var(--safe-area-bottom)',
+            paddingLeft: 'var(--safe-area-left)',
+            paddingRight: 'var(--safe-area-right)',
+          },
+        })}
       />
       <ToastProvider />
       {children}

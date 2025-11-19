@@ -8,6 +8,7 @@ import {
   Patch,
   Post,
   Put,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -33,8 +34,8 @@ export class DeliveryController {
     private readonly trakingService: TrakingService,
   ) {}
 
-  // Получить всех курьеров (GET /pickers)
-  // Возвращает только пикеров которые online (isOnline = true)
+  // Get all available pickers (GET /pickers)
+  // Returns only online pickers (isOnline = true)
   @Get('pickers')
   async getAvailablePickers() {
     const pickers = await this.deliveryService.getAvailablePickers();
@@ -44,8 +45,35 @@ export class DeliveryController {
       .filter((picker) => picker.isOnline === true)
       .map((picker) => ({
         ...picker,
-        price: picker.basePrice || 15.0, // Use picker's base price, default to 15.00 zł
+        price: picker.basePrice || 15.0,
       }));
+  }
+
+  // Get nearby pickers with distance (GET /pickers/nearby)
+  // Returns pickers sorted by distance from given location
+  @Get('pickers/nearby')
+  async getNearbyPickers(
+    @Query('lat') lat: string,
+    @Query('lng') lng: string,
+    @Query('deliveryType') deliveryType?: string,
+  ) {
+    const latitude = parseFloat(lat);
+    const longitude = parseFloat(lng);
+
+    if (isNaN(latitude) || isNaN(longitude)) {
+      throw new NotFoundException('Invalid coordinates');
+    }
+
+    const type = (deliveryType || 'within-city') as
+      | 'within-city'
+      | 'suburban'
+      | 'inter-city';
+
+    return await this.deliveryService.getNearbyPickers(
+      latitude,
+      longitude,
+      type,
+    );
   }
 
   // Найти получателя по email

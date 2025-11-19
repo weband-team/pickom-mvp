@@ -76,16 +76,14 @@ export default function MyOffersPage() {
                   status: deliveryResponse.data.status,
                 },
               };
-            } catch (err) {
-              console.error(`Failed to fetch delivery ${offer.deliveryId}:`, err);
+            } catch {
               return offer;
             }
           })
         );
 
         setOffers(offersWithDelivery);
-      } catch (err: any) {
-        console.error('Failed to fetch my offers:', err);
+      } catch {
         setError('Failed to load your offers. Please try again.');
       } finally {
         setLoading(false);
@@ -199,26 +197,16 @@ export default function MyOffersPage() {
   }, [offers]);
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#f5f5f5',
-        p: 2,
-      }}
-    >
-      <Box sx={{ position: 'relative', width: '100%', maxWidth: 375, height: 812 }}>
-        <MobileContainer showFrame={false}>
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              height: '100vh',
-              backgroundColor: 'background.default',
-            }}
-          >
+    <>
+      <MobileContainer showFrame={false}>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            height: '100vh',
+            backgroundColor: 'background.default',
+          }}
+        >
             {/* Header */}
             <Box
               sx={{
@@ -432,10 +420,9 @@ export default function MyOffersPage() {
                 </Box>
               )}
             </Box>
-          </Box>
-        </MobileContainer>
-        <BottomNavigation />
-      </Box>
-    </Box>
+        </Box>
+      </MobileContainer>
+      <BottomNavigation />
+    </>
   );
 }

@@ -8,7 +8,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
 // Fix for default marker icon in React-Leaflet
-// @ts-ignore
+// @ts-expect-error - Deleting internal Leaflet property for custom icon setup
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
@@ -84,7 +84,6 @@ export default function LocationPicker({ onLocationSelect, initialPosition }: Pr
 
         setLocationError(errorMessage);
         setLoadingLocation(false);
-        console.error('Geolocation error:', error);
       },
       {
         enableHighAccuracy: true,

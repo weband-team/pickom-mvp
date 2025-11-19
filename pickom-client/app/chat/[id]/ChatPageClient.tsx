@@ -37,8 +37,7 @@ export function ChatPageClient({ chatId }: ChatPageClientProps) {
         const response = await getCurrentUser();
         setCurrentUserUid(response.user.uid);
         setCurrentUserRole(response.user.role);
-      } catch (err) {
-        console.error('Failed to fetch current user:', err);
+      } catch {
       }
     };
 
@@ -72,7 +71,7 @@ export function ChatPageClient({ chatId }: ChatPageClientProps) {
 
         // Convert API messages to local format (for non-picker or single chat)
         if (chatData.messages && currentUserRole !== 'picker') {
-          const formattedMessages: Message[] = chatData.messages.map((msg: any) => ({
+          const formattedMessages: Message[] = chatData.messages.map((msg) => ({
             id: msg.id,
             senderId: msg.senderId,
             senderName: msg.senderName,
@@ -91,8 +90,7 @@ export function ChatPageClient({ chatId }: ChatPageClientProps) {
         if (currentUserRole !== 'picker') {
           await markMessagesAsRead(chatId);
         }
-      } catch (err: any) {
-        console.error('Failed to fetch chat:', err);
+      } catch {
         setError('Failed to load chat. Please try again.');
       } finally {
         setLoading(false);
@@ -130,8 +128,7 @@ export function ChatPageClient({ chatId }: ChatPageClientProps) {
 
       setMessages(prev => [...prev, formattedMessage]);
       setNewMessage('');
-    } catch (err: any) {
-      console.error('Failed to send message:', err);
+    } catch {
       alert('Failed to send message. Please try again.');
     } finally {
       setSending(false);

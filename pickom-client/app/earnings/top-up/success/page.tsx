@@ -23,8 +23,7 @@ export default function TopUpSuccessPage() {
 
         const balanceResponse = await getUserBalance(userData.uid);
         setBalance(balanceResponse.balance || 0);
-      } catch (err) {
-        console.error('Failed to fetch user data:', err);
+      } catch {
         setError('Failed to load balance. Please check your profile.');
       } finally {
         setLoading(false);
@@ -47,18 +46,8 @@ export default function TopUpSuccessPage() {
   }
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#f5f5f5',
-        p: 2,
-      }}
-    >
-      <Box sx={{ position: 'relative', width: '100%', maxWidth: 375, height: 812 }}>
-        <MobileContainer showFrame={false}>
+    <>
+      <MobileContainer showFrame={false}>
           <Box
             sx={{
               p: 3,
@@ -112,9 +101,8 @@ export default function TopUpSuccessPage() {
               Back to Earnings
             </Button>
           </Box>
-        </MobileContainer>
-        <BottomNavigation />
-      </Box>
-    </Box>
+      </MobileContainer>
+      <BottomNavigation />
+    </>
   );
 }

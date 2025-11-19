@@ -23,8 +23,7 @@ export default function CompletedDeliveriesPage() {
           return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         });
         setDeliveries(sortedDeliveries);
-      } catch (err) {
-        console.error('Failed to fetch completed deliveries:', err);
+      } catch {
         setError('Failed to load completed deliveries.');
       } finally {
         setLoading(false);
@@ -52,19 +51,9 @@ export default function CompletedDeliveriesPage() {
   }
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#f5f5f5',
-        p: 2,
-      }}
-    >
-      <Box sx={{ position: 'relative', width: '100%', maxWidth: 375, height: 812 }}>
-        <MobileContainer showFrame={false}>
-          <Box sx={{ p: 3, pb: 10, backgroundColor: 'background.default', minHeight: '100vh' }}>
+    <>
+      <MobileContainer showFrame={false}>
+        <Box sx={{ p: 3, pb: 10, backgroundColor: 'background.default', minHeight: '100vh' }}>
             <Box sx={{ mb: 3, display: 'flex', alignItems: 'center' }}>
               <Button
                 onClick={handleBackClick}
@@ -133,10 +122,9 @@ export default function CompletedDeliveriesPage() {
                 ))}
               </Box>
             )}
-          </Box>
-        </MobileContainer>
-        <BottomNavigation />
-      </Box>
-    </Box>
+        </Box>
+      </MobileContainer>
+      <BottomNavigation />
+    </>
   );
 }

@@ -21,6 +21,7 @@ import { ThemeToggle } from '@/components/common/ThemeToggle';
 import { handleMe } from '@/app/api/auth';
 import { updateUser } from '@/app/api/user';
 import dynamic from 'next/dynamic';
+import { AxiosError } from 'axios';
 
 const LocationPicker = dynamic(() => import('@/components/LocationPicker'), {
   ssr: false,
@@ -75,8 +76,7 @@ export default function EditProfilePage() {
           locationLng: user.location?.lng?.toString() || '',
           locationPlaceId: user.location?.placeId || '',
         });
-      } catch (err: any) {
-        console.error('Failed to fetch user data:', err);
+      } catch {
         setError('Failed to load profile. Please login again.');
         setTimeout(() => router.push('/login'), 2000);
       } finally {
@@ -113,7 +113,7 @@ export default function EditProfilePage() {
   const handleInputChange = (field: keyof EditFormData) => (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
-    let value = event.target.value;
+    const value = event.target.value;
 
     // Special handling for phone field - validate in real-time
     if (field === 'phone') {
@@ -203,9 +203,9 @@ export default function EditProfilePage() {
       setTimeout(() => {
         router.push('/profile');
       }, 1500);
-    } catch (err: any) {
-      console.error('Failed to update profile:', err);
-      setError(err.response?.data?.message || 'Failed to update profile. Please try again.');
+    } catch (err) {
+      const error = err as AxiosError<{ message?: string }>;
+      setError(error.response?.data?.message || 'Failed to update profile. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -224,18 +224,8 @@ export default function EditProfilePage() {
   }
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: 'background.default',
-        p: 2,
-      }}
-    >
-      <Box sx={{ position: 'relative', width: '100%', maxWidth: 375, height: 812 }}>
-        <MobileContainer showFrame={false}>
+    <>
+      <MobileContainer showFrame={false}>
           <Box sx={{ p: 3, pb: 10, backgroundColor: 'background.default', minHeight: '100vh' }}>
             {/* Header */}
             <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -427,9 +417,8 @@ export default function EditProfilePage() {
               </CardContent>
             </Card>
           </Box>
-        </MobileContainer>
-        <BottomNavigation />
-      </Box>
-    </Box>
+      </MobileContainer>
+      <BottomNavigation />
+    </>
   );
 }

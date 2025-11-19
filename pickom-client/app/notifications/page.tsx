@@ -34,8 +34,7 @@ export default function NotificationsPage() {
         const response = await getCurrentUser();
         setCurrentUserRole(response.user.role);
         setCurrentUserId(response.user.uid);
-      } catch (err) {
-        console.error('Failed to fetch current user:', err);
+      } catch {
       }
     };
 
@@ -63,8 +62,7 @@ export default function NotificationsPage() {
         } else {
           router.push(`/delivery-details/${notification.related_delivery_id}`);
         }
-      } catch (err) {
-        console.error('Failed to fetch delivery:', err);
+      } catch {
         // Fallback to delivery-details page
         router.push(`/delivery-details/${notification.related_delivery_id}`);
       }
@@ -85,26 +83,16 @@ export default function NotificationsPage() {
   };
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#f5f5f5',
-        p: 2,
-      }}
-    >
-      <Box sx={{ position: 'relative', width: '100%', maxWidth: 375, height: 812 }}>
-        <MobileContainer showFrame={false}>
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              height: '100vh',
-              backgroundColor: 'background.default',
-            }}
-          >
+    <>
+      <MobileContainer showFrame={false}>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            height: '100vh',
+            backgroundColor: 'background.default',
+          }}
+        >
             {/* Header */}
             <Box
               sx={{
@@ -251,14 +239,13 @@ export default function NotificationsPage() {
                 </Box>
               )}
             </Box>
-          </Box>
-        </MobileContainer>
-        <BottomNavigation
-          unreadChatsCount={unreadChats}
-          unreadNotificationsCount={unreadCount}
-          activeOrdersCount={activeOrders}
-        />
-      </Box>
-    </Box>
+        </Box>
+      </MobileContainer>
+      <BottomNavigation
+        unreadChatsCount={unreadChats}
+        unreadNotificationsCount={unreadCount}
+        activeOrdersCount={activeOrders}
+      />
+    </>
   );
 }

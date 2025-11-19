@@ -74,7 +74,7 @@ export default function OfferCard({
         <Chip
           label={getStatusLabel(offer.status)}
           size="small"
-          color={getStatusColor(offer.status) as any}
+          color={getStatusColor(offer.status) as 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning'}
           sx={{ fontWeight: 600 }}
         />
         <Typography variant="caption" color="text.secondary">

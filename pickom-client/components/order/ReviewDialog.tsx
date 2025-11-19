@@ -48,6 +48,12 @@ export function ReviewDialog({
       onClose={handleCancel}
       maxWidth="sm"
       fullWidth
+      sx={{
+        '& .MuiDialog-paper': {
+          // Safe area padding for modals
+          margin: 'var(--safe-area-top) var(--safe-area-right) var(--safe-area-bottom) var(--safe-area-left)',
+        },
+      }}
     >
       <DialogTitle>
         <Typography variant="h6">Leave a Review</Typography>

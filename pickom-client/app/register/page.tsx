@@ -25,6 +25,7 @@ import {
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase-config';
 import { handleRegister as registerWithBackend } from '../api/auth';
+import { AxiosError } from 'axios';
 
 interface RegistrationState {
   step: 'userData' | 'pickerData';
@@ -256,20 +257,24 @@ export default function RegisterPage() {
       } else {
         router.push('/delivery-methods');
       }
-    } catch (error: any) {
-      console.error('Registration error:', error);
-
+    } catch (err) {
       // Handle Firebase-specific errors
       let errorMessage = 'Registration failed. Please try again.';
 
-      if (error.code === 'auth/email-already-in-use') {
-        errorMessage = 'This email is already registered. Please sign in instead.';
-      } else if (error.code === 'auth/weak-password') {
-        errorMessage = 'Password is too weak. Please use a stronger password.';
-      } else if (error.code === 'auth/invalid-email') {
-        errorMessage = 'Invalid email address.';
-      } else if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
+      const error = err as unknown as { code?: string };
+      if (error && typeof error === 'object' && 'code' in error) {
+        if (error.code === 'auth/email-already-in-use') {
+          errorMessage = 'This email is already registered. Please sign in instead.';
+        } else if (error.code === 'auth/weak-password') {
+          errorMessage = 'Password is too weak. Please use a stronger password.';
+        } else if (error.code === 'auth/invalid-email') {
+          errorMessage = 'Invalid email address.';
+        }
+      } else {
+        const axiosError = err as AxiosError<{ message?: string }>;
+        if (axiosError.response?.data?.message) {
+          errorMessage = axiosError.response.data.message;
+        }
       }
 
       setError(errorMessage);

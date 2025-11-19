@@ -30,20 +30,36 @@ export const MobileContainer: React.FC<MobileContainerProps> = ({
       <Box
         data-mobile-container
         sx={{
-          width: '100%',
-          maxWidth: width,
-          height: shouldShowBottomNav ? 'calc(100vh - 70px)' : '100vh',
-          maxHeight: shouldShowBottomNav ? `calc(${height}px - 70px)` : height,
+          width: '100vw',
+          height: '100vh',
           bgcolor: backgroundColor || 'background.default',
-          overflow: 'hidden', // Changed from 'auto' to 'hidden' to contain modals
-          position: 'relative',
+          overflow: 'hidden',
+          position: 'fixed',
+          left: 0,
+          right: 0,
+          bottom: 0,
+          // Top padding to start BELOW status bar
+          pt: 'env(safe-area-inset-top)',
+          // Bottom padding for bottom navigation
+          pb: shouldShowBottomNav ? '68px' : 0,
+          margin: 0,
           '&::-webkit-scrollbar': {
             display: 'none',
           },
           scrollbarWidth: 'none',
         }}
       >
-        <Box sx={{ paddingBottom: 0, minHeight: '100%', overflow: 'auto', height: '100%' }}>
+        <Box sx={{
+          width: '100%',
+          height: '100%',
+          overflow: 'auto',
+          margin: 0,
+          padding: 0,
+          '&::-webkit-scrollbar': {
+            display: 'none',
+          },
+          scrollbarWidth: 'none',
+        }}>
           {children}
         </Box>
       </Box>
@@ -101,7 +117,8 @@ export const MobileContainer: React.FC<MobileContainerProps> = ({
           sx={{
             width: '100%',
             height: '100%',
-            paddingTop: 6,
+            // Combine notch padding with safe area
+            paddingTop: 'calc(24px + var(--safe-area-top))',
             overflow: 'auto',
             position: 'relative',
             '&::-webkit-scrollbar': {
@@ -110,7 +127,7 @@ export const MobileContainer: React.FC<MobileContainerProps> = ({
             scrollbarWidth: 'none',
           }}
         >
-          <Box sx={{ paddingBottom: 4, minHeight: '100%' }}>
+          <Box sx={{ paddingBottom: 'calc(16px + var(--safe-area-bottom))', minHeight: '100%' }}>
             {children}
           </Box>
         </Box>

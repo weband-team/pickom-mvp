@@ -15,11 +15,12 @@ import BottomNavigation from '../../components/common/BottomNavigation';
 import { useNavigationBadges } from '@/hooks/useNavigationBadges';
 import { ThemeToggle } from '../../components/common/ThemeToggle';
 import { handleMe } from '../api/auth';
+import { User } from '../api/dto/user';
 
 export default function ProfilePage() {
   const router = useRouter();
   const { unreadChats, unreadNotifications, activeOrders } = useNavigationBadges();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const [loggingOut, setLoggingOut] = useState(false);
@@ -29,8 +30,7 @@ export default function ProfilePage() {
       try {
         const response = await handleMe();
         setUser(response.data.user);
-      } catch (err: any) {
-        console.error('Failed to fetch user data:', err);
+      } catch {
         setError('Failed to load profile. Please login again.');
         // Redirect to login if not authenticated
         setTimeout(() => router.push('/login'), 2000);
@@ -56,8 +56,7 @@ export default function ProfilePage() {
       localStorage.removeItem('pickerOnlineStatus');
       localStorage.removeItem('pickerPlannedTrips');
       router.push('/login');
-    } catch (error) {
-      console.error('Logout error:', error);
+    } catch {
       setError('Failed to sign out. Please try again.');
       setLoggingOut(false);
     }
@@ -80,18 +79,8 @@ export default function ProfilePage() {
   }
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#f5f5f5',
-        p: 2,
-      }}
-    >
-      <Box sx={{ position: 'relative', width: '100%', maxWidth: 375, height: 812 }}>
-        <MobileContainer showFrame={false}>
+    <>
+      <MobileContainer showFrame={false}>
           <Box sx={{ p: 3, pb: 6, backgroundColor: 'background.default', minHeight: '100vh' }}>
             {/* Header with Back Button and Theme Toggle */}
             <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -240,13 +229,12 @@ export default function ProfilePage() {
               </Button>
             </Box>
           </Box>
-        </MobileContainer>
-        <BottomNavigation
-          unreadChatsCount={unreadChats}
-          unreadNotificationsCount={unreadNotifications}
-          activeOrdersCount={activeOrders}
-        />
-      </Box>
-    </Box>
+      </MobileContainer>
+      <BottomNavigation
+        unreadChatsCount={unreadChats}
+        unreadNotificationsCount={unreadNotifications}
+        activeOrdersCount={activeOrders}
+      />
+    </>
   );
 }

@@ -15,6 +15,7 @@ import { validateEmail, validatePassword } from '../utils/validation';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase-config';
 import { handleLogin as loginWithBackend } from './api/auth';
+import { AxiosError } from 'axios';
 
 export default function HomePage() {
   const [formData, setFormData] = useState<LoginRequest>({
@@ -96,22 +97,26 @@ export default function HomePage() {
       } else {
         router.push('/delivery-methods');
       }
-    } catch (error: any) {
-      console.error('Login error:', error);
-
+    } catch (err) {
       // Handle Firebase-specific errors
       let errorMessage = 'Invalid email or password. Please try again.';
 
-      if (error.code === 'auth/invalid-credential') {
-        errorMessage = 'Invalid email or password.';
-      } else if (error.code === 'auth/user-not-found') {
-        errorMessage = 'No account found with this email.';
-      } else if (error.code === 'auth/wrong-password') {
-        errorMessage = 'Incorrect password.';
-      } else if (error.code === 'auth/too-many-requests') {
-        errorMessage = 'Too many failed attempts. Please try again later.';
-      } else if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
+      const error = err as unknown as { code?: string };
+      if (error && typeof error === 'object' && 'code' in error) {
+        if (error.code === 'auth/invalid-credential') {
+          errorMessage = 'Invalid email or password.';
+        } else if (error.code === 'auth/user-not-found') {
+          errorMessage = 'No account found with this email.';
+        } else if (error.code === 'auth/wrong-password') {
+          errorMessage = 'Incorrect password.';
+        } else if (error.code === 'auth/too-many-requests') {
+          errorMessage = 'Too many failed attempts. Please try again later.';
+        }
+      } else {
+        const axiosError = err as AxiosError<{ message?: string }>;
+        if (axiosError.response?.data?.message) {
+          errorMessage = axiosError.response.data.message;
+        }
       }
 
       setError(errorMessage);

@@ -10,6 +10,11 @@ import { User } from 'src/user/types/user.type';
 import { User as UserEntity } from 'src/user/entities/user.entity';
 import { NotificationService } from 'src/notification/notification.service';
 import { ChatService } from 'src/chat/chat.service';
+import {
+  calculateHaversineDistance,
+  getRadiusByDeliveryType,
+  estimateDeliveryTime,
+} from 'src/utils/geo.utils';
 
 @Injectable()
 export class DeliveryService {
@@ -22,9 +27,48 @@ export class DeliveryService {
     private readonly chatService: ChatService,
   ) {}
 
-  // Получить всех курьеров (role: 'picker')
+  // Get all available pickers (role: 'picker')
   async getAvailablePickers(): Promise<User[]> {
     return await this.userService.findAllPickers();
+  }
+
+  // Get nearby pickers with distance calculation
+  async getNearbyPickers(
+    lat: number,
+    lng: number,
+    deliveryType: 'within-city' | 'suburban' | 'inter-city' = 'within-city',
+  ): Promise<
+    (User & {
+      distance: number;
+      estimatedTime: number;
+    })[]
+  > {
+    const pickers = await this.userService.findAllPickers();
+    const radius = getRadiusByDeliveryType(deliveryType);
+
+    // Filter online pickers with location, calculate distance
+    const pickersWithDistance = pickers
+      .filter((picker) => picker.isOnline === true && picker.location)
+      .map((picker) => {
+        const distance = calculateHaversineDistance(
+          lat,
+          lng,
+          picker.location!.lat,
+          picker.location!.lng,
+        );
+        const estimatedTime = estimateDeliveryTime(distance);
+
+        return {
+          ...picker,
+          distance: Math.round(distance * 10) / 10, // Round to 1 decimal
+          estimatedTime,
+          price: picker.basePrice || 15.0,
+        };
+      })
+      .filter((picker) => picker.distance <= radius) // Filter by radius
+      .sort((a, b) => a.distance - b.distance); // Sort by distance ASC
+
+    return pickersWithDistance;
   }
 
   // Создать запрос на доставку
@@ -670,5 +714,32 @@ export class DeliveryService {
       createdAt: delivery.createdAt,
       updatedAt: delivery.updatedAt,
     };
+  }
+
+  async findOne(id: number): Promise<Delivery | null> {
+    return await this.deliveryRepository.findOne({
+      where: { id },
+      relations: ['sender', 'picker', 'recipient'],
+    });
+  }
+
+  async updateDeliveryPicker(
+    deliveryId: number,
+    pickerId: number,
+    status: 'accepted' | 'picked_up' | 'delivered' | 'cancelled',
+  ): Promise<Delivery> {
+    const delivery = await this.deliveryRepository.findOne({
+      where: { id: deliveryId },
+      relations: ['sender', 'picker', 'recipient'],
+    });
+
+    if (!delivery) {
+      throw new Error('Delivery not found');
+    }
+
+    delivery.pickerId = pickerId;
+    delivery.status = status;
+
+    return await this.deliveryRepository.save(delivery);
   }
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { memo } from 'react';
-import { Box, Typography, Stack } from '@mui/material';
+import { Box, Typography, Stack, Chip } from '@mui/material';
 import {
   UserAvatar,
   TrustBadge,
@@ -10,6 +10,19 @@ import {
 } from '../ui';
 import { Picker } from '../../types/picker';
 import { theme, cardStyles } from '../../styles/theme';
+
+// Distance color helpers
+function getDistanceColor(distance: number): string {
+  if (distance < 2) return '#4caf50'; // green - nearby
+  if (distance < 5) return '#ff9800'; // orange - close
+  return '#f44336'; // red - far
+}
+
+function getDistanceLabel(distance: number): string {
+  if (distance < 2) return 'Nearby';
+  if (distance < 5) return 'Close';
+  return 'Far';
+}
 
 interface PickerCardMemoProps {
   picker: Picker;
@@ -77,11 +90,26 @@ export const PickerCardMemo = memo(function PickerCardMemo({
 
           <Stack direction="row" justifyContent="space-between" alignItems="center">
             <Box>
-              <Typography variant="h6" sx={{ fontWeight: 'bold', color: theme.colors.primary }}>
-                {picker.price} zł
-              </Typography>
+              <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5 }}>
+                <Typography variant="h6" sx={{ fontWeight: 'bold', color: theme.colors.primary }}>
+                  {picker.price} zl
+                </Typography>
+                {picker.distance > 0 && (
+                  <Chip
+                    label={`${picker.distance} km`}
+                    size="small"
+                    sx={{
+                      backgroundColor: getDistanceColor(picker.distance),
+                      color: 'white',
+                      fontSize: '0.7rem',
+                      height: 20,
+                      '& .MuiChip-label': { px: 1 }
+                    }}
+                  />
+                )}
+              </Stack>
               <Typography variant="body2" color="text.secondary">
-                {picker.duration} min
+                {picker.estimatedTime ? `~${picker.estimatedTime} min` : `${picker.duration} min`}
               </Typography>
             </Box>
             <Stack direction="row" spacing={1}>

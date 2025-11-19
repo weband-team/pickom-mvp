@@ -49,8 +49,7 @@ export default function EarningsPage() {
           const earnings = completed.reduce((sum, delivery) => sum + (Number(delivery.price) || 0), 0);
           setTotalEarnings(Number(earnings) || 0);
         }
-      } catch (err) {
-        console.error('Failed to fetch earnings data:', err);
+      } catch {
         setError('Failed to load earnings. Please login again.');
         setTimeout(() => router.push('/login'), 2000);
       } finally {
@@ -94,18 +93,8 @@ export default function EarningsPage() {
   }
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#f5f5f5',
-        p: 2,
-      }}
-    >
-      <Box sx={{ position: 'relative', width: '100%', maxWidth: 375, height: 812 }}>
-        <MobileContainer showFrame={false}>
+    <>
+      <MobileContainer showFrame={false}>
           <Box sx={{ p: 3, pb: 10, backgroundColor: 'background.default', minHeight: '100vh' }}>
             <Box sx={{ mb: 3, display: 'flex', alignItems: 'center' }}>
               <Button
@@ -209,12 +198,11 @@ export default function EarningsPage() {
               </CardContent>
             </Card>
           </Box>
-        </MobileContainer>
-        <BottomNavigation
-          unreadChatsCount={unreadChats}
-          unreadNotificationsCount={unreadNotifications}
-        />
-      </Box>
-    </Box>
+      </MobileContainer>
+      <BottomNavigation
+        unreadChatsCount={unreadChats}
+        unreadNotificationsCount={unreadNotifications}
+      />
+    </>
   );
 }

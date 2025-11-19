@@ -69,8 +69,7 @@ export function TabbedChat({ senderChatId, receiverChatId, currentUserUid }: Tab
         }
         setReceiverUnread(chatData.unreadCount || 0);
       }
-    } catch (err) {
-      console.error('Failed to fetch chat:', err);
+    } catch {
     }
   }, []);
 
@@ -91,8 +90,7 @@ export function TabbedChat({ senderChatId, receiverChatId, currentUserUid }: Tab
           await markMessagesAsRead(receiverChatId);
           setReceiverUnread(0);
         }
-      } catch (err) {
-        console.error('Failed to mark messages as read:', err);
+      } catch {
       }
     };
 
@@ -136,8 +134,7 @@ export function TabbedChat({ senderChatId, receiverChatId, currentUserUid }: Tab
       }
 
       setNewMessage('');
-    } catch (err) {
-      console.error('Failed to send message:', err);
+    } catch {
       alert('Failed to send message. Please try again.');
     } finally {
       setSending(false);

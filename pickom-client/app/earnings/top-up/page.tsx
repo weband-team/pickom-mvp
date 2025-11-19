@@ -11,6 +11,7 @@ import BottomNavigation from '@/components/common/BottomNavigation';
 import { handleMe } from '../../api/auth';
 import { getUserBalance } from '../../api/user';
 import { User } from '../../api/dto/user';
+import { API_URL } from '../../api/base';
 
 export default function TopUpPage() {
   const router = useRouter();
@@ -32,8 +33,7 @@ export default function TopUpPage() {
 
         const balanceResponse = await getUserBalance(userData.uid);
         setBalance(balanceResponse.balance || 0);
-      } catch (err) {
-        console.error('Failed to fetch user data:', err);
+      } catch {
         setError('Failed to load data. Please login again.');
         setTimeout(() => router.push('/login'), 2000);
       } finally {
@@ -85,7 +85,7 @@ export default function TopUpPage() {
 
     try {
       const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_SERVER}/payment/topup-balance`,
+        `${API_URL}/payment/topup-balance`,
         {
           userId: user.uid,
           amount: parseFloat(amount),
@@ -99,20 +99,16 @@ export default function TopUpPage() {
       );
 
       const { url } = response.data;
-
-      console.log('Balance top-up session created');
       toast.success('Redirecting to payment page...');
 
       window.location.href = url;
-    } catch (error) {
-      console.error('Balance top-up error:', error);
-
+    } catch (err) {
       let errorMessage = 'Unknown error occurred';
-      if (error && typeof error === 'object' && 'response' in error) {
-        const axiosError = error as { response?: { data?: { message?: string }; status: number } };
+      if (err && typeof err === 'object' && 'response' in err) {
+        const axiosError = err as { response?: { data?: { message?: string }; status: number } };
         errorMessage = axiosError.response?.data?.message || `Server error: ${axiosError.response?.status}`;
-      } else if (error instanceof Error) {
-        errorMessage = error.message;
+      } else if (err instanceof Error) {
+        errorMessage = err.message;
       }
 
       toast.error(`Top-up failed: ${errorMessage}`);
@@ -137,95 +133,84 @@ export default function TopUpPage() {
   }
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#f5f5f5',
-        p: 2,
-      }}
-    >
-      <Box sx={{ position: 'relative', width: '100%', maxWidth: 375, height: 812 }}>
-        <MobileContainer showFrame={false}>
-          <Box sx={{ p: 3, pb: 10, backgroundColor: 'background.default', minHeight: '100vh' }}>
-            <Box sx={{ mb: 3, display: 'flex', alignItems: 'center' }}>
-              <Button
-                onClick={handleBackClick}
-                sx={{ minWidth: 'auto', p: 1, mr: 1 }}
-              >
-                <ArrowBack />
-              </Button>
-              <Typography variant="h5" sx={{ fontWeight: 600 }}>
-                Top Up Balance
+    <>
+      <MobileContainer showFrame={false}>
+        <Box sx={{ p: 3, pb: 10, backgroundColor: 'background.default', minHeight: '100vh' }}>
+          <Box sx={{ mb: 3, display: 'flex', alignItems: 'center' }}>
+            <Button
+              onClick={handleBackClick}
+              sx={{ minWidth: 'auto', p: 1, mr: 1 }}
+            >
+              <ArrowBack />
+            </Button>
+            <Typography variant="h5" sx={{ fontWeight: 600 }}>
+              Top Up Balance
+            </Typography>
+          </Box>
+
+          <Card sx={{ mb: 3 }}>
+            <CardContent>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                Current Balance
               </Typography>
+              <Typography variant="h4" sx={{ fontWeight: 700, color: '#667eea' }}>
+                ${balance.toFixed(2)}
+              </Typography>
+            </CardContent>
+          </Card>
+
+          <form onSubmit={handleSubmit}>
+            <Box sx={{ mb: 3 }}>
+              <TextField
+                fullWidth
+                label="Amount (USD)"
+                type="number"
+                value={amount}
+                onChange={handleAmountChange}
+                error={!!amountError}
+                helperText={amountError || 'Minimum: $1, Maximum: $1000'}
+                inputProps={{
+                  min: 1,
+                  max: 1000,
+                  step: 0.01,
+                }}
+                required
+              />
             </Box>
 
-            <Card sx={{ mb: 3 }}>
-              <CardContent>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                  Current Balance
-                </Typography>
-                <Typography variant="h4" sx={{ fontWeight: 700, color: '#667eea' }}>
-                  ${balance.toFixed(2)}
-                </Typography>
-              </CardContent>
-            </Card>
-
-            <form onSubmit={handleSubmit}>
-              <Box sx={{ mb: 3 }}>
-                <TextField
-                  fullWidth
-                  label="Amount (USD)"
-                  type="number"
-                  value={amount}
-                  onChange={handleAmountChange}
-                  error={!!amountError}
-                  helperText={amountError || 'Minimum: $1, Maximum: $1000'}
-                  inputProps={{
-                    min: 1,
-                    max: 1000,
-                    step: 0.01,
-                  }}
-                  required
-                />
-              </Box>
-
-              <Box sx={{ mb: 3 }}>
-                <TextField
-                  fullWidth
-                  label="Description (optional)"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  multiline
-                  rows={2}
-                />
-              </Box>
-
-              <Alert severity="info" sx={{ mb: 3 }}>
-                You will be redirected to Stripe Checkout to complete the payment securely.
-              </Alert>
-
-              <Button
+            <Box sx={{ mb: 3 }}>
+              <TextField
                 fullWidth
-                variant="contained"
-                type="submit"
-                disabled={submitting || !!amountError}
-                sx={{
-                  py: 1.5,
-                  fontSize: '1rem',
-                  fontWeight: 600,
-                  textTransform: 'none',
-                }}
-              >
-                {submitting ? <CircularProgress size={24} /> : 'Continue to Payment'}
-              </Button>
-            </form>
-          </Box>
-        </MobileContainer>
-        <BottomNavigation />
-      </Box>
-    </Box>
+                label="Description (optional)"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                multiline
+                rows={2}
+              />
+            </Box>
+
+            <Alert severity="info" sx={{ mb: 3 }}>
+              You will be redirected to Stripe Checkout to complete the payment securely.
+            </Alert>
+
+            <Button
+              fullWidth
+              variant="contained"
+              type="submit"
+              disabled={submitting || !!amountError}
+              sx={{
+                py: 1.5,
+                fontSize: '1rem',
+                fontWeight: 600,
+                textTransform: 'none',
+              }}
+            >
+              {submitting ? <CircularProgress size={24} /> : 'Continue to Payment'}
+            </Button>
+          </form>
+        </Box>
+      </MobileContainer>
+      <BottomNavigation />
+    </>
   );
 }

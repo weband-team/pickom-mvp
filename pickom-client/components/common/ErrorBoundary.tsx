@@ -39,15 +39,6 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
       url: typeof window !== 'undefined' ? window.location.href : 'SSR',
     };
 
-    // Log to console in development
-    if (process.env.NODE_ENV === 'development') {
-      console.group('🔴 ErrorBoundary caught an error');
-      console.error('Error:', error);
-      console.error('Error Info:', errorInfo);
-      console.error('Full Details:', errorDetails);
-      console.groupEnd();
-    }
-
     // Call custom error handler if provided
     this.props.onError?.(error, errorInfo);
 

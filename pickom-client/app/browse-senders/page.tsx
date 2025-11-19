@@ -64,8 +64,7 @@ export default function BrowseSendersPage() {
         sendersData.sort((a, b) => b.totalOrders - a.totalOrders);
 
         setSendersWithOrders(sendersData);
-      } catch (err: any) {
-        console.error('Failed to fetch senders:', err);
+      } catch {
         setError('Failed to load senders. Please try again.');
       } finally {
         setLoading(false);
@@ -84,18 +83,8 @@ export default function BrowseSendersPage() {
   };
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        backgroundColor: '#ffffff',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        p: 2,
-      }}
-    >
-      <Box sx={{ position: 'relative', width: '100%', maxWidth: 375, height: 812 }}>
-        <MobileContainer showFrame={false}>
+    <>
+      <MobileContainer showFrame={false}>
           {/* User Avatar */}
           <UserAvatar
             name="Vadim"
@@ -314,9 +303,8 @@ export default function BrowseSendersPage() {
               </Box>
             )}
           </Box>
-        </MobileContainer>
-        <BottomNavigation />
-      </Box>
-    </Box>
+      </MobileContainer>
+      <BottomNavigation />
+    </>
   );
 }

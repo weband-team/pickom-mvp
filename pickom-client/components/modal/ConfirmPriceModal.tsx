@@ -11,6 +11,20 @@ interface ConfirmPriceModalProps {
   onCancel: () => void;
 }
 
+const Puller = () => (
+  <Box
+    sx={{
+      width: 40,
+      height: 4,
+      backgroundColor: 'action.disabled',
+      borderRadius: 2,
+      position: 'absolute',
+      top: 8,
+      left: 'calc(50% - 20px)',
+    }}
+  />
+);
+
 export function ConfirmPriceModal({ isOpen, price, onConfirm, onCancel }: ConfirmPriceModalProps) {
   return (
     <Dialog
@@ -22,15 +36,20 @@ export function ConfirmPriceModal({ isOpen, price, onConfirm, onCancel }: Confir
           alignItems: 'flex-end',
         },
         '& .MuiDialog-paper': {
-          maxWidth: '375px',
-          width: '100%',
+          width: '100vw',
           margin: 0,
-          marginBottom: 0,
-          borderRadius: '16px 16px 0 0',
+          // Add safe area padding for bottom sheet modals
+          marginBottom: 'env(safe-area-inset-bottom)',
+          paddingBottom: 'env(safe-area-inset-bottom)',
+          paddingLeft: 'env(safe-area-inset-left)',
+          paddingRight: 'env(safe-area-inset-right)',
+          borderRadius: '24px 24px 0 0',
           backgroundColor: 'background.paper',
+          position: 'relative',
         },
       }}
     >
+      <Puller />
       <DialogContent sx={{ textAlign: 'center', pt: 4, pb: 2 }}>
         {/* Warning Icon Circle */}
         <Box

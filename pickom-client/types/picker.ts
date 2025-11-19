@@ -1,17 +1,23 @@
 import { BaseUserData } from './auth'
 
 export interface Picker extends BaseUserData{
-  trustLevel: number; 
-  price: number; 
-  duration: number; 
+  trustLevel: number;
+  price: number;
+  duration: number;
   reviewCount: number;
   isOnline: boolean;
   isPhoneVerified: boolean;
   isEmailVerified: boolean;
-  distance: number; 
+  distance: number;
   vehicle?: 'car' | 'bike' | 'scooter' | 'walking';
   completedDeliveries: number;
   deliveryCount: number; // alias for completedDeliveries for backwards compatibility
+  location?: {
+    lat: number;
+    lng: number;
+    address?: string;
+  };
+  estimatedTime?: number; // estimated delivery time in minutes
 }
 
 export interface PickerFilters {

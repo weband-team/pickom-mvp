@@ -99,9 +99,9 @@ export default function OfferComponent() {
         pickerName: 'Иван Петров',
         price: 25,
       });
-      console.log('Уведомление создано!');
+      // Notification created successfully
     } catch (error) {
-      console.error('Ошибка:', error);
+      // Handle error
     }
   };
 
@@ -314,7 +314,7 @@ try {
   // Успех - автоматический toast
 } catch (error) {
   // Ошибка - автоматический toast с описанием
-  console.error('Detailed error:', error);
+  // Error is automatically handled
 }
 ```
 

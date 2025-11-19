@@ -23,6 +23,12 @@ export function CancelOrderDialog({
       onClose={onCancel}
       maxWidth="xs"
       fullWidth
+      sx={{
+        '& .MuiDialog-paper': {
+          // Safe area padding for modals
+          margin: 'var(--safe-area-top) var(--safe-area-right) var(--safe-area-bottom) var(--safe-area-left)',
+        },
+      }}
     >
       <DialogTitle>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

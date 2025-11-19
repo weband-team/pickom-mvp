@@ -56,9 +56,7 @@ export function ReceiverSelector({
         onRecipientIdChange('');
         setSearchError('User not found');
       }
-    } catch (error: any) {
-      console.error('Failed to find receiver:', error);
-      setFoundReceiver(null);
+    } catch {      setFoundReceiver(null);
       onRecipientIdChange('');
       setSearchError('Failed to search. Please try again.');
     } finally {

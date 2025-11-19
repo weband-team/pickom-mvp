@@ -1,4 +1,4 @@
-'use client' 
+'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -8,9 +8,10 @@ import {
     TextInput,
     MobileContainer,
     PickomLogo
-} from '../../components/ui'
+} from '../../components/ui';
 import { PackageTypeEnum } from '@/types/package';
 import { ReceiverSelector } from '@/components/order/ReceiverSelector';
+import { AxiosError } from 'axios';
 
 export default function PackageTypePage(){
     const router = useRouter();
@@ -54,7 +55,6 @@ export default function PackageTypePage(){
                     <Stack spacing={2} sx={{ mb: 3 }}>
                         <Box
                             onClick={() => {
-                                console.log('Clicked Small Parcel');
                                 setSelectedType(PackageTypeEnum.SMALL_PARCEL);
                             }}
                             sx={{
@@ -88,7 +88,6 @@ export default function PackageTypePage(){
                         </Box>
 
                         <Box onClick={() => {
-                            console.log('Clicked Large Parcel');
                             setSelectedType(PackageTypeEnum.LARGE_PARCEL);
                         }}
                             sx={{
@@ -121,7 +120,6 @@ export default function PackageTypePage(){
                             </Stack>
                         </Box>
                         <Box onClick={() => {
-                            console.log('Clicked Document');
                             setSelectedType(PackageTypeEnum.DOCUMENT);
                         }}
                             sx={{
@@ -154,7 +152,6 @@ export default function PackageTypePage(){
                             </Stack>
                         </Box>
                         <Box onClick={() => {
-                            console.log('Clicked Other');
                             setSelectedType(PackageTypeEnum.OTHER);
                         }}
                             sx={{
@@ -350,9 +347,9 @@ export default function PackageTypePage(){
 
                                     // Redirect to searching pickers
                                     router.push('/searching-pickers');
-                                } catch (error: any) {
-                                    console.error('Failed to create delivery:', error);
+                                } catch (err) {
                                     const toast = (await import('react-hot-toast')).default;
+                                    const error = err as AxiosError<{ message?: string }>;
                                     const errorMessage = error.response?.data?.message || 'Failed to create delivery. Please try again.';
                                     toast.error(errorMessage);
                                     setIsSearching(false);

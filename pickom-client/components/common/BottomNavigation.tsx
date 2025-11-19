@@ -100,17 +100,20 @@ function BottomNavigation({
         <Paper
             className={className}
             sx={{
-                position: 'absolute',
+                position: 'fixed',
                 bottom: 0,
                 left: 0,
                 right: 0,
+                width: '100vw',
                 zIndex: 1200,
                 paddingBottom: 'env(safe-area-inset-bottom)',
+                paddingLeft: 0,
+                paddingRight: 0,
                 backgroundColor: 'background.paper',
                 borderTop: 1,
                 borderColor: 'divider',
                 borderRadius: 0,
-                boxShadow: 'none',
+                boxShadow: '0px -2px 4px rgba(0, 0, 0, 0.1)',
             }}
             elevation={0}
         >
@@ -119,6 +122,10 @@ function BottomNavigation({
                 onChange={handleChange}
                 sx={{
                     backgroundColor: 'background.paper',
+                    width: '100%',
+                    height: '68px',
+                    paddingLeft: 'env(safe-area-inset-left)',
+                    paddingRight: 'env(safe-area-inset-right)',
                 }}
             >
                 <BottomNavigationAction

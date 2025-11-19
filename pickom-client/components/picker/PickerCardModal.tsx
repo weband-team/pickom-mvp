@@ -68,11 +68,14 @@ export default function PickerCardModal({
       PaperProps={{
         sx: {
           maxHeight: '90vh',
-          maxWidth: '375px',
-          margin: '0 auto',
-          borderTopLeftRadius: 16,
-          borderTopRightRadius: 16,
+          width: '100vw',
+          borderTopLeftRadius: 24,
+          borderTopRightRadius: 24,
           backgroundColor: 'background.paper',
+          // Safe area padding for bottom sheet
+          paddingBottom: 'env(safe-area-inset-bottom)',
+          paddingLeft: 'env(safe-area-inset-left)',
+          paddingRight: 'env(safe-area-inset-right)',
         },
       }}
     >

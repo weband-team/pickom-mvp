@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Box, Typography, Stack, IconButton, Alert } from '@mui/material';
-import { ArrowBack } from '@mui/icons-material';
+import { Box, Typography, Stack, IconButton, Alert, ToggleButtonGroup, ToggleButton, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+import { ArrowBack, ViewList, Map as MapIcon } from '@mui/icons-material';
 import {
   MobileContainer,
   PickomLogo,
@@ -14,12 +14,19 @@ import { UserAvatar } from '@/components/profile/UserAvatar';
 import BottomNavigation from '../../components/common/BottomNavigation';
 import { Picker } from '../../types/picker';
 import { UserType } from '../../types/auth';
-import { theme } from '../../styles/theme';
 import { filterPickers } from '../../data/mockPickers';
-import { getAvailablePickers, createDeliveryRequest, updateDeliveryRequest } from '../api/delivery';
+import { getNearbyPickers, getAvailablePickers } from '../api/delivery';
 import { notificationsAPI } from '../api/notifications';
 import { getCurrentUser } from '../api/user';
 import { useRouter } from 'next/navigation';
+import { AxiosError } from 'axios';
+import dynamic from 'next/dynamic';
+
+// Lazy load map component to avoid SSR issues
+const PickersMap = dynamic(() => import('../../components/picker/PickersMap'), {
+  ssr: false,
+  loading: () => <LoadingIndicator type="dots" text="Loading map..." />
+});
 
 export default function PickerResultsPage() {
   const router = useRouter();
@@ -33,25 +40,50 @@ export default function PickerResultsPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [isCreatingDelivery, setIsCreatingDelivery] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string>('');
+  const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
+  const [deliveryType, setDeliveryType] = useState<'within-city' | 'suburban' | 'inter-city'>('within-city');
+  const [fromLocation, setFromLocation] = useState<{ lat: number; lng: number } | null>(null);
   const ITEMS_PER_PAGE = 10;
 
-  // Fetch pickers from backend on component mount
+  // Fetch pickers from backend on component mount or when deliveryType changes
   useEffect(() => {
     const fetchPickers = async () => {
       setLoading(true);
       setError('');
 
       try {
-        const response = await getAvailablePickers();
-        console.log('Raw pickers from backend:', response.data);
+        // Get fromLocation from localStorage (set by package-type page)
+        const deliveryData = localStorage.getItem('deliveryData');
+        let location: { lat: number; lng: number } | null = null;
+
+        if (deliveryData) {
+          const parsed = JSON.parse(deliveryData);
+          if (parsed.fromLocation) {
+            location = {
+              lat: parsed.fromLocation.lat,
+              lng: parsed.fromLocation.lng
+            };
+            setFromLocation(location);
+          }
+        }
+
+        let response;
+        if (location) {
+          // Use nearby API with real distance calculation
+          response = await getNearbyPickers(location.lat, location.lng, deliveryType);
+        } else {
+          // Fallback to all pickers
+          response = await getAvailablePickers();
+        }
+
         const pickers = response.data.map((picker: any) => ({
           // BaseUserData fields
           id: picker.uid,
           fullName: picker.name,
           email: picker.email,
-          age: 0, // TODO: add to backend
-          country: '', // TODO: add to backend
-          city: '', // TODO: add to backend
+          age: 0,
+          country: '',
+          city: '',
           phoneNumber: picker.phone || '',
           isVerified: true,
           avatarUrl: picker.avatarUrl || '',
@@ -60,27 +92,27 @@ export default function PickerResultsPage() {
           rating: Number(picker.rating) || 0,
 
           // Picker specific fields
-          trustLevel: (Number(picker.rating) || 0) * 20, // Convert 0-5 rating to 0-100 trust
+          trustLevel: (Number(picker.rating) || 0) * 20,
           price: Number(picker.price) || 15.00,
-          duration: Math.floor(Math.random() * 60) + 10, // TODO: get from backend
+          duration: picker.estimatedTime || Math.floor(Math.random() * 60) + 10,
           reviewCount: picker.totalRatings || 0,
           isOnline: picker.isOnline || false,
           isPhoneVerified: !!picker.phone,
           isEmailVerified: true,
-          distance: Math.floor(Math.random() * 20) + 1, // TODO: get from backend
-          vehicle: 'car' as const, // TODO: get from backend
-          completedDeliveries: 0, // TODO: get from backend
-          deliveryCount: 0, // TODO: get from backend
+          distance: picker.distance || 0,
+          vehicle: 'car' as const,
+          completedDeliveries: picker.completedDeliveries || 0,
+          deliveryCount: picker.completedDeliveries || 0,
+          location: picker.location,
+          estimatedTime: picker.estimatedTime,
         }));
 
-        console.log('Mapped pickers:', pickers);
         setAllPickers(pickers);
         setFilteredPickers(pickers);
         const initialPickers = pickers.slice(0, ITEMS_PER_PAGE);
         setDisplayedPickers(initialPickers);
         setHasMore(pickers.length > ITEMS_PER_PAGE);
-      } catch (err: any) {
-        console.error('Failed to fetch pickers:', err);
+      } catch {
         setError('Failed to load pickers. Please try again.');
       } finally {
         setLoading(false);
@@ -88,7 +120,7 @@ export default function PickerResultsPage() {
     };
 
     fetchPickers();
-  }, []);
+  }, [deliveryType]);
 
   // Handle filtered pickers change with loading state
   useEffect(() => {
@@ -167,14 +199,11 @@ export default function PickerResultsPage() {
   }, [loadMore]);
 
   const handleChat = useCallback((pickerId: string) => {
-    console.log('Chat with picker:', pickerId);
     localStorage.setItem('selectedPickerId', pickerId);
     window.location.href = `/chat/${pickerId}`;
   }, []);
 
   const handleSelectPicker = useCallback(async (pickerId: string) => {
-    console.log('Selected picker:', pickerId);
-
     // Get delivery data from localStorage (set by package-type page)
     const deliveryData = localStorage.getItem('deliveryData');
     if (!deliveryData) {
@@ -219,9 +248,7 @@ export default function PickerResultsPage() {
           read: false,
           related_delivery_id: deliveryId,
         });
-        console.log('Invitation notification sent to picker');
       } catch (notifErr) {
-        console.error('Failed to send notification:', notifErr);
         throw notifErr; // Fail the operation if notification fails
       }
 
@@ -232,27 +259,17 @@ export default function PickerResultsPage() {
       setTimeout(() => {
         router.push('/delivery-methods?tab=manage');
       }, 2000);
-    } catch (err: any) {
-      console.error('Failed to send invitation:', err);
-      setError(err.response?.data?.message || 'Failed to send invitation. Please try again.');
+    } catch (err) {
+      const error = err as AxiosError<{ message?: string }>;
+      setError(error.response?.data?.message || 'Failed to send invitation. Please try again.');
     } finally {
       setIsCreatingDelivery(false);
     }
   }, [allPickers, router]);
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        backgroundColor: '#f5f5f5',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        p: 2,
-      }}
-    >
-      <Box sx={{ position: 'relative', width: '100%', maxWidth: 375, height: 812 }}>
-        <MobileContainer showFrame={false}>
+    <>
+      <MobileContainer showFrame={false}>
           {/* User Avatar */}
           <UserAvatar
             name="Vadim"
@@ -305,6 +322,40 @@ export default function PickerResultsPage() {
             </Box>
           )}
 
+          {/* View Toggle & Delivery Type */}
+          <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
+            <Stack direction="row" spacing={2} alignItems="center">
+              {/* View Mode Toggle */}
+              <ToggleButtonGroup
+                value={viewMode}
+                exclusive
+                onChange={(_, value) => value && setViewMode(value)}
+                size="small"
+              >
+                <ToggleButton value="list">
+                  <ViewList fontSize="small" />
+                </ToggleButton>
+                <ToggleButton value="map">
+                  <MapIcon fontSize="small" />
+                </ToggleButton>
+              </ToggleButtonGroup>
+
+              {/* Delivery Type Selector */}
+              <FormControl size="small" sx={{ minWidth: 120, flex: 1 }}>
+                <InputLabel>Radius</InputLabel>
+                <Select
+                  value={deliveryType}
+                  label="Radius"
+                  onChange={(e) => setDeliveryType(e.target.value as any)}
+                >
+                  <MenuItem value="within-city">City (10 km)</MenuItem>
+                  <MenuItem value="suburban">Suburban (25 km)</MenuItem>
+                  <MenuItem value="inter-city">Inter-city (50 km)</MenuItem>
+                </Select>
+              </FormControl>
+            </Stack>
+          </Box>
+
           {/* Filters */}
           <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
             <Box sx={{ p: 2 }}>
@@ -344,10 +395,23 @@ export default function PickerResultsPage() {
                   No pickers found
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Try adjusting your search filters
+                  {fromLocation
+                    ? 'No pickers available within this radius. Try increasing the search area.'
+                    : 'Try adjusting your search filters'}
                 </Typography>
               </Box>
+            ) : viewMode === 'map' ? (
+              /* Map View */
+              <Box sx={{ height: '100%', minHeight: 400 }}>
+                <PickersMap
+                  pickers={filteredPickers}
+                  fromLocation={fromLocation}
+                  onSelectPicker={handleSelectPicker}
+                  onChatPicker={handleChat}
+                />
+              </Box>
             ) : (
+              /* List View */
               <Box sx={{ p: 2 }}>
                 <Stack spacing={2}>
                   {displayedPickers.map((picker) => (
@@ -390,9 +454,8 @@ export default function PickerResultsPage() {
               </Box>
             )}
           </Box>
-        </MobileContainer>
-        <BottomNavigation />
-      </Box>
-    </Box>
+      </MobileContainer>
+      <BottomNavigation />
+    </>
   );
 }

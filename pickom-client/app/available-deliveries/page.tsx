@@ -16,7 +16,8 @@ import { getPickerSettings, savePickerSettings, toggleOnlineStatus, type PickerC
 import type { Picker } from '@/types/picker';
 import { useNavigationBadges } from '@/hooks/useNavigationBadges';
 import { UserType } from '@/types/auth';
-import { DeliveryRequest } from '../api/delivery'; 
+import { DeliveryRequest } from '../api/delivery';
+import { AxiosError } from 'axios'; 
 // interface DeliveryRequest {
 //   id: number;
 //   senderId: string;
@@ -112,11 +113,9 @@ export default function AvailableDeliveriesPage() {
         // Sync local online status with backend on mount
         const localOnlineStatus = pickerSettings.isOnline;
         if (user.isOnline !== localOnlineStatus) {
-          console.log(`Syncing online status: local=${localOnlineStatus}, backend=${user.isOnline}`);
           await updateOnlineStatus(user.uid, localOnlineStatus);
         }
-      } catch (err) {
-        console.error('Failed to load current user:', err);
+      } catch {
       }
     };
 
@@ -131,8 +130,7 @@ export default function AvailableDeliveriesPage() {
       try {
         const response = await getMyDeliveryRequests();
         setDeliveries(response.data);
-      } catch (err: any) {
-        console.error('Failed to fetch deliveries:', err);
+      } catch {
         setError('Failed to load delivery requests. Please try again.');
       } finally {
         setLoading(false);
@@ -154,23 +152,18 @@ export default function AvailableDeliveriesPage() {
     try {
       // Get all notifications of type 'new_delivery'
       const notifications = await notificationsAPI.getUserNotifications();
-      console.log('All notifications:', notifications);
 
       const invitationNotifications = notifications.filter(
         (n: Notification) => n.type === 'new_delivery' && n.related_delivery_id
       );
-      console.log('Invitation notifications:', invitationNotifications);
 
       // Fetch delivery details for each invitation
       const invitationDeliveries = await Promise.all(
         invitationNotifications.map(async (notification: Notification) => {
           try {
-            console.log('Fetching delivery:', notification.related_delivery_id);
             const response = await getDeliveryRequestById(notification.related_delivery_id!);
-            console.log('Delivery data:', response.data);
             return response.data;
-          } catch (err) {
-            console.error('Failed to fetch delivery:', notification.related_delivery_id, err);
+          } catch {
             return null;
           }
         })
@@ -180,11 +173,9 @@ export default function AvailableDeliveriesPage() {
       const filtered = invitationDeliveries.filter(
         (d): d is DeliveryRequest => d !== null && d.status === 'pending'
       );
-      console.log('Filtered invitations:', filtered);
 
       setInvitations(filtered);
-    } catch (err) {
-      console.error('Failed to load invitations:', err);
+    } catch {
     } finally {
       setLoadingInvitations(false);
     }
@@ -250,9 +241,9 @@ export default function AvailableDeliveriesPage() {
       alert('Offer submitted successfully!');
       setShowOfferModal(false);
       setSelectedDelivery(null);
-    } catch (err: any) {
-      console.error('Failed to create offer:', err);
-      alert(err.response?.data?.message || 'Failed to create offer. Please try again.');
+    } catch (err) {
+      const error = err as AxiosError<{ message?: string }>;
+      alert(error.response?.data?.message || 'Failed to create offer. Please try again.');
     } finally {
       setSubmittingOffer(false);
     }
@@ -267,9 +258,7 @@ export default function AvailableDeliveriesPage() {
     if (currentUserId) {
       try {
         await updateOnlineStatus(currentUserId, newOnlineStatus);
-        console.log('Online status synced with backend:', newOnlineStatus);
-      } catch (err) {
-        console.error('Failed to sync online status with backend:', err);
+      } catch {
         // Optionally show error toast to user
       }
     }
@@ -350,26 +339,16 @@ export default function AvailableDeliveriesPage() {
   };
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#f5f5f5',
-        p: 2,
-      }}
-    >
-      <Box sx={{ position: 'relative', width: '100%', maxWidth: 375, height: 812 }}>
-        <MobileContainer showFrame={false}>
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              height: '100vh',
-              backgroundColor: 'background.default',
-            }}
-          >
+    <>
+      <MobileContainer showFrame={false}>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            height: '100vh',
+            backgroundColor: 'background.default',
+          }}
+        >
             {/* Header */}
             <Box
               sx={{
@@ -522,7 +501,8 @@ export default function AvailableDeliveriesPage() {
               sx={{
                 borderBottom: 1,
                 borderColor: 'divider',
-                minHeight: 48,
+                minHeight: 56,
+                px: 2,
                 '& .MuiTabs-flexContainer': {
                   pl: 0,
                 },
@@ -530,13 +510,12 @@ export default function AvailableDeliveriesPage() {
                   ml: 0,
                 },
                 '& .MuiTab-root': {
-                  minHeight: 48,
+                  minHeight: 56,
                   fontSize: '0.75rem',
                   fontWeight: 500,
                   textTransform: 'none',
                   minWidth: 80,
-                  pl: 2,
-                  pr: 2,
+                  px: 1.5,
                   '&:first-of-type': {
                     pl: 0,
                   },
@@ -641,7 +620,7 @@ export default function AvailableDeliveriesPage() {
                         <Chip
                           label={getStatusLabel(delivery.status)}
                           size="small"
-                          color={getStatusColor(delivery.status) as any}
+                          color={getStatusColor(delivery.status) as 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning'}
                           sx={{ height: 20, fontSize: '0.75rem' }}
                         />
                       </Box>
@@ -768,14 +747,29 @@ export default function AvailableDeliveriesPage() {
           PaperProps={{
             sx: {
               maxHeight: '90vh',
-              maxWidth: '375px',
-              margin: '0 auto',
-              borderTopLeftRadius: 16,
-              borderTopRightRadius: 16,
+              width: '100vw',
+              borderTopLeftRadius: 24,
+              borderTopRightRadius: 24,
               backgroundColor: 'background.paper',
+              paddingBottom: 'env(safe-area-inset-bottom)',
+              paddingLeft: 'env(safe-area-inset-left)',
+              paddingRight: 'env(safe-area-inset-right)',
             },
           }}
         >
+          {/* Swipe Handle */}
+          <Box
+            sx={{
+              width: 40,
+              height: 4,
+              backgroundColor: 'action.disabled',
+              borderRadius: 2,
+              position: 'absolute',
+              top: 8,
+              left: 'calc(50% - 20px)',
+            }}
+          />
+
           {/* Header */}
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 3, pt: 3, pb: 2 }}>
             <Typography variant="h6" sx={{ fontWeight: 600 }}>
@@ -843,7 +837,6 @@ export default function AvailableDeliveriesPage() {
             )}
           </Box>
         </SwipeableDrawer>
-      </Box>
-    </Box>
+    </>
   );
 }
