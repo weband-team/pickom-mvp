@@ -1,7 +1,7 @@
 'use client';
 
 import { Box, Typography, IconButton, Button, CircularProgress, Alert } from '@mui/material';
-import { ArrowBack, Logout, AccountBalanceWallet, Edit } from '@mui/icons-material';
+import { ArrowBack, Logout, AccountBalanceWallet, Edit, CreditCard } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { signOut } from 'firebase/auth';
@@ -217,6 +217,24 @@ export default function ProfilePage() {
                 }}
               >
                 {user.role === 'picker' ? 'My Earnings' : 'My Balance'}
+              </Button>
+            </Box>
+
+            {/* Card Management Button */}
+            <Box sx={{ mt: 2 }}>
+              <Button
+                fullWidth
+                variant="outlined"
+                startIcon={<CreditCard />}
+                onClick={() => router.push('/payment-methods')}
+                sx={{
+                  py: 1.5,
+                  textTransform: 'none',
+                  fontSize: '1rem',
+                  fontWeight: 500,
+                }}
+              >
+                Card Management
               </Button>
             </Box>
 

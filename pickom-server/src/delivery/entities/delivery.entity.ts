@@ -95,6 +95,9 @@ export class Delivery {
   @Column({ type: 'text', nullable: true, name: 'deliveries_url' })
   deliveriesUrl: string | null;
 
+  @Column({ type: 'text', nullable: true, name: 'package_image_url' })
+  packageImageUrl: string | null;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

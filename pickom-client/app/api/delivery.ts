@@ -30,6 +30,7 @@ export interface CreateDeliveryRequest {
   recipientEmail?: string;
   recipientPhone?: string;
   status?: 'pending' | 'accepted' | 'picked_up' | 'delivered' | 'cancelled';
+  packageImageUrl?: string;
 }
 
 export interface DeliveryRequest {
@@ -53,6 +54,7 @@ export interface DeliveryRequest {
   updatedAt: string;
   senderName?: string;
   senderRating?: number;
+  packageImageUrl?: string;
 }
 
 export interface Picker {

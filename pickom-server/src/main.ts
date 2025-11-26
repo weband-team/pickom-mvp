@@ -18,6 +18,9 @@ async function bootstrap() {
   // Настройка cookie-parser
   app.use(cookieParser());
 
+  // Увеличение лимита размера JSON для загрузки изображений (10MB)
+  app.use(json({ limit: '10mb' }));
+
   // Настройка CORS
   app.enableCors({
     origin: process.env.CLIENT_URI || 'http://localhost:3000',

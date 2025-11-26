@@ -24,6 +24,7 @@ export default function PackageTypePage(){
     const [recipientPhone, setRecipientPhone] = useState('');
     const [selectedType, setSelectedType] = useState<PackageTypeEnum | null>(null);
     const [isSearching, setIsSearching] = useState(false);
+    const [imagePreview, setImagePreview] = useState<string | null>(null);
 
     // Map package type to size
     const getSizeFromType = (): 'small' | 'medium' | 'large' => {
@@ -34,6 +35,36 @@ export default function PackageTypePage(){
             return 'large';
         }
         return 'medium'; // OTHER
+    };
+
+    // Handle image upload
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            // Check file size (max 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                alert('Image size should be less than 5MB');
+                return;
+            }
+
+            // Check file type
+            if (!file.type.startsWith('image/')) {
+                alert('Please upload an image file');
+                return;
+            }
+
+            // Create preview URL
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setImagePreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    // Remove image
+    const handleRemoveImage = () => {
+        setImagePreview(null);
     };
     return (
         <Box sx={{
@@ -229,6 +260,95 @@ export default function PackageTypePage(){
                                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setWeight(e.target.value)}
                                 fullWidth
                             />
+
+                            {/* Image Upload Section */}
+                            <Box>
+                                <Typography variant="subtitle2" sx={{ mb: 1, color: 'text.secondary' }}>
+                                    Package Photo (optional)
+                                </Typography>
+
+                                {!imagePreview ? (
+                                    <Box
+                                        component="label"
+                                        sx={{
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            p: 3,
+                                            border: '2px dashed',
+                                            borderColor: 'divider',
+                                            borderRadius: 2,
+                                            cursor: 'pointer',
+                                            backgroundColor: 'background.paper',
+                                            transition: 'all 0.2s ease-in-out',
+                                            '&:hover': {
+                                                backgroundColor: 'action.hover',
+                                                borderColor: 'primary.main',
+                                            }
+                                        }}
+                                    >
+                                        <Typography fontSize="3rem" sx={{ mb: 1 }}>📷</Typography>
+                                        <Typography variant="body2" color="text.secondary" textAlign="center">
+                                            Click to upload package photo
+                                        </Typography>
+                                        <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
+                                            Max size: 10MB
+                                        </Typography>
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={handleImageChange}
+                                            style={{ display: 'none' }}
+                                        />
+                                    </Box>
+                                ) : (
+                                    <Box
+                                        sx={{
+                                            position: 'relative',
+                                            border: '2px solid',
+                                            borderColor: 'primary.main',
+                                            borderRadius: 2,
+                                            overflow: 'hidden',
+                                        }}
+                                    >
+                                        <Box
+                                            component="img"
+                                            src={imagePreview}
+                                            alt="Package preview"
+                                            sx={{
+                                                width: '100%',
+                                                height: 'auto',
+                                                maxHeight: 300,
+                                                objectFit: 'contain',
+                                                display: 'block',
+                                            }}
+                                        />
+                                        <Box
+                                            sx={{
+                                                position: 'absolute',
+                                                top: 8,
+                                                right: 8,
+                                                display: 'flex',
+                                                gap: 1,
+                                            }}
+                                        >
+                                            <Button
+                                                size="small"
+                                                variant="contained"
+                                                color="error"
+                                                onClick={handleRemoveImage}
+                                                sx={{
+                                                    minWidth: 'auto',
+                                                    px: 2,
+                                                }}
+                                            >
+                                                Remove
+                                            </Button>
+                                        </Box>
+                                    </Box>
+                                )}
+                            </Box>
                         </Stack>
                     </Box>
 
@@ -324,6 +444,7 @@ export default function PackageTypePage(){
                                         notes: notes || undefined,
                                         recipientEmail: recipientId || undefined,
                                         recipientPhone: recipientPhone || undefined,
+                                        packageImageUrl: imagePreview || undefined,
                                     });
 
                                     const deliveryId = response.data.id;
@@ -350,10 +471,10 @@ export default function PackageTypePage(){
 
                                     // Redirect to searching pickers
                                     router.push('/searching-pickers');
-                                } catch (error: any) {
+                                } catch (error) {
                                     console.error('Failed to create delivery:', error);
                                     const toast = (await import('react-hot-toast')).default;
-                                    const errorMessage = error.response?.data?.message || 'Failed to create delivery. Please try again.';
+                                    const errorMessage = (error as {response?: {data?: {message?: string}}})?.response?.data?.message || 'Failed to create delivery. Please try again.';
                                     toast.error(errorMessage);
                                     setIsSearching(false);
                                 }

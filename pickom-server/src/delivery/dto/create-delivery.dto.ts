@@ -86,4 +86,8 @@ export class CreateDeliveryDto {
   @IsEnum(['pending', 'accepted', 'picked_up', 'delivered', 'cancelled'])
   @IsOptional()
   status?: 'pending' | 'accepted' | 'picked_up' | 'delivered' | 'cancelled';
+
+  @IsString()
+  @IsOptional()
+  packageImageUrl?: string;
 }

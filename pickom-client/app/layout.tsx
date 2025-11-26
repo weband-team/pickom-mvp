@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ThemeWrapper } from '../components';
 import { Toaster } from 'react-hot-toast';
+import StripeProvider from './providers/StripeProvider';
 
 
 export const metadata: Metadata = {
@@ -17,7 +18,9 @@ export default function RootLayout({
         <html lang="en">
             <body>
                 <ThemeWrapper>
-                    {children}
+                    <StripeProvider>
+                        {children}
+                    </StripeProvider>
                     <Toaster
                         position="top-right"
                         toastOptions={{

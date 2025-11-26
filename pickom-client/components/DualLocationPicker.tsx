@@ -149,14 +149,11 @@ export default function DualLocationPicker({
         onRouteCalculated(routeData);
       }
     } catch (err) {
-      console.error('Route calculation error:', err);
-      setError('Could not calculate route. Showing straight line.');
-      // Fallback to straight line
-      setRouteCoordinates([
-        [from.lat, from.lng],
-        [to.lat, to.lng]
-      ]);
+      // console.error('Route calculation error:', err);
+      // Don't show line if route can't be calculated (e.g., across ocean)
+      setRouteCoordinates([]);
       setRouteInfo(null);
+      setError('');
     } finally {
       setCalculatingRoute(false);
     }

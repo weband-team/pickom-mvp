@@ -8,7 +8,12 @@ import { Repository } from 'typeorm';
 import Stripe from 'stripe';
 import { ConfigService } from '@nestjs/config';
 import { Payment } from './entities/payment.entity';
-import { CreatePaymentIntentDto, TopUpBalanceDto } from './dto';
+import {
+  CreatePaymentIntentDto,
+  TopUpBalanceDto,
+  PaymentMethodResponseDto,
+  SetupIntentResponseDto,
+} from './dto';
 import { User } from '../user/entities/user.entity';
 
 @Injectable()
@@ -44,6 +49,7 @@ export class PaymentService {
       currency = 'usd',
       fromUserId,
       toUserId,
+      paymentMethodId,
     } = createPaymentIntentDto;
     // Check if user exists
     const user = await this.userRepository.findOne({ where: { id: userId } });
@@ -65,18 +71,49 @@ export class PaymentService {
       }
     }
 
-    // Validate toUserId if provided
+    // Validate toUserId if provided (ensure it's a number)
     if (toUserId) {
+      const toUserIdNum = typeof toUserId === 'string' ? parseInt(toUserId, 10) : toUserId;
+      if (isNaN(toUserIdNum)) {
+        throw new BadRequestException(`Invalid toUserId: ${toUserId}`);
+      }
       const toUser = await this.userRepository.findOne({
-        where: { id: toUserId },
+        where: { id: toUserIdNum },
       });
       if (!toUser) {
         throw new BadRequestException(`To user with id ${toUserId} not found.`);
       }
     }
 
+    // Bug #9 fix: If paymentMethodId is provided, validate ownership
+    let stripeCustomerId: string | undefined;
+    if (paymentMethodId) {
+      stripeCustomerId = await this.getOrCreateStripeCustomer(userId);
+
+      // Verify payment method belongs to this customer
+      try {
+        const paymentMethod =
+          await this.stripe.paymentMethods.retrieve(paymentMethodId);
+        if (paymentMethod.customer !== stripeCustomerId) {
+          throw new BadRequestException(
+            'Payment method does not belong to this user',
+          );
+        }
+      } catch (error: any) {
+        if (error.code === 'resource_missing') {
+          throw new NotFoundException('Payment method not found');
+        }
+        if (error instanceof BadRequestException) {
+          throw error;
+        }
+        throw new BadRequestException(
+          `Failed to verify payment method: ${error.message}`,
+        );
+      }
+    }
+
     // Create Stripe payment intent
-    const paymentIntent = await this.stripe.paymentIntents.create({
+    const paymentIntentOptions: Stripe.PaymentIntentCreateParams = {
       amount: Math.round(amount * 100), // Stripe expects amount in cents
       currency,
       description:
@@ -85,13 +122,61 @@ export class PaymentService {
       metadata: {
         ...(deliveryId && { deliveryId: deliveryId.toString() }),
         userId: userId.toString(),
+        // Mark if payment is with card (money from Stripe, not balance)
+        paymentSource: paymentMethodId ? 'card' : 'balance',
       },
-    });
+    };
+
+    // Add customer and payment method if provided
+    if (paymentMethodId && stripeCustomerId) {
+      paymentIntentOptions.customer = stripeCustomerId;
+      paymentIntentOptions.payment_method = paymentMethodId;
+      // Auto-confirm payment with saved card (same as topUpBalance)
+      paymentIntentOptions.confirm = true;
+      paymentIntentOptions.off_session = true;
+    }
+
+    // Bug #11 fix: Wrap Stripe API call in try-catch
+    let paymentIntent: Stripe.PaymentIntent;
+    try {
+      paymentIntent = await this.stripe.paymentIntents.create(
+        paymentIntentOptions,
+      );
+    } catch (error: any) {
+      // Handle specific Stripe errors
+      if (error.type === 'StripeCardError') {
+        throw new BadRequestException(
+          `Card error: ${error.message || 'Card was declined'}`,
+        );
+      }
+      if (error.code === 'insufficient_funds') {
+        throw new BadRequestException('Insufficient funds on card');
+      }
+      if (error.code === 'card_declined') {
+        throw new BadRequestException(
+          `Card declined: ${error.decline_code || 'Unknown reason'}`,
+        );
+      }
+      if (error.type === 'StripeInvalidRequestError') {
+        throw new BadRequestException(
+          `Invalid request: ${error.message || 'Please check payment details'}`,
+        );
+      }
+      // Network or API errors
+      throw new BadRequestException(
+        `Payment failed: ${error.message || 'Unable to process payment'}`,
+      );
+    }
 
     // Save payment to database
+    // Ensure toUserId is a number or null
+    const toUserIdNum = toUserId
+      ? (typeof toUserId === 'string' ? parseInt(toUserId, 10) : toUserId)
+      : null;
+
     const payment = this.paymentRepository.create({
       fromUserId: fromUserId || userId,
-      toUserId: toUserId || null, // Will be set when delivery is accepted
+      toUserId: toUserIdNum,
       deliveryId,
       amount,
       currency,
@@ -102,6 +187,7 @@ export class PaymentService {
       description,
       metadata: {
         stripePaymentIntentId: paymentIntent.id,
+        paymentSource: paymentMethodId ? 'card' : 'balance',
       },
     });
 
@@ -112,6 +198,37 @@ export class PaymentService {
       clientSecret: paymentIntent.client_secret,
       paymentIntentId: paymentIntent.id,
     };
+  }
+
+  /**
+   * Create Payment Intent by Firebase UID
+   */
+  async createPaymentIntentByUid(
+    firebaseUid: string,
+    createPaymentIntentDto: CreatePaymentIntentDto,
+  ) {
+    const userId = await this.getUserIdByUid(firebaseUid);
+
+    // If toUserId is provided as Firebase UID (string), convert to database ID
+    let modifiedDto = { ...createPaymentIntentDto };
+    if (createPaymentIntentDto.toUserId) {
+      if (typeof createPaymentIntentDto.toUserId === 'string') {
+        const toUserIdStr = createPaymentIntentDto.toUserId;
+        const toUser = await this.userRepository.findOne({
+          where: { uid: toUserIdStr },
+        });
+        if (toUser) {
+          modifiedDto.toUserId = toUser.id;
+        } else {
+          modifiedDto.toUserId = undefined;
+        }
+      } else {
+        // Already a number, keep it
+        modifiedDto.toUserId = createPaymentIntentDto.toUserId;
+      }
+    }
+
+    return this.createPaymentIntent(userId, modifiedDto);
   }
 
   async createCheckoutSession(
@@ -147,10 +264,14 @@ export class PaymentService {
       }
     }
 
-    // Validate toUserId if provided
+    // Validate toUserId if provided (ensure it's a number)
     if (toUserId) {
+      const toUserIdNum = typeof toUserId === 'string' ? parseInt(toUserId, 10) : toUserId;
+      if (isNaN(toUserIdNum)) {
+        throw new BadRequestException(`Invalid toUserId: ${toUserId}`);
+      }
       const toUser = await this.userRepository.findOne({
-        where: { id: toUserId },
+        where: { id: toUserIdNum },
       });
       if (!toUser) {
         throw new BadRequestException(`To user with id ${toUserId} not found.`);
@@ -196,9 +317,14 @@ export class PaymentService {
     });
 
     // Save payment to database (payment_intent will be updated via webhook)
+    // Ensure toUserId is a number or null
+    const toUserIdNum = toUserId
+      ? (typeof toUserId === 'string' ? parseInt(toUserId, 10) : toUserId)
+      : null;
+
     const payment = this.paymentRepository.create({
       fromUserId: fromUserId || userId,
-      toUserId: toUserId || null,
+      toUserId: toUserIdNum,
       deliveryId,
       amount,
       currency,
@@ -328,6 +454,7 @@ export class PaymentService {
 
               // Check if this is a balance top-up
               const isTopUp = payment.metadata?.type === 'balance_topup';
+              const isCardPayment = payment.metadata?.paymentSource === 'card';
 
               if (isTopUp) {
                 // For balance top-up, only increment the user's balance
@@ -340,8 +467,24 @@ export class PaymentService {
                   'balance',
                   payment.amount,
                 );
+              } else if (isCardPayment) {
+                // For card payments, money came from Stripe - don't deduct from sender's balance
+                console.log(
+                  `Card payment - money from Stripe, not deducting from sender's balance`,
+                );
+                if (payment.toUserId) {
+                  console.log(
+                    `Incrementing balance for user ${payment.toUserId} by ${payment.amount}`,
+                  );
+                  await transactionalEntityManager.increment(
+                    User,
+                    { id: payment.toUserId },
+                    'balance',
+                    payment.amount,
+                  );
+                }
               } else {
-                // For regular payments, decrement from sender and increment to receiver
+                // For balance payments, decrement from sender and increment to receiver
                 if (payment.fromUserId) {
                   console.log(
                     `Decrementing balance for user ${payment.fromUserId} by ${payment.amount}`,
@@ -413,6 +556,7 @@ export class PaymentService {
 
           // Check if this is a balance top-up
           const isTopUp = payment.metadata?.type === 'balance_topup';
+          const isCardPayment = payment.metadata?.paymentSource === 'card';
 
           if (isTopUp) {
             // For balance top-up, only increment the user's balance
@@ -425,8 +569,25 @@ export class PaymentService {
               'balance',
               payment.amount,
             );
+          } else if (isCardPayment) {
+            // For card payments, money came from Stripe - don't deduct from sender's balance
+            // Only increment receiver's balance (if there is a receiver)
+            console.log(
+              `Card payment - money from Stripe, not deducting from sender's balance`,
+            );
+            if (payment.toUserId) {
+              console.log(
+                `Incrementing balance for user ${payment.toUserId} by ${payment.amount}`,
+              );
+              await transactionalEntityManager.increment(
+                User,
+                { id: payment.toUserId },
+                'balance',
+                payment.amount,
+              );
+            }
           } else {
-            // For regular payments, decrement from sender and increment to receiver
+            // For balance payments, decrement from sender and increment to receiver
             if (payment.fromUserId) {
               console.log(
                 `Decrementing balance for user ${payment.fromUserId} by ${payment.amount}`,
@@ -495,6 +656,14 @@ export class PaymentService {
     });
   }
 
+  /**
+   * Get payments by Firebase UID
+   */
+  async getPaymentsByUserUid(firebaseUid: string) {
+    const userId = await this.getUserIdByUid(firebaseUid);
+    return this.getPaymentsByUser(userId);
+  }
+
   async getPaymentById(paymentId: number) {
     const payment = await this.paymentRepository.findOne({
       where: { id: paymentId },
@@ -509,7 +678,7 @@ export class PaymentService {
   }
 
   async topUpBalance(topUpBalanceDto: TopUpBalanceDto) {
-    const { userId, amount, description } = topUpBalanceDto;
+    const { userId, amount, description, paymentMethodId } = topUpBalanceDto;
 
     // Find user by Firebase UID
     const user = await this.userRepository.findOne({ where: { uid: userId } });
@@ -517,38 +686,148 @@ export class PaymentService {
       throw new NotFoundException(`User with uid ${userId} not found`);
     }
 
-    // Create Stripe Checkout Session for balance top-up
-    const session = await this.stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      line_items: [
-        {
-          price_data: {
-            currency: 'usd',
-            product_data: {
-              name: 'Balance Top-Up',
-              description:
-                description || `Top-up balance for user ${user.name}`,
-            },
-            unit_amount: Math.round(amount * 100), // Stripe expects amount in cents
+    // If paymentMethodId is provided, use saved card (Bug #9 fix: validate ownership)
+    if (paymentMethodId) {
+      // Get or create Stripe customer
+      const stripeCustomerId = await this.getOrCreateStripeCustomer(user.id);
+
+      // Verify payment method belongs to this customer
+      try {
+        const paymentMethod =
+          await this.stripe.paymentMethods.retrieve(paymentMethodId);
+        console.log('Payment method customer:', paymentMethod.customer);
+        console.log('User stripeCustomerId:', stripeCustomerId);
+        if (paymentMethod.customer !== stripeCustomerId) {
+          throw new BadRequestException(
+            `Payment method does not belong to this user. PM customer: ${paymentMethod.customer}, User customer: ${stripeCustomerId}`,
+          );
+        }
+      } catch (error: any) {
+        if (error.code === 'resource_missing') {
+          throw new NotFoundException('Payment method not found');
+        }
+        if (error instanceof BadRequestException) {
+          throw error;
+        }
+        throw new BadRequestException(
+          `Failed to verify payment method: ${error.message}`,
+        );
+      }
+
+      // Bug #11 fix: Create Payment Intent with saved card (with try-catch)
+      let paymentIntent: Stripe.PaymentIntent;
+      try {
+        paymentIntent = await this.stripe.paymentIntents.create({
+          amount: Math.round(amount * 100),
+          currency: 'usd',
+          customer: stripeCustomerId,
+          payment_method: paymentMethodId,
+          confirm: true,
+          off_session: true,
+          description: description || `Balance top-up for user ${user.name}`,
+          metadata: {
+            userId: user.id.toString(),
+            type: 'balance_topup',
           },
-          quantity: 1,
+        });
+      } catch (error: any) {
+        // Handle specific Stripe errors
+        if (error.type === 'StripeCardError') {
+          throw new BadRequestException(
+            `Card error: ${error.message || 'Card was declined'}`,
+          );
+        }
+        if (error.code === 'insufficient_funds') {
+          throw new BadRequestException('Insufficient funds on card');
+        }
+        if (error.code === 'card_declined') {
+          throw new BadRequestException(
+            `Card declined: ${error.decline_code || 'Unknown reason'}`,
+          );
+        }
+        if (error.type === 'StripeInvalidRequestError') {
+          throw new BadRequestException(
+            `Invalid request: ${error.message || 'Please check payment details'}`,
+          );
+        }
+        // Network or API errors
+        throw new BadRequestException(
+          `Payment failed: ${error.message || 'Unable to process payment'}`,
+        );
+      }
+
+      // Save payment to database
+      // NOTE: Balance will be updated by webhook when payment succeeds (Bug #1 fix: no double charging)
+      const payment = this.paymentRepository.create({
+        fromUserId: user.id,
+        toUserId: user.id, // For balance top-up, from and to are the same
+        deliveryId: null,
+        amount,
+        currency: 'usd',
+        status: 'pending',
+        paymentMethod: 'stripe',
+        stripePaymentIntentId: paymentIntent.id,
+        stripeClientSecret: paymentIntent.client_secret,
+        description: description || 'Balance top-up',
+        metadata: {
+          type: 'balance_topup',
         },
-      ],
-      mode: 'payment',
-      success_url: `${this.configService.get<string>('CLIENT_URI')}/test-balance-topup/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${this.configService.get<string>('CLIENT_URI')}/test-balance-topup`,
-      metadata: {
-        userId: user.id.toString(),
-        type: 'balance_topup',
-      },
-      payment_intent_data: {
-        description: description || `Balance top-up for user ${user.name}`,
+      });
+
+      await this.paymentRepository.save(payment);
+
+      return {
+        paymentIntentId: paymentIntent.id,
+        clientSecret: paymentIntent.client_secret,
+        status: paymentIntent.status,
+      };
+    }
+
+    // Bug #11 fix: Create Stripe Checkout Session with try-catch
+    let session: Stripe.Checkout.Session;
+    try {
+      session = await this.stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price_data: {
+              currency: 'usd',
+              product_data: {
+                name: 'Balance Top-Up',
+                description:
+                  description || `Top-up balance for user ${user.name}`,
+              },
+              unit_amount: Math.round(amount * 100), // Stripe expects amount in cents
+            },
+            quantity: 1,
+          },
+        ],
+        mode: 'payment',
+        success_url: `${this.configService.get<string>('CLIENT_URI')}/test-balance-topup/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${this.configService.get<string>('CLIENT_URI')}/test-balance-topup`,
         metadata: {
           userId: user.id.toString(),
           type: 'balance_topup',
         },
-      },
-    });
+        payment_intent_data: {
+          description: description || `Balance top-up for user ${user.name}`,
+          metadata: {
+            userId: user.id.toString(),
+            type: 'balance_topup',
+          },
+        },
+      });
+    } catch (error: any) {
+      // Handle Stripe API errors
+      if (error.type === 'StripeInvalidRequestError') {
+        throw new BadRequestException(
+          `Invalid request: ${error.message || 'Please check payment details'}`,
+        );
+      }
+      throw new BadRequestException(
+        `Failed to create checkout session: ${error.message || 'Unknown error'}`,
+      );
+    }
 
     // Save payment to database (will be updated via webhook)
     const payment = this.paymentRepository.create({
@@ -574,5 +853,348 @@ export class PaymentService {
       sessionId: session.id,
       url: session.url,
     };
+  }
+
+  // =====================
+  // Payment Cards Methods
+  // =====================
+
+  /**
+   * Helper method to get or create Stripe customer for a user
+   * Bug #10 fix: Added database lock to prevent race condition
+   */
+  private async getOrCreateStripeCustomer(userId: number): Promise<string> {
+    // Use transaction with pessimistic write lock to prevent race conditions
+    return await this.userRepository.manager.transaction(
+      async (transactionalEntityManager) => {
+        // Lock the user row for update (prevents concurrent modifications)
+        const user = await transactionalEntityManager.findOne(User, {
+          where: { id: userId },
+          lock: { mode: 'pessimistic_write' },
+        });
+
+        if (!user) {
+          throw new NotFoundException(`User with id ${userId} not found`);
+        }
+
+        // If user already has a Stripe customer ID, return it
+        if (user.stripeCustomerId) {
+          return user.stripeCustomerId;
+        }
+
+        // Create new Stripe customer (outside of transaction, but row is locked)
+        let customer: Stripe.Customer;
+        try {
+          customer = await this.stripe.customers.create({
+            email: user.email,
+            name: user.name,
+            metadata: {
+              userId: user.id.toString(),
+            },
+          });
+        } catch (error: any) {
+          throw new BadRequestException(
+            `Failed to create Stripe customer: ${error.message}`,
+          );
+        }
+
+        // Save Stripe customer ID to user
+        user.stripeCustomerId = customer.id;
+        await transactionalEntityManager.save(User, user);
+
+        return customer.id;
+      },
+    );
+  }
+
+  /**
+   * Helper method to get user ID by Firebase UID
+   */
+  private async getUserIdByUid(firebaseUid: string): Promise<number> {
+    const user = await this.userRepository.findOne({
+      where: { uid: firebaseUid },
+    });
+    if (!user) {
+      throw new NotFoundException(`User with uid ${firebaseUid} not found`);
+    }
+    return user.id;
+  }
+
+  /**
+   * Get all payment methods (saved cards) for a user
+   */
+  async getPaymentMethods(userId: number): Promise<PaymentMethodResponseDto[]> {
+    const stripeCustomerId = await this.getOrCreateStripeCustomer(userId);
+
+    // Bug #4 fix: Get customer with default payment method in one call
+    const customer = await this.stripe.customers.retrieve(stripeCustomerId);
+
+    // List all payment methods for this customer
+    const paymentMethods = await this.stripe.paymentMethods.list({
+      customer: stripeCustomerId,
+      type: 'card',
+    });
+
+    const defaultPaymentMethodId =
+      !customer.deleted
+        ? customer.invoice_settings?.default_payment_method
+        : null;
+
+    return paymentMethods.data.map((pm) => ({
+      id: pm.id,
+      brand: pm.card?.brand || 'unknown',
+      lastFourDigits: pm.card?.last4 || '0000',
+      expMonth: pm.card?.exp_month || 0,
+      expYear: pm.card?.exp_year || 0,
+      isDefault: pm.id === defaultPaymentMethodId,
+    }));
+  }
+
+  /**
+   * Get all payment methods by Firebase UID
+   */
+  async getPaymentMethodsByUid(
+    firebaseUid: string,
+  ): Promise<PaymentMethodResponseDto[]> {
+    const userId = await this.getUserIdByUid(firebaseUid);
+    return this.getPaymentMethods(userId);
+  }
+
+  /**
+   * Create Setup Intent for adding a new card
+   */
+  async createSetupIntent(userId: number): Promise<SetupIntentResponseDto> {
+    const stripeCustomerId = await this.getOrCreateStripeCustomer(userId);
+
+    const setupIntent = await this.stripe.setupIntents.create({
+      customer: stripeCustomerId,
+      payment_method_types: ['card'],
+      usage: 'off_session',
+    });
+
+    if (!setupIntent.client_secret) {
+      throw new BadRequestException(
+        'Failed to create setup intent (No secret)',
+      );
+    }
+
+    return {
+      clientSecret: setupIntent.client_secret,
+      setupIntentId: setupIntent.id,
+    };
+  }
+
+  /**
+   * Create Setup Intent by Firebase UID
+   */
+  async createSetupIntentByUid(
+    firebaseUid: string,
+  ): Promise<SetupIntentResponseDto> {
+    const userId = await this.getUserIdByUid(firebaseUid);
+    return this.createSetupIntent(userId);
+  }
+
+  /**
+   * Attach payment method to customer
+   */
+  async attachPaymentMethod(
+    userId: number,
+    paymentMethodId: string,
+  ): Promise<{ success: boolean; message: string }> {
+    try {
+      const stripeCustomerId = await this.getOrCreateStripeCustomer(userId);
+
+      // Bug #3 and #8 fix: Attach payment method to customer
+      await this.stripe.paymentMethods.attach(paymentMethodId, {
+        customer: stripeCustomerId,
+      });
+
+      return {
+        success: true,
+        message: 'Payment method attached successfully',
+      };
+    } catch (error: any) {
+      throw new BadRequestException(
+        `Failed to attach payment method: ${error.message}`,
+      );
+    }
+  }
+
+  /**
+   * Attach payment method by Firebase UID
+   */
+  async attachPaymentMethodByUid(
+    firebaseUid: string,
+    paymentMethodId: string,
+  ): Promise<{ success: boolean; message: string }> {
+    const userId = await this.getUserIdByUid(firebaseUid);
+    return this.attachPaymentMethod(userId, paymentMethodId);
+  }
+
+  /**
+   * Detach (remove) payment method from customer
+   */
+  async detachPaymentMethod(
+    userId: number,
+    paymentMethodId: string,
+  ): Promise<{ success: boolean; message: string }> {
+    // Bug #5 and #7 fix: Verify ownership before detaching
+    const stripeCustomerId = await this.getOrCreateStripeCustomer(userId);
+
+    const paymentMethod =
+      await this.stripe.paymentMethods.retrieve(paymentMethodId);
+    if (paymentMethod.customer !== stripeCustomerId) {
+      throw new BadRequestException(
+        'Payment method does not belong to this user',
+      );
+    }
+
+    await this.stripe.paymentMethods.detach(paymentMethodId);
+
+    return {
+      success: true,
+      message: 'Payment method removed successfully',
+    };
+  }
+
+  /**
+   * Detach payment method by Firebase UID
+   */
+  async detachPaymentMethodByUid(
+    firebaseUid: string,
+    paymentMethodId: string,
+  ): Promise<{ success: boolean; message: string }> {
+    const userId = await this.getUserIdByUid(firebaseUid);
+    return this.detachPaymentMethod(userId, paymentMethodId);
+  }
+
+  /**
+   * Set a payment method as default
+   */
+  async setDefaultPaymentMethod(
+    userId: number,
+    paymentMethodId: string,
+  ): Promise<{ success: boolean; message: string }> {
+    // Bug #6 and #7 fix: Verify ownership before setting as default
+    const stripeCustomerId = await this.getOrCreateStripeCustomer(userId);
+
+    const paymentMethod =
+      await this.stripe.paymentMethods.retrieve(paymentMethodId);
+    if (paymentMethod.customer !== stripeCustomerId) {
+      throw new BadRequestException(
+        'Payment method does not belong to this user',
+      );
+    }
+
+    await this.stripe.customers.update(stripeCustomerId, {
+      invoice_settings: {
+        default_payment_method: paymentMethodId,
+      },
+    });
+
+    return {
+      success: true,
+      message: 'Default payment method updated successfully',
+    };
+  }
+
+  /**
+   * Set default payment method by Firebase UID
+   */
+  async setDefaultPaymentMethodByUid(
+    firebaseUid: string,
+    paymentMethodId: string,
+  ): Promise<{ success: boolean; message: string }> {
+    const userId = await this.getUserIdByUid(firebaseUid);
+    return this.setDefaultPaymentMethod(userId, paymentMethodId);
+  }
+
+  /**
+   * Pay with balance (deduct from sender's balance)
+   */
+  async payWithBalance(
+    firebaseUid: string,
+    amount: number,
+    deliveryId: number,
+    toUserUid?: string,
+    description?: string,
+  ): Promise<{ success: boolean; paymentId: number; message: string }> {
+    const user = await this.userRepository.findOne({
+      where: { uid: firebaseUid },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Check if user has sufficient balance
+    if (user.balance < amount) {
+      throw new Error(
+        `Insufficient balance. You have $${user.balance.toFixed(2)} but need $${amount.toFixed(2)}`,
+      );
+    }
+
+    // Get toUser ID if provided
+    let toUserId: number | null = null;
+    if (toUserUid) {
+      const toUser = await this.userRepository.findOne({
+        where: { uid: toUserUid },
+      });
+      if (toUser) {
+        toUserId = toUser.id;
+      }
+    }
+
+    // Use transaction to deduct balance and create payment record atomically
+    return await this.paymentRepository.manager.transaction(
+      async (transactionalEntityManager) => {
+        // Deduct from sender's balance
+        await transactionalEntityManager.decrement(
+          User,
+          { id: user.id },
+          'balance',
+          amount,
+        );
+
+        // If toUserId is provided, increment their balance immediately
+        if (toUserId) {
+          await transactionalEntityManager.increment(
+            User,
+            { id: toUserId },
+            'balance',
+            amount,
+          );
+        }
+
+        // Create payment record
+        const payment = this.paymentRepository.create({
+          fromUserId: user.id,
+          toUserId: toUserId,
+          deliveryId,
+          amount,
+          currency: 'usd',
+          status: 'completed',
+          paymentMethod: 'balance',
+          description:
+            description || `Payment for delivery #${deliveryId} using balance`,
+          metadata: {
+            deliveryId: deliveryId.toString(),
+            paymentSource: 'balance',
+            type: 'delivery_payment',
+          },
+        });
+
+        const savedPayment = await transactionalEntityManager.save(
+          Payment,
+          payment,
+        );
+
+        return {
+          success: true,
+          paymentId: savedPayment.id,
+          message: 'Payment successful',
+        };
+      },
+    );
   }
 }

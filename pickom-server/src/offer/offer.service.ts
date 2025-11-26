@@ -70,32 +70,8 @@ export class OfferService {
       throw new NotFoundException('Offer not found');
     }
 
-    // If offer is being accepted, deduct balance from sender and create payment record
-    if (status === 'accepted' && offer.delivery?.sender && offer.picker) {
-      // Deduct balance from sender
-      await this.userService.deductBalance(
-        offer.delivery.sender.uid,
-        offer.price,
-      );
-
-      // Create payment record for audit trail
-      const payment = this.paymentRepository.create({
-        fromUserId: offer.delivery.sender.id,
-        toUserId: offer.picker.id,
-        deliveryId: offer.deliveryId,
-        amount: offer.price,
-        currency: 'usd',
-        status: 'pending', // Will be 'completed' when delivery is finished
-        paymentMethod: 'balance',
-        description: `Payment for delivery #${offer.deliveryId} - Offer #${offerId}`,
-        metadata: {
-          offerId: offerId.toString(),
-          type: 'delivery_payment',
-        },
-      });
-
-      await this.paymentRepository.save(payment);
-    }
+    // Payment is now handled separately via payment endpoints
+    // No automatic balance deduction here
 
     offer.status = status;
     const updatedOffer = await this.offerRepository.save(offer);

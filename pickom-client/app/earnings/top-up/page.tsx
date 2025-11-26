@@ -87,14 +87,11 @@ export default function TopUpPage() {
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_SERVER}/payment/topup-balance`,
         {
-          userId: user.uid,
           amount: parseFloat(amount),
           description: description,
         },
         {
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          withCredentials: true,
         }
       );
 

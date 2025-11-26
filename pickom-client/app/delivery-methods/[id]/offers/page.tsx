@@ -28,6 +28,8 @@ import { getDeliveryRequestById, updateDeliveryRequest } from '@/app/api/deliver
 import { getUser, getUserBalance } from '@/app/api/user';
 import { createChat } from '@/app/api/chat';
 import { handleMe } from '@/app/api/auth';
+import PaymentMethodSelector from '@/app/components/payment/PaymentMethodSelector';
+import axios from 'axios';
 
 type OfferStatus = 'all' | 'pending' | 'accepted' | 'rejected';
 
@@ -59,17 +61,26 @@ export default function DeliveryOffersPage({ params }: { params: Promise<{ id: s
     offerId: null,
   });
 
-  // Insufficient funds dialog
-  const [insufficientFundsDialog, setInsufficientFundsDialog] = useState<{
+  // Payment method selection dialog
+  const [paymentMethodDialog, setPaymentMethodDialog] = useState<{
     open: boolean;
-    required: number;
-    current: number;
+    offerId: number | null;
+    offerPrice: number;
   }>({
     open: false,
-    required: 0,
-    current: 0,
+    offerId: null,
+    offerPrice: 0,
   });
 
+  // Selected payment method (balance or card ID)
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<{
+    type: 'balance' | 'card' | null;
+    cardId?: string;
+  }>({
+    type: null,
+  });
+
+  const [showCardSelector, setShowCardSelector] = useState(false);
   const [processing, setProcessing] = useState(false);
 
   // Fetch offers and delivery data
@@ -183,26 +194,60 @@ export default function DeliveryOffersPage({ params }: { params: Promise<{ id: s
       const latestBalance = Number(balanceResponse.balance) || 0;
       setCurrentUserBalance(latestBalance);
 
-      // Check if user has sufficient balance
-      if (latestBalance < selectedOffer.price) {
-        setInsufficientFundsDialog({
-          open: true,
-          required: selectedOffer.price,
-          current: latestBalance,
-        });
-        return;
-      }
-
-      // Sufficient balance, show confirmation dialog
-      setConfirmDialog({
+      // Show payment method selection dialog
+      setPaymentMethodDialog({
         open: true,
-        type: 'accept',
         offerId,
+        offerPrice: selectedOffer.price,
       });
     } catch (err) {
       console.error('Failed to check balance:', err);
       alert('Failed to verify balance. Please try again.');
     }
+  };
+
+  const handlePayWithBalance = async () => {
+    if (!paymentMethodDialog.offerId) return;
+
+    const offerPrice = Number(paymentMethodDialog.offerPrice || 0);
+
+    // Check if balance is sufficient
+    if (currentUserBalance < offerPrice) {
+      alert(`Insufficient balance. You need $${(offerPrice - currentUserBalance).toFixed(2)} more.`);
+      return;
+    }
+
+    // Set payment method and close payment dialog
+    setSelectedPaymentMethod({ type: 'balance' });
+    setPaymentMethodDialog({ open: false, offerId: null, offerPrice: 0 });
+
+    // Show confirmation dialog
+    setConfirmDialog({
+      open: true,
+      type: 'accept',
+      offerId: paymentMethodDialog.offerId,
+    });
+  };
+
+  const handlePayWithCard = (cardId: string) => {
+    if (!paymentMethodDialog.offerId) return;
+
+    // Set payment method and close dialogs
+    setSelectedPaymentMethod({ type: 'card', cardId });
+    setShowCardSelector(false);
+    setPaymentMethodDialog({ open: false, offerId: null, offerPrice: 0 });
+
+    // Show confirmation dialog
+    setConfirmDialog({
+      open: true,
+      type: 'accept',
+      offerId: paymentMethodDialog.offerId,
+    });
+  };
+
+  const handleAddNewCard = () => {
+    // Redirect to add card page
+    router.push('/payment-methods');
   };
 
   const handleReject = (offerId: number) => {
@@ -227,17 +272,63 @@ export default function DeliveryOffersPage({ params }: { params: Promise<{ id: s
         return;
       }
 
-      // Update offer status
-      await updateOfferStatus(confirmDialog.offerId, { status: newStatus });
-
       if (confirmDialog.type === 'accept') {
-        // 1. Assign picker to delivery and update status to 'accepted'
+        const API_URL = process.env.NEXT_PUBLIC_SERVER || 'http://localhost:4242';
+
+        // Process payment based on selected method
+        if (selectedPaymentMethod.type === 'card' && selectedPaymentMethod.cardId) {
+          try {
+            // Create payment intent with saved card
+            await axios.post(
+              `${API_URL}/payment/create-intent`,
+              {
+                amount: Number(selectedOffer.price),
+                deliveryId: deliveryId,
+                description: `Payment for delivery #${deliveryId}`,
+                paymentMethodId: selectedPaymentMethod.cardId,
+                toUserId: selectedOffer.pickerId, // Pass picker ID for payment
+              },
+              { withCredentials: true }
+            );
+          } catch (err: any) {
+            console.error('Payment failed:', err);
+            const errorMessage = err.response?.data?.message || err.message || 'Payment failed';
+            alert(`Payment failed: ${errorMessage}`);
+            setProcessing(false);
+            return;
+          }
+        } else if (selectedPaymentMethod.type === 'balance') {
+          try {
+            // Pay with balance
+            await axios.post(
+              `${API_URL}/payment/pay-with-balance`,
+              {
+                amount: Number(selectedOffer.price),
+                deliveryId: deliveryId,
+                description: `Payment for delivery #${deliveryId}`,
+                toUserId: selectedOffer.pickerId, // Pass picker ID for payment
+              },
+              { withCredentials: true }
+            );
+          } catch (err: any) {
+            console.error('Balance payment failed:', err);
+            const errorMessage = err.response?.data?.message || err.message || 'Payment failed';
+            alert(`Payment failed: ${errorMessage}`);
+            setProcessing(false);
+            return;
+          }
+        }
+
+        // Update offer status
+        await updateOfferStatus(confirmDialog.offerId, { status: newStatus });
+
+        // Assign picker to delivery and update status to 'accepted'
         await updateDeliveryRequest(deliveryId, {
           pickerId: selectedOffer.pickerId,
           status: 'accepted'
         });
 
-        // 3. Auto-reject all other pending offers
+        // Auto-reject all other pending offers
         const pendingOffers = offers.filter(
           o => o.id !== confirmDialog.offerId && o.status === 'pending'
         );
@@ -248,9 +339,12 @@ export default function DeliveryOffersPage({ params }: { params: Promise<{ id: s
           )
         );
 
-        alert('Offer accepted! The picker has been assigned and other offers have been rejected.');
+        alert('Offer accepted! Payment processed and picker has been assigned.');
         router.push(`/delivery-methods?tab=manage`);
       } else {
+        // Update offer status for rejection
+        await updateOfferStatus(confirmDialog.offerId, { status: newStatus });
+
         // Update local state for rejected offer
         setOffers(prev =>
           prev.map(offer =>
@@ -268,11 +362,13 @@ export default function DeliveryOffersPage({ params }: { params: Promise<{ id: s
     } finally {
       setProcessing(false);
       setConfirmDialog({ open: false, type: null, offerId: null });
+      setSelectedPaymentMethod({ type: null });
     }
   };
 
   const handleCancelDialog = () => {
     setConfirmDialog({ open: false, type: null, offerId: null });
+    setSelectedPaymentMethod({ type: null });
   };
 
   // Empty state messages
@@ -467,6 +563,18 @@ export default function DeliveryOffersPage({ params }: { params: Promise<{ id: s
                 <>
                   You are about to accept this offer. The picker will be assigned to your delivery
                   and all other pending offers will be automatically rejected.
+                  {selectedPaymentMethod.type === 'balance' && (
+                    <>
+                      <br /><br />
+                      <strong>Payment method: Balance</strong>
+                    </>
+                  )}
+                  {selectedPaymentMethod.type === 'card' && (
+                    <>
+                      <br /><br />
+                      <strong>Payment method: Saved Card</strong>
+                    </>
+                  )}
                 </>
               ) : (
                 <>
@@ -491,58 +599,114 @@ export default function DeliveryOffersPage({ params }: { params: Promise<{ id: s
           </DialogActions>
         </Dialog>
 
-        {/* Insufficient Funds Dialog */}
+        {/* Payment Method Selection Dialog */}
         <Dialog
-          open={insufficientFundsDialog.open}
-          onClose={() => setInsufficientFundsDialog({ open: false, required: 0, current: 0 })}
+          open={paymentMethodDialog.open}
+          onClose={() => setPaymentMethodDialog({ open: false, offerId: null, offerPrice: 0 })}
           maxWidth="xs"
           fullWidth
         >
-          <DialogTitle sx={{ color: 'error.main' }}>
-            Insufficient Balance
+          <DialogTitle>
+            Select Payment Method
           </DialogTitle>
           <DialogContent>
-            <DialogContentText sx={{ mb: 2 }}>
-              You don't have enough balance to accept this offer. Please top up your account to continue.
+            <DialogContentText sx={{ mb: 3 }}>
+              Choose how you want to pay for this delivery (${Number(paymentMethodDialog.offerPrice || 0).toFixed(2)})
             </DialogContentText>
-            <Box sx={{
-              backgroundColor: 'grey.100',
-              p: 2,
-              borderRadius: 1,
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 1
-            }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                <Typography variant="body2" color="text.secondary">Current Balance:</Typography>
-                <Typography variant="body2" fontWeight={600}>${insufficientFundsDialog.current.toFixed(2)}</Typography>
-              </Box>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                <Typography variant="body2" color="text.secondary">Required Amount:</Typography>
-                <Typography variant="body2" fontWeight={600} color="error">${insufficientFundsDialog.required.toFixed(2)}</Typography>
-              </Box>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', pt: 1, borderTop: 1, borderColor: 'divider' }}>
-                <Typography variant="body2" color="text.secondary">Need to Add:</Typography>
-                <Typography variant="body1" fontWeight={700} color="primary">${(insufficientFundsDialog.required - insufficientFundsDialog.current).toFixed(2)}</Typography>
-              </Box>
+
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {/* Pay with Balance */}
+              <Button
+                variant="outlined"
+                fullWidth
+                onClick={handlePayWithBalance}
+                disabled={processing}
+                sx={{
+                  p: 2,
+                  justifyContent: 'space-between',
+                  textTransform: 'none',
+                  borderColor: currentUserBalance >= Number(paymentMethodDialog.offerPrice || 0) ? 'success.main' : 'error.main',
+                }}
+              >
+                <Box sx={{ textAlign: 'left' }}>
+                  <Typography variant="body1" fontWeight={600}>
+                    Pay with Balance
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Current: ${currentUserBalance.toFixed(2)}
+                    {currentUserBalance < Number(paymentMethodDialog.offerPrice || 0) &&
+                      ` (Need $${(Number(paymentMethodDialog.offerPrice || 0) - currentUserBalance).toFixed(2)} more)`
+                    }
+                  </Typography>
+                </Box>
+                <Typography variant="h6">💰</Typography>
+              </Button>
+
+              {/* Pay with Saved Card */}
+              <Button
+                variant="outlined"
+                fullWidth
+                onClick={() => setShowCardSelector(true)}
+                disabled={processing}
+                sx={{
+                  p: 2,
+                  justifyContent: 'space-between',
+                  textTransform: 'none',
+                }}
+              >
+                <Box sx={{ textAlign: 'left' }}>
+                  <Typography variant="body1" fontWeight={600}>
+                    Pay with Saved Card
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Use one of your saved cards
+                  </Typography>
+                </Box>
+                <Typography variant="h6">💳</Typography>
+              </Button>
+
+              {/* Add New Card */}
+              <Button
+                variant="outlined"
+                fullWidth
+                onClick={handleAddNewCard}
+                disabled={processing}
+                sx={{
+                  p: 2,
+                  justifyContent: 'space-between',
+                  textTransform: 'none',
+                }}
+              >
+                <Box sx={{ textAlign: 'left' }}>
+                  <Typography variant="body1" fontWeight={600}>
+                    Add New Card
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Add and pay with a new card
+                  </Typography>
+                </Box>
+                <Typography variant="h6">➕</Typography>
+              </Button>
             </Box>
           </DialogContent>
           <DialogActions sx={{ px: 3, py: 2 }}>
             <Button
-              onClick={() => setInsufficientFundsDialog({ open: false, required: 0, current: 0 })}
+              onClick={() => setPaymentMethodDialog({ open: false, offerId: null, offerPrice: 0 })}
               variant="outlined"
+              disabled={processing}
             >
               Cancel
             </Button>
-            <Button
-              onClick={() => router.push('/earnings/top-up')}
-              variant="contained"
-              color="primary"
-            >
-              Top Up Balance
-            </Button>
           </DialogActions>
         </Dialog>
+
+        {/* Card Selector Modal */}
+        <PaymentMethodSelector
+          open={showCardSelector}
+          onClose={() => setShowCardSelector(false)}
+          onCardSelected={handlePayWithCard}
+          title="Select Card for Payment"
+        />
       </Box>
     </Box>
   );

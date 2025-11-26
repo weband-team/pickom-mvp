@@ -87,6 +87,7 @@ export class DeliveryService {
     delivery.weight = createDto.weight || null;
     delivery.notes = createDto.notes || null;
     delivery.status = createDto.status || 'pending';
+    delivery.packageImageUrl = createDto.packageImageUrl || null;
 
     // Сохраняем в базу данных
     const savedDelivery = await this.deliveryRepository.save(delivery);

@@ -108,6 +108,10 @@ export class User {
   };
 
   @ApiProperty()
+  @Column({ type: 'varchar', nullable: true, unique: true, name: 'stripe_customer_id' })
+  stripeCustomerId: string | null;
+
+  @ApiProperty()
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
