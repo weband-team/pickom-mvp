@@ -33,6 +33,9 @@ import {
   LocalShippingOutlined,
   Star,
   Close,
+  Schedule,
+  DirectionsCar,
+  Done,
 } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
 import { MobileContainer } from '@/components/ui/layout/MobileContainer';
@@ -43,7 +46,21 @@ import { getUser, getCurrentUser } from '@/app/api/user';
 import SenderCard, { SenderCardData } from '@/components/sender/SenderCard';
 import ReceiverCard from '@/components/order/ReceiverCard';
 import { createChat } from '@/app/api/chat';
+import { getPickerLocation, updatePickerLocation } from '@/app/api/tracking';
+import dynamic from 'next/dynamic';
 
+// Lazy load map component to avoid SSR issues
+const DeliveryTrackingMap = dynamic(
+  () => import('@/components/tracking/DeliveryTrackingMap'),
+  {
+    ssr: false,
+    loading: () => (
+      <Box sx={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'grey.100', borderRadius: 1 }}>
+        <CircularProgress size={24} />
+      </Box>
+    ),
+  }
+);
 
 interface DeliveryRequest {
   id: number;
@@ -55,6 +72,9 @@ interface DeliveryRequest {
   description?: string;
   fromAddress: string;
   toAddress: string;
+  fromLocation?: { lat: number; lng: number };
+  toLocation?: { lat: number; lng: number };
+  pickerLocation?: { lat: number; lng: number };
   price: number;
   size: 'small' | 'medium' | 'large';
   weight?: number;
@@ -107,6 +127,10 @@ export default function DeliveryDetailsPage({ params }: { params: Promise<{ id: 
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [showStatusDialog, setShowStatusDialog] = useState(false);
   const [nextStatus, setNextStatus] = useState<'picked_up' | 'delivered' | null>(null);
+
+  // Tracking state
+  const [pickerLocation, setPickerLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [lastLocationUpdate, setLastLocationUpdate] = useState<Date | null>(null);
 
   useEffect(() => {
     const fetchDeliveryDetails = async () => {
@@ -199,6 +223,90 @@ export default function DeliveryDetailsPage({ params }: { params: Promise<{ id: 
     const mobileContainer = document.querySelector('[data-mobile-container]') as HTMLElement;
     setModalContainer(mobileContainer);
   }, []);
+
+  // Polling for picker location (for sender/receiver)
+  useEffect(() => {
+    if (!delivery || !userRole) return;
+
+    // Only poll for active deliveries
+    if (delivery.status !== 'accepted' && delivery.status !== 'picked_up') return;
+
+    // Sender/receiver polls for picker location
+    if (userRole === 'sender') {
+      const pollLocation = async () => {
+        try {
+          const response = await getPickerLocation(delivery.id);
+          if (response.data.pickerLocation) {
+            setPickerLocation({
+              lat: response.data.pickerLocation.lat,
+              lng: response.data.pickerLocation.lng,
+            });
+            setLastLocationUpdate(new Date());
+          }
+        } catch (err) {
+          console.error('Failed to fetch picker location:', err);
+        }
+      };
+
+      // Initial fetch
+      pollLocation();
+
+      // Poll every 15 seconds
+      const intervalId = setInterval(pollLocation, 15000);
+      return () => clearInterval(intervalId);
+    }
+  }, [delivery, userRole]);
+
+  // Send picker's geolocation (for picker with active delivery)
+  useEffect(() => {
+    if (!delivery || userRole !== 'picker') return;
+
+    // Only track for active deliveries where this picker is assigned
+    if (delivery.status !== 'accepted' && delivery.status !== 'picked_up') return;
+    if (delivery.pickerId !== currentUser?.uid) return;
+
+    let watchId: number | null = null;
+
+    const startTracking = () => {
+      if (!navigator.geolocation) {
+        console.error('Geolocation not supported');
+        return;
+      }
+
+      watchId = navigator.geolocation.watchPosition(
+        async (position) => {
+          const location = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          };
+
+          try {
+            await updatePickerLocation(delivery.id, location);
+            setPickerLocation(location);
+            setLastLocationUpdate(new Date());
+          } catch (err) {
+            console.error('Failed to update location:', err);
+          }
+        },
+        (error) => {
+          console.error('Geolocation error:', error);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 5000,
+        }
+      );
+    };
+
+    startTracking();
+
+    return () => {
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+      }
+    };
+  }, [delivery, userRole, currentUser]);
 
   const handleBack = () => {
     if (userRole === 'sender') {
@@ -484,6 +592,245 @@ export default function DeliveryDetailsPage({ params }: { params: Promise<{ id: 
                   </Box>
                 </CardContent>
               </Card>
+
+              {/* Delivery Timeline */}
+              <Card sx={{ m: 2, boxShadow: 1 }}>
+                <CardContent>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
+                    Delivery Progress
+                  </Typography>
+
+                  <Box sx={{ position: 'relative', pl: 3 }}>
+                    {/* Timeline line */}
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        left: 11,
+                        top: 12,
+                        bottom: 12,
+                        width: 2,
+                        bgcolor: 'divider',
+                      }}
+                    />
+
+                    {/* Pending */}
+                    <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2, position: 'relative' }}>
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          left: -19,
+                          width: 24,
+                          height: 24,
+                          borderRadius: '50%',
+                          bgcolor: delivery.status !== 'cancelled' ? 'success.main' : 'grey.400',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <Done sx={{ fontSize: 14, color: 'white' }} />
+                      </Box>
+                      <Box>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                          Created
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {new Date(delivery.createdAt).toLocaleString()}
+                        </Typography>
+                      </Box>
+                    </Box>
+
+                    {/* Accepted */}
+                    <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2, position: 'relative' }}>
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          left: -19,
+                          width: 24,
+                          height: 24,
+                          borderRadius: '50%',
+                          bgcolor: ['accepted', 'picked_up', 'delivered'].includes(delivery.status) ? 'success.main' : 'grey.300',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        {['accepted', 'picked_up', 'delivered'].includes(delivery.status) ? (
+                          <Done sx={{ fontSize: 14, color: 'white' }} />
+                        ) : (
+                          <Schedule sx={{ fontSize: 14, color: 'grey.500' }} />
+                        )}
+                      </Box>
+                      <Box>
+                        <Typography variant="body2" sx={{ fontWeight: ['accepted', 'picked_up', 'delivered'].includes(delivery.status) ? 600 : 400, color: ['accepted', 'picked_up', 'delivered'].includes(delivery.status) ? 'text.primary' : 'text.secondary' }}>
+                          Accepted by Picker
+                        </Typography>
+                        {['accepted', 'picked_up', 'delivered'].includes(delivery.status) && (
+                          <Typography variant="caption" color="text.secondary">
+                            Picker assigned
+                          </Typography>
+                        )}
+                      </Box>
+                    </Box>
+
+                    {/* Picked Up */}
+                    <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2, position: 'relative' }}>
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          left: -19,
+                          width: 24,
+                          height: 24,
+                          borderRadius: '50%',
+                          bgcolor: ['picked_up', 'delivered'].includes(delivery.status) ? 'success.main' : 'grey.300',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        {['picked_up', 'delivered'].includes(delivery.status) ? (
+                          <Done sx={{ fontSize: 14, color: 'white' }} />
+                        ) : (
+                          <LocalShipping sx={{ fontSize: 14, color: 'grey.500' }} />
+                        )}
+                      </Box>
+                      <Box>
+                        <Typography variant="body2" sx={{ fontWeight: ['picked_up', 'delivered'].includes(delivery.status) ? 600 : 400, color: ['picked_up', 'delivered'].includes(delivery.status) ? 'text.primary' : 'text.secondary' }}>
+                          Picked Up
+                        </Typography>
+                        {['picked_up', 'delivered'].includes(delivery.status) && (
+                          <Typography variant="caption" color="text.secondary">
+                            Package collected
+                          </Typography>
+                        )}
+                      </Box>
+                    </Box>
+
+                    {/* In Transit */}
+                    <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2, position: 'relative' }}>
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          left: -19,
+                          width: 24,
+                          height: 24,
+                          borderRadius: '50%',
+                          bgcolor: delivery.status === 'picked_up' ? 'primary.main' : delivery.status === 'delivered' ? 'success.main' : 'grey.300',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        {delivery.status === 'delivered' ? (
+                          <Done sx={{ fontSize: 14, color: 'white' }} />
+                        ) : delivery.status === 'picked_up' ? (
+                          <DirectionsCar sx={{ fontSize: 14, color: 'white' }} />
+                        ) : (
+                          <DirectionsCar sx={{ fontSize: 14, color: 'grey.500' }} />
+                        )}
+                      </Box>
+                      <Box>
+                        <Typography variant="body2" sx={{ fontWeight: delivery.status === 'picked_up' || delivery.status === 'delivered' ? 600 : 400, color: delivery.status === 'picked_up' || delivery.status === 'delivered' ? 'text.primary' : 'text.secondary' }}>
+                          In Transit
+                        </Typography>
+                        {delivery.status === 'picked_up' && (
+                          <Typography variant="caption" color="primary.main">
+                            On the way...
+                          </Typography>
+                        )}
+                      </Box>
+                    </Box>
+
+                    {/* Delivered */}
+                    <Box sx={{ display: 'flex', alignItems: 'flex-start', position: 'relative' }}>
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          left: -19,
+                          width: 24,
+                          height: 24,
+                          borderRadius: '50%',
+                          bgcolor: delivery.status === 'delivered' ? 'success.main' : 'grey.300',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        {delivery.status === 'delivered' ? (
+                          <CheckCircle sx={{ fontSize: 14, color: 'white' }} />
+                        ) : (
+                          <CheckCircle sx={{ fontSize: 14, color: 'grey.500' }} />
+                        )}
+                      </Box>
+                      <Box>
+                        <Typography variant="body2" sx={{ fontWeight: delivery.status === 'delivered' ? 600 : 400, color: delivery.status === 'delivered' ? 'success.main' : 'text.secondary' }}>
+                          Delivered
+                        </Typography>
+                        {delivery.status === 'delivered' && (
+                          <Typography variant="caption" color="success.main">
+                            Package delivered!
+                          </Typography>
+                        )}
+                      </Box>
+                    </Box>
+
+                    {/* Cancelled status */}
+                    {delivery.status === 'cancelled' && (
+                      <Box sx={{ display: 'flex', alignItems: 'flex-start', mt: 2, position: 'relative' }}>
+                        <Box
+                          sx={{
+                            position: 'absolute',
+                            left: -19,
+                            width: 24,
+                            height: 24,
+                            borderRadius: '50%',
+                            bgcolor: 'error.main',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          <Cancel sx={{ fontSize: 14, color: 'white' }} />
+                        </Box>
+                        <Box>
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: 'error.main' }}>
+                            Cancelled
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            Delivery was cancelled
+                          </Typography>
+                        </Box>
+                      </Box>
+                    )}
+                  </Box>
+                </CardContent>
+              </Card>
+
+              {/* Live Tracking Map */}
+              {(delivery.status === 'accepted' || delivery.status === 'picked_up') && (
+                <Card sx={{ m: 2, boxShadow: 1 }}>
+                  <CardContent>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
+                      Live Tracking
+                    </Typography>
+                    <DeliveryTrackingMap
+                      pickupLocation={delivery.fromLocation}
+                      dropoffLocation={delivery.toLocation}
+                      pickerLocation={pickerLocation || delivery.pickerLocation}
+                      pickerName={picker?.fullName}
+                      status={delivery.status}
+                      userRole={userRole}
+                      fromAddress={delivery.fromAddress}
+                      toAddress={delivery.toAddress}
+                    />
+                    {lastLocationUpdate && (
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1, textAlign: 'center' }}>
+                        Last updated: {lastLocationUpdate.toLocaleTimeString()}
+                      </Typography>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Sender/Picker Info Cards */}
               {isSender && picker && (

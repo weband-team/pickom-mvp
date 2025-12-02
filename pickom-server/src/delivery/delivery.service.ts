@@ -47,14 +47,14 @@ export class DeliveryService {
     const radius = getRadiusByDeliveryType(deliveryType);
 
     // Filter online pickers with location, calculate distance
-    const pickersWithDistance = pickers
+    let pickersWithDistance = pickers
       .filter((picker) => picker.isOnline === true && picker.location)
       .map((picker) => {
         const distance = calculateHaversineDistance(
           lat,
           lng,
-          picker.location!.lat,
-          picker.location!.lng,
+          picker.location.lat,
+          picker.location.lng,
         );
         const estimatedTime = estimateDeliveryTime(distance);
 
@@ -64,9 +64,18 @@ export class DeliveryService {
           estimatedTime,
           price: picker.basePrice || 15.0,
         };
-      })
-      .filter((picker) => picker.distance <= radius) // Filter by radius
-      .sort((a, b) => a.distance - b.distance); // Sort by distance ASC
+      });
+
+    // For inter-city deliveries, show all pickers sorted by distance
+    // For other types, filter by radius
+    if (deliveryType !== 'inter-city') {
+      pickersWithDistance = pickersWithDistance.filter(
+        (picker) => picker.distance <= radius,
+      );
+    }
+
+    // Sort by distance ASC (closest first)
+    pickersWithDistance.sort((a, b) => a.distance - b.distance);
 
     return pickersWithDistance;
   }
@@ -131,6 +140,7 @@ export class DeliveryService {
     delivery.weight = createDto.weight || null;
     delivery.notes = createDto.notes || null;
     delivery.status = createDto.status || 'pending';
+    delivery.packageImageUrl = createDto.packageImageUrl || null;
 
     // Сохраняем в базу данных
     const savedDelivery = await this.deliveryRepository.save(delivery);

@@ -11,4 +11,8 @@ export class TopUpBalanceDto {
   @IsString()
   @IsOptional()
   description?: string;
+
+  @IsString()
+  @IsOptional()
+  paymentMethodId?: string;
 }

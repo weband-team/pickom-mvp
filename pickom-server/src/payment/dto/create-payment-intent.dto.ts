@@ -21,7 +21,10 @@ export class CreatePaymentIntentDto {
   @IsOptional()
   fromUserId?: number;
 
-  @IsNumber()
   @IsOptional()
-  toUserId?: number;
+  toUserId?: number | string; // Can be database ID (number) or Firebase UID (string)
+
+  @IsString()
+  @IsOptional()
+  paymentMethodId?: string;
 }

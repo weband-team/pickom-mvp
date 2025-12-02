@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { ThemeWrapper } from '../components';
 import { Toaster } from 'react-hot-toast';
 import { CapacitorProvider } from '@/components/providers/CapacitorProvider';
+import StripeProvider from './providers/StripeProvider';
 
 export const metadata: Metadata = {
     title: "Pickom",
@@ -38,8 +39,9 @@ export default function RootLayout({
         <html lang="en" style={{ margin: 0, padding: 0, width: '100%', height: '100%', overflow: 'hidden' }}>
             <body style={{ margin: 0, padding: 0, width: '100%', height: '100%', overflow: 'hidden' }}>
                 <CapacitorProvider>
-                    <ThemeWrapper>
-                        {children}
+                    <StripeProvider>
+                        <ThemeWrapper>
+                            {children}
                         <Toaster
                             position="top-right"
                             toastOptions={{
@@ -64,7 +66,8 @@ export default function RootLayout({
                                 },
                             }}
                         />
-                    </ThemeWrapper>
+                        </ThemeWrapper>
+                    </StripeProvider>
                 </CapacitorProvider>
             </body>
         </html>

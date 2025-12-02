@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { getAuthToken } from '@/app/api/auth';
+import { Capacitor } from '@capacitor/core';
 
 interface Location {
   lat: number;
@@ -46,7 +47,24 @@ interface UseWebSocketTrackingOptions {
   onError?: (error: string) => void;
 }
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_SERVER || 'http://localhost:3000';
+// Dynamic Socket URL based on platform (same logic as base.ts)
+function getSocketUrl(): string {
+  // Check if running in browser (not SSR)
+  if (typeof window === 'undefined') {
+    return 'http://localhost:4242';
+  }
+
+  const isNative = Capacitor.isNativePlatform();
+
+  if (isNative) {
+    // For mobile: use NEXT_PUBLIC_SERVER_MOBILE from .env
+    return process.env.NEXT_PUBLIC_SERVER_MOBILE || 'http://10.0.2.2:4242';
+  }
+
+  // Browser environment
+  return process.env.NEXT_PUBLIC_SERVER || 'http://localhost:4242';
+}
+
 const MOVING_THRESHOLD = 5; // meters (reduced for testing)
 
 export const useWebSocketTracking = ({
@@ -88,7 +106,8 @@ export const useWebSocketTracking = ({
           return;
         }
 
-        const socket = io(`${SOCKET_URL}/tracking`, {
+        const socketUrl = getSocketUrl();
+        const socket = io(`${socketUrl}/tracking`, {
           transportOptions: {
             polling: {
               extraHeaders: {

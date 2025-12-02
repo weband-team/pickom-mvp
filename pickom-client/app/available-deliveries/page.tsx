@@ -496,29 +496,17 @@ export default function AvailableDeliveriesPage() {
             <Tabs
               value={selectedTab}
               onChange={handleTabChange}
-              variant="scrollable"
-              scrollButtons="auto"
+              variant="fullWidth"
               sx={{
                 borderBottom: 1,
                 borderColor: 'divider',
-                minHeight: 56,
-                px: 2,
-                '& .MuiTabs-flexContainer': {
-                  pl: 0,
-                },
-                '& .MuiTabs-scroller': {
-                  ml: 0,
-                },
+                minHeight: 48,
                 '& .MuiTab-root': {
-                  minHeight: 56,
+                  minHeight: 48,
                   fontSize: '0.75rem',
                   fontWeight: 500,
                   textTransform: 'none',
-                  minWidth: 80,
-                  px: 1.5,
-                  '&:first-of-type': {
-                    pl: 0,
-                  },
+                  px: 1,
                 },
               }}
             >

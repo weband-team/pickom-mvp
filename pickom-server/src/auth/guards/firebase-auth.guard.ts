@@ -17,7 +17,7 @@ export class FirebaseAuthGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<ReqWithUser>();
     const response = context.switchToHttp().getResponse<Response>();
     const sessionCookie = request.cookies.session as string | undefined | null;
-    const authHeader = request.headers.authorization as string | undefined;
+    const authHeader = request.headers.authorization;
 
     // Try session cookie first (for browser)
     if (sessionCookie) {

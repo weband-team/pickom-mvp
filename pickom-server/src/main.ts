@@ -21,7 +21,9 @@ async function bootstrap() {
   // Request logging middleware
   app.use((req, res, next) => {
     const timestamp = new Date().toISOString();
-    console.log(`📥 [${timestamp}] ${req.method} ${req.url} - Origin: ${req.headers.origin || 'no-origin'}`);
+    console.log(
+      `📥 [${timestamp}] ${req.method} ${req.url} - Origin: ${req.headers.origin || 'no-origin'}`,
+    );
     next();
   });
 
@@ -99,7 +101,9 @@ async function bootstrap() {
   await app.listen(port, '0.0.0.0');
 
   console.log(`🚀 Application is running on: http://localhost:${port}`);
-  console.log(`🌐 Network: http://0.0.0.0:${port} (accessible from any device)`);
+  console.log(
+    `🌐 Network: http://0.0.0.0:${port} (accessible from any device)`,
+  );
   console.log(`📚 Swagger UI: http://localhost:${port}/api`);
   console.log(`🧪 Test Auth: http://localhost:${port}/test-auth.html`);
 }

@@ -1,7 +1,7 @@
 'use client';
 
-import { Box, Typography, Button, CircularProgress, Alert, Card, CardContent, TextField } from '@mui/material';
-import { ArrowBack } from '@mui/icons-material';
+import { Box, Typography, Button, CircularProgress, Alert, Card, CardContent, TextField, Dialog, DialogTitle, DialogContent, DialogActions, Divider } from '@mui/material';
+import { ArrowBack, CreditCard, Add } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
@@ -11,7 +11,7 @@ import BottomNavigation from '@/components/common/BottomNavigation';
 import { handleMe } from '../../api/auth';
 import { getUserBalance } from '../../api/user';
 import { User } from '../../api/dto/user';
-import { API_URL } from '../../api/base';
+import PaymentMethodSelector from '../../components/payment/PaymentMethodSelector';
 
 export default function TopUpPage() {
   const router = useRouter();
@@ -23,6 +23,10 @@ export default function TopUpPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string>('');
   const [amountError, setAmountError] = useState<string>('');
+
+  // Payment method selection
+  const [paymentMethodDialog, setPaymentMethodDialog] = useState(false);
+  const [showCardSelector, setShowCardSelector] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -81,20 +85,27 @@ export default function TopUpPage() {
       return;
     }
 
+    // Open payment method selection dialog
+    setPaymentMethodDialog(true);
+  };
+
+  const handlePayWithCheckout = async () => {
+    if (!user || !validateAmount(amount)) {
+      return;
+    }
+
+    setPaymentMethodDialog(false);
     setSubmitting(true);
 
     try {
       const response = await axios.post(
-        `${API_URL}/payment/topup-balance`,
+        `${process.env.NEXT_PUBLIC_SERVER}/payment/topup-balance`,
         {
-          userId: user.uid,
           amount: parseFloat(amount),
           description: description,
         },
         {
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          withCredentials: true,
         }
       );
 
@@ -112,6 +123,61 @@ export default function TopUpPage() {
       }
 
       toast.error(`Top-up failed: ${errorMessage}`);
+      setSubmitting(false);
+    }
+  };
+
+  const handlePayWithCard = async (cardId: string) => {
+    if (!user || !validateAmount(amount)) {
+      return;
+    }
+
+    setShowCardSelector(false);
+    setPaymentMethodDialog(false);
+    setSubmitting(true);
+
+    try {
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_SERVER}/payment/topup-balance`,
+        {
+          amount: parseFloat(amount),
+          description: description,
+          paymentMethodId: cardId,
+        },
+        {
+          withCredentials: true,
+        }
+      );
+
+      const { status } = response.data;
+
+      if (status === 'succeeded') {
+        toast.success('Payment successful! Balance updated.');
+
+        // Refresh balance
+        const balanceResponse = await getUserBalance(user.uid);
+        setBalance(balanceResponse.balance || 0);
+
+        // Reset form
+        setAmount('10');
+        setDescription('Balance top-up');
+      } else if (status === 'requires_action') {
+        toast.error('3D Secure authentication required. Please use Stripe Checkout instead.');
+      } else {
+        toast.error('Payment processing. Check your balance in a moment.');
+      }
+
+      setSubmitting(false);
+    } catch (err) {
+      let errorMessage = 'Unknown error occurred';
+      if (err && typeof err === 'object' && 'response' in err) {
+        const axiosError = err as { response?: { data?: { message?: string }; status: number } };
+        errorMessage = axiosError.response?.data?.message || `Server error: ${axiosError.response?.status}`;
+      } else if (err instanceof Error) {
+        errorMessage = err.message;
+      }
+
+      toast.error(`Payment failed: ${errorMessage}`);
       setSubmitting(false);
     }
   };
@@ -189,10 +255,6 @@ export default function TopUpPage() {
               />
             </Box>
 
-            <Alert severity="info" sx={{ mb: 3 }}>
-              You will be redirected to Stripe Checkout to complete the payment securely.
-            </Alert>
-
             <Button
               fullWidth
               variant="contained"
@@ -211,6 +273,77 @@ export default function TopUpPage() {
         </Box>
       </MobileContainer>
       <BottomNavigation />
+
+      {/* Payment Method Selection Dialog */}
+      <Dialog
+        open={paymentMethodDialog}
+        onClose={() => setPaymentMethodDialog(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: { borderRadius: 2 },
+        }}
+      >
+        <DialogTitle>Select Payment Method</DialogTitle>
+        <DialogContent>
+          <Box sx={{ pt: 1 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Choose how you want to pay for this top-up of ${parseFloat(amount).toFixed(2)}
+            </Typography>
+
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {/* Pay with Saved Card */}
+              <Button
+                variant="outlined"
+                startIcon={<CreditCard />}
+                onClick={() => setShowCardSelector(true)}
+                fullWidth
+                sx={{
+                  py: 1.5,
+                  justifyContent: 'flex-start',
+                  textTransform: 'none',
+                }}
+              >
+                Pay with Saved Card
+              </Button>
+
+              {/* Pay with Stripe Checkout (New Card) */}
+              <Button
+                variant="outlined"
+                startIcon={<Add />}
+                onClick={handlePayWithCheckout}
+                fullWidth
+                sx={{
+                  py: 1.5,
+                  justifyContent: 'flex-start',
+                  textTransform: 'none',
+                }}
+              >
+                Pay with New Card (Stripe Checkout)
+              </Button>
+            </Box>
+
+            <Divider sx={{ my: 2 }} />
+
+            <Typography variant="caption" color="text.secondary">
+              All payments are securely processed by Stripe
+            </Typography>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setPaymentMethodDialog(false)} color="inherit">
+            Cancel
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Card Selector Modal */}
+      <PaymentMethodSelector
+        open={showCardSelector}
+        onClose={() => setShowCardSelector(false)}
+        onCardSelected={handlePayWithCard}
+        title="Select Card for Top-Up"
+      />
     </>
   );
 }

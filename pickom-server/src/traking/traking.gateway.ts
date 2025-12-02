@@ -79,14 +79,15 @@ export class TrackingGateway
     this.deliveryRooms.get(deliveryId)!.add(client.id);
 
     // Send current tracking data
-    const tracking = await this.trackingService.getTrackingByDeliveryId(
-      deliveryId,
-    );
+    const tracking =
+      await this.trackingService.getTrackingByDeliveryId(deliveryId);
     if (tracking) {
       client.emit('tracking-data', tracking);
     }
 
-    console.log(`Client ${client.id} joined tracking for delivery ${deliveryId}`);
+    console.log(
+      `Client ${client.id} joined tracking for delivery ${deliveryId}`,
+    );
   }
 
   @SubscribeMessage('leave-tracking')
@@ -119,9 +120,8 @@ export class TrackingGateway
 
     try {
       // Verify this user is the picker
-      const tracking = await this.trackingService.getTrackingByDeliveryId(
-        deliveryId,
-      );
+      const tracking =
+        await this.trackingService.getTrackingByDeliveryId(deliveryId);
       if (!tracking || tracking.pickerId !== userId) {
         client.emit('error', {
           message: 'Only the picker can update location',
@@ -165,9 +165,8 @@ export class TrackingGateway
 
     try {
       // Verify this user is the picker
-      const tracking = await this.trackingService.getTrackingByDeliveryId(
-        deliveryId,
-      );
+      const tracking =
+        await this.trackingService.getTrackingByDeliveryId(deliveryId);
       if (!tracking || tracking.pickerId !== userId) {
         client.emit('error', {
           message: 'Only the picker can update status',

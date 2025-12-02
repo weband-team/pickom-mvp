@@ -9,8 +9,9 @@ const config: CapacitorConfig = {
   // Uncomment to use dev server, comment out to use static build from 'out/' directory
   server: {
     // Point to your local dev server
-    //url: 'http://10.0.2.2:3000',
-    url: 'http://192.168.100.28:3000',
+    // For Android Studio emulator: use 10.0.2.2
+    // For real device: use your computer's IP (e.g., 192.168.100.28)
+    url: 'http://10.0.2.2:3000',
     cleartext: true,
   },
 

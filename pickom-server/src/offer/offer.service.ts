@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, Inject, forwardRef } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Offer } from './entities/offer.entity';
@@ -71,7 +76,12 @@ export class OfferService {
   ): Promise<Offer> {
     const offer = await this.offerRepository.findOne({
       where: { id: offerId },
-      relations: ['delivery', 'delivery.sender', 'delivery.recipient', 'picker'],
+      relations: [
+        'delivery',
+        'delivery.sender',
+        'delivery.recipient',
+        'picker',
+      ],
     });
 
     if (!offer) {
@@ -105,18 +115,24 @@ export class OfferService {
       await this.paymentRepository.save(payment);
 
       // Update delivery: set picker and status to 'accepted'
-      console.log(`[OfferService] Updating delivery ${offer.deliveryId} with pickerId ${offer.picker.id}`);
+      console.log(
+        `[OfferService] Updating delivery ${offer.deliveryId} with pickerId ${offer.picker.id}`,
+      );
       await this.deliveryService.updateDeliveryPicker(
         offer.deliveryId,
         offer.picker.id,
-        'accepted'
+        'accepted',
       );
 
       // Create tracking record for real-time location tracking
-      console.log(`[OfferService] Creating tracking for delivery ${offer.deliveryId}`);
+      console.log(
+        `[OfferService] Creating tracking for delivery ${offer.deliveryId}`,
+      );
       try {
         await this.trakingService.createTracking(offer.deliveryId);
-        console.log(`[OfferService] Tracking created successfully for delivery ${offer.deliveryId}`);
+        console.log(
+          `[OfferService] Tracking created successfully for delivery ${offer.deliveryId}`,
+        );
       } catch (error) {
         console.error(`[OfferService] Error creating tracking:`, error.message);
         // Continue even if tracking creation fails
@@ -135,16 +151,22 @@ export class OfferService {
         });
         console.log('[OfferService] Created sender chat successfully');
       } catch (error) {
-        console.error('[OfferService] Error creating sender chat:', error.message);
+        console.error(
+          '[OfferService] Error creating sender chat:',
+          error.message,
+        );
       }
 
       // Create chat between picker and receiver (if receiver exists)
       if (offer.delivery.recipient) {
-        console.log('[OfferService] Creating chat between picker and receiver', {
-          pickerUid: offer.picker.uid,
-          recipientUid: offer.delivery.recipient.uid,
-          deliveryId: offer.deliveryId,
-        });
+        console.log(
+          '[OfferService] Creating chat between picker and receiver',
+          {
+            pickerUid: offer.picker.uid,
+            recipientUid: offer.delivery.recipient.uid,
+            deliveryId: offer.deliveryId,
+          },
+        );
         try {
           await this.chatService.createChat(offer.picker.uid, {
             participantId: offer.delivery.recipient.uid,
@@ -152,7 +174,10 @@ export class OfferService {
           });
           console.log('[OfferService] Created receiver chat successfully');
         } catch (error) {
-          console.error('[OfferService] Error creating receiver chat:', error.message);
+          console.error(
+            '[OfferService] Error creating receiver chat:',
+            error.message,
+          );
         }
       }
 
@@ -172,7 +197,10 @@ export class OfferService {
     return updatedOffer;
   }
 
-  private async rejectOtherOffers(deliveryId: number, acceptedOfferId: number): Promise<void> {
+  private async rejectOtherOffers(
+    deliveryId: number,
+    acceptedOfferId: number,
+  ): Promise<void> {
     const otherOffers = await this.offerRepository.find({
       where: { deliveryId, status: 'pending' },
     });

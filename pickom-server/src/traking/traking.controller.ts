@@ -67,4 +67,76 @@ export class TrakingController {
       throw new BadRequestException(error.message);
     }
   }
+
+  // Update picker's current location
+  @Put('/:deliveryId/location')
+  @UseGuards(FirebaseAuthGuard)
+  async updatePickerLocation(
+    @Param('deliveryId') deliveryId: number,
+    @Body() location: { lat: number; lng: number },
+    @Req() req: ReqWithUser,
+  ) {
+    const { uid } = req.user as { uid: string };
+    const user = await this.userService.findOne(uid);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    if (user.role !== 'picker') {
+      throw new ForbiddenException('Only pickers can update location');
+    }
+
+    // Verify picker has access to this delivery
+    const hasAccess = await this.trakingService.hasAccess(deliveryId, user.id);
+    if (!hasAccess) {
+      throw new ForbiddenException('No access to this delivery');
+    }
+
+    try {
+      return await this.trakingService.updatePickerLocation(
+        deliveryId,
+        location,
+      );
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        // Create tracking if it doesn't exist
+        await this.trakingService.createTracking(deliveryId);
+        return await this.trakingService.updatePickerLocation(
+          deliveryId,
+          location,
+        );
+      }
+      throw new BadRequestException(error.message);
+    }
+  }
+
+  // Get picker's current location (for sender/receiver polling)
+  @Get('/:deliveryId/location')
+  @UseGuards(FirebaseAuthGuard)
+  async getPickerLocation(
+    @Param('deliveryId') deliveryId: number,
+    @Req() req: ReqWithUser,
+  ) {
+    const { uid } = req.user as { uid: string };
+    const user = await this.userService.findOne(uid);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Verify user has access to this delivery
+    const hasAccess = await this.trakingService.hasAccess(deliveryId, user.id);
+    if (!hasAccess) {
+      throw new ForbiddenException('No access to this delivery');
+    }
+
+    const tracking =
+      await this.trakingService.getTrackingByDeliveryId(deliveryId);
+    if (!tracking) {
+      return { pickerLocation: null };
+    }
+
+    return {
+      pickerLocation: tracking.pickerLocation,
+      status: tracking.status,
+    };
+  }
 }

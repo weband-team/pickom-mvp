@@ -1,27 +1,34 @@
-import { AxiosResponse } from 'axios';
-import { protectedFetch } from './base';
+import axios from 'axios';
 
-export type DeliveryStatus = 'pending' | 'accepted' | 'picked_up' | 'delivered' | 'cancelled';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
-export interface TrackingInfo {
-  id: number;
-  deliveryId: number;
-  status: DeliveryStatus;
-  currentLocation?: string;
-  updatedAt: Date;
-}
+const api = axios.create({
+  baseURL: API_URL,
+  withCredentials: true,
+});
 
-export interface UpdateTrackingStatusRequest {
-  status: DeliveryStatus;
-}
-
-export const getTracking = async (deliveryId: number): Promise<AxiosResponse<TrackingInfo>> => {
-  return protectedFetch.get(`/traking/${deliveryId}`);
+// Get tracking info for delivery
+export const getTracking = async (deliveryId: number) => {
+  return api.get(`/traking/${deliveryId}`);
 };
 
+// Update picker's current location
+export const updatePickerLocation = async (
+  deliveryId: number,
+  location: { lat: number; lng: number }
+) => {
+  return api.put(`/traking/${deliveryId}/location`, location);
+};
+
+// Get picker's current location (for polling)
+export const getPickerLocation = async (deliveryId: number) => {
+  return api.get(`/traking/${deliveryId}/location`);
+};
+
+// Update tracking status
 export const updateTrackingStatus = async (
   deliveryId: number,
-  data: UpdateTrackingStatusRequest
-): Promise<AxiosResponse<TrackingInfo>> => {
-  return protectedFetch.put(`/traking/${deliveryId}`, data);
+  status: 'pending' | 'accepted' | 'picked_up' | 'delivered' | 'cancelled'
+) => {
+  return api.put(`/traking/${deliveryId}`, { status });
 };

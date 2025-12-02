@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, Inject, forwardRef } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Tracking } from './entities/traking.entity';
@@ -89,10 +94,7 @@ export class TrakingService {
     }
   }
 
-  async hasAccess(
-    deliveryId: number,
-    userId: number,
-  ): Promise<boolean> {
+  async hasAccess(deliveryId: number, userId: number): Promise<boolean> {
     // First check tracking
     const tracking = await this.getTrackingByDeliveryId(deliveryId);
     if (tracking) {

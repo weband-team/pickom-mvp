@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Box, Typography, Stack, IconButton, Alert, ToggleButtonGroup, ToggleButton, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
-import { ArrowBack, ViewList, Map as MapIcon } from '@mui/icons-material';
+import { ArrowBack, ViewList, Map as MapIcon, FilterList } from '@mui/icons-material';
 import {
   MobileContainer,
   PickomLogo,
@@ -25,7 +25,10 @@ import dynamic from 'next/dynamic';
 // Lazy load map component to avoid SSR issues
 const PickersMap = dynamic(() => import('../../components/picker/PickersMap'), {
   ssr: false,
-  loading: () => <LoadingIndicator type="dots" text="Loading map..." />
+  loading: () => {
+    console.log('PickersMap is loading...');
+    return <LoadingIndicator type="dots" text="Loading map..." />;
+  }
 });
 
 export default function PickerResultsPage() {
@@ -43,6 +46,8 @@ export default function PickerResultsPage() {
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const [deliveryType, setDeliveryType] = useState<'within-city' | 'suburban' | 'inter-city'>('within-city');
   const [fromLocation, setFromLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [sortBy, setSortBy] = useState<'price' | 'duration' | 'trust' | 'rating' | 'distance'>('price');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const ITEMS_PER_PAGE = 10;
 
   // Fetch pickers from backend on component mount or when deliveryType changes
@@ -140,17 +145,32 @@ export default function PickerResultsPage() {
     }
   }, [filteredPickers]);
 
-  // Handle filter changes
+  // Handle filter changes (from sliders only)
   const handleFiltersChange = useCallback((filters: {
     maxPrice?: number;
     maxDuration?: number;
     minTrustLevel?: number;
-    sortBy: 'price' | 'duration' | 'trust' | 'rating' | 'distance';
-    sortOrder: 'asc' | 'desc';
   }) => {
-    const filtered = filterPickers(allPickers, filters);
+    const filtered = filterPickers(allPickers, {
+      ...filters,
+      sortBy,
+      sortOrder
+    });
     setFilteredPickers(filtered);
-  }, [allPickers]);
+  }, [allPickers, sortBy, sortOrder]);
+
+  // Handle sort button clicks
+  const handleSort = useCallback((newSortBy: 'price' | 'duration' | 'trust') => {
+    const newOrder = sortBy === newSortBy && sortOrder === 'asc' ? 'desc' : 'asc';
+    setSortBy(newSortBy);
+    setSortOrder(newOrder);
+
+    const filtered = filterPickers(allPickers, {
+      sortBy: newSortBy,
+      sortOrder: newOrder
+    });
+    setFilteredPickers(filtered);
+  }, [sortBy, sortOrder, allPickers]);
 
 
   // Load more pickers with realistic loading delay
@@ -298,7 +318,7 @@ export default function PickerResultsPage() {
               </IconButton>
               <Box sx={{ flex: 1 }}>
                 <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                  Available Pickers
+                  Available Pickers {viewMode === 'map' ? '(Map View)' : '(List View)'}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
                   Found {filteredPickers.length} pickers in your area
@@ -329,7 +349,10 @@ export default function PickerResultsPage() {
               <ToggleButtonGroup
                 value={viewMode}
                 exclusive
-                onChange={(_, value) => value && setViewMode(value)}
+                onChange={(_, value) => {
+                  console.log('View mode changing to:', value);
+                  if (value) setViewMode(value);
+                }}
                 size="small"
               >
                 <ToggleButton value="list">
@@ -356,20 +379,47 @@ export default function PickerResultsPage() {
             </Stack>
           </Box>
 
-          {/* Filters */}
+          {/* Sort & Filters - Single Row */}
           <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
             <Box sx={{ p: 2 }}>
-              <Button
-                variant={showFilters ? 'contained' : 'outlined'}
-                onClick={() => setShowFilters(!showFilters)}
-                size="small"
-                fullWidth
-              >
-                Filters & Sorting
-              </Button>
+              <Stack direction="row" spacing={1} sx={{ flexWrap: 'nowrap', overflowX: 'auto' }}>
+                <Button
+                  onClick={() => handleSort('price')}
+                  variant={sortBy === 'price' ? 'contained' : 'outlined'}
+                  size="small"
+                  sx={{ minWidth: 'auto', whiteSpace: 'nowrap' }}
+                >
+                  Price {sortBy === 'price' ? (sortOrder === 'asc' ? '↑' : '↓') : ''}
+                </Button>
+                <Button
+                  onClick={() => handleSort('duration')}
+                  variant={sortBy === 'duration' ? 'contained' : 'outlined'}
+                  size="small"
+                  sx={{ minWidth: 'auto', whiteSpace: 'nowrap' }}
+                >
+                  Time {sortBy === 'duration' ? (sortOrder === 'asc' ? '↑' : '↓') : ''}
+                </Button>
+                <Button
+                  onClick={() => handleSort('trust')}
+                  variant={sortBy === 'trust' ? 'contained' : 'outlined'}
+                  size="small"
+                  sx={{ minWidth: 'auto', whiteSpace: 'nowrap' }}
+                >
+                  Trust {sortBy === 'trust' ? (sortOrder === 'asc' ? '↑' : '↓') : ''}
+                </Button>
+                <Button
+                  onClick={() => setShowFilters(!showFilters)}
+                  variant={showFilters ? 'contained' : 'outlined'}
+                  size="small"
+                  startIcon={<FilterList />}
+                  sx={{ minWidth: 'auto', whiteSpace: 'nowrap' }}
+                >
+                  Filters
+                </Button>
+              </Stack>
             </Box>
 
-            {/* Full Filters */}
+            {/* Advanced Filters (sliders) */}
             {showFilters && (
               <Box sx={{ p: 2, borderTop: 1, borderColor: 'divider' }}>
                 <LazyPickerFilters onFiltersChange={handleFiltersChange} />
@@ -379,14 +429,15 @@ export default function PickerResultsPage() {
 
           {/* Results */}
           <Box sx={{ flex: 1, overflow: 'auto' }}>
-            {loading && displayedPickers.length === 0 ? (
+            {console.log('Render check:', { viewMode, loading, displayedPickersLength: displayedPickers.length, filteredPickersLength: filteredPickers.length })}
+            {loading && filteredPickers.length === 0 ? (
               <Box sx={{ py: 8 }}>
                 <LoadingIndicator
                   type="dots"
                   text="Loading pickers..."
                 />
               </Box>
-            ) : displayedPickers.length === 0 ? (
+            ) : filteredPickers.length === 0 ? (
               <Box sx={{ textAlign: 'center', py: 8 }}>
                 <Typography variant="h1" sx={{ fontSize: '4rem', mb: 2 }}>
                   📦
@@ -402,14 +453,18 @@ export default function PickerResultsPage() {
               </Box>
             ) : viewMode === 'map' ? (
               /* Map View */
-              <Box sx={{ height: '100%', minHeight: 400 }}>
-                <PickersMap
-                  pickers={filteredPickers}
-                  fromLocation={fromLocation}
-                  onSelectPicker={handleSelectPicker}
-                  onChatPicker={handleChat}
-                />
-              </Box>
+              <>
+                {console.log('Rendering map view. Pickers:', filteredPickers.length, 'FromLocation:', fromLocation)}
+                <Box sx={{ position: 'relative', width: '100%', height: 'calc(100vh - 300px)', minHeight: 400 }}>
+                  <PickersMap
+                    pickers={filteredPickers}
+                    fromLocation={fromLocation}
+                    onSelectPicker={handleSelectPicker}
+                    onChatPicker={handleChat}
+                    searchRadius={deliveryType === 'within-city' ? 10 : deliveryType === 'suburban' ? 25 : 50}
+                  />
+                </Box>
+              </>
             ) : (
               /* List View */
               <Box sx={{ p: 2 }}>

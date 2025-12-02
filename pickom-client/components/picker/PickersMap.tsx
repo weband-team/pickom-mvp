@@ -45,9 +45,10 @@ interface PickersMapProps {
   fromLocation: { lat: number; lng: number } | null;
   onSelectPicker: (pickerId: string) => void;
   onChatPicker: (pickerId: string) => void;
+  searchRadius?: number; // in kilometers
 }
 
-export default function PickersMap({ pickers, fromLocation, onSelectPicker, onChatPicker }: PickersMapProps) {
+export default function PickersMap({ pickers, fromLocation, onSelectPicker, onChatPicker, searchRadius = 10 }: PickersMapProps) {
   // Determine map center
   const getMapCenter = (): [number, number] => {
     if (fromLocation) {
@@ -104,7 +105,7 @@ export default function PickersMap({ pickers, fromLocation, onSelectPicker, onCh
           {/* Search radius circle */}
           <Circle
             center={[fromLocation.lat, fromLocation.lng]}
-            radius={10000} // 10km default, could be dynamic
+            radius={searchRadius * 1000} // Convert km to meters
             pathOptions={{
               color: '#2196f3',
               fillColor: '#2196f3',
@@ -180,7 +181,11 @@ export default function PickersMap({ pickers, fromLocation, onSelectPicker, onCh
                   <Button
                     size="small"
                     variant="outlined"
-                    onClick={() => onChatPicker(picker.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onChatPicker(picker.id);
+                    }}
+                    onMouseDown={(e) => e.stopPropagation()}
                     sx={{ fontSize: '0.7rem', py: 0.5 }}
                   >
                     Chat
@@ -188,7 +193,11 @@ export default function PickersMap({ pickers, fromLocation, onSelectPicker, onCh
                   <Button
                     size="small"
                     variant="contained"
-                    onClick={() => onSelectPicker(picker.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSelectPicker(picker.id);
+                    }}
+                    onMouseDown={(e) => e.stopPropagation()}
                     sx={{ fontSize: '0.7rem', py: 0.5 }}
                   >
                     Select

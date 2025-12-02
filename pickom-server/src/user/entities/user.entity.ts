@@ -67,6 +67,10 @@ export class User {
   balance: number;
 
   @ApiProperty()
+  @Column({ type: 'text', nullable: true, name: 'stripe_customer_id' })
+  stripeCustomerId: string;
+
+  @ApiProperty()
   @Column({ type: 'boolean', default: true })
   active: boolean;
 
