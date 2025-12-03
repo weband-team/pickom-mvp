@@ -194,7 +194,7 @@ export default function DeliveryOffersPage({ params }: { params: Promise<{ id: s
       setPaymentMethodDialog({
         open: true,
         offerId,
-        offerPrice: selectedOffer.price,
+        offerPrice: Number(selectedOffer.price),
       });
     } catch {
       alert('Failed to verify balance. Please try again.');
