@@ -1,0 +1,1480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pickom - People-Powered Delivery Built with 95% AI</title>
+  <meta name="description" content="Connect package senders with travelers. Built with 95% AI-assisted code. Save time, earn money, reduce carbon footprint.">
+  <style>
+    /* ========== RESET & BASE ========== */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      overflow-x: hidden;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: #1f2937;
+      background: #ffffff;
+      overflow-x: hidden;
+    }
+
+    /* ========== PROGRESS BAR ========== */
+    #progress-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+      z-index: 9999;
+      width: 0%;
+      transition: width 0.1s ease;
+    }
+
+    /* ========== STICKY NAV ========== */
+    #sticky-nav {
+      position: fixed;
+      top: -80px;
+      left: 0;
+      right: 0;
+      height: 70px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
+      z-index: 9998;
+      transition: top 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 48px;
+    }
+
+    #sticky-nav.visible {
+      top: 0;
+    }
+
+    #sticky-nav .logo {
+      font-size: 1.5rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* ========== CONTAINER ========== */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 32px;
+    }
+
+    /* ========== SECTIONS ========== */
+    section {
+      padding: 120px 0;
+      width: 100%;
+      position: relative;
+      overflow: hidden;
+    }
+
+    section.compact {
+      padding: 80px 0;
+    }
+
+    /* ========== TYPOGRAPHY ========== */
+    .hero-title {
+      font-size: 4rem;
+      font-weight: 900;
+      line-height: 1.1;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 32px;
+      letter-spacing: -0.02em;
+    }
+
+    .hero-subtitle {
+      font-size: 1.5rem;
+      color: #6b7280;
+      line-height: 1.7;
+      max-width: 700px;
+      margin: 0 auto 48px;
+      font-weight: 400;
+    }
+
+    .section-title {
+      font-size: 3.5rem;
+      font-weight: 900;
+      text-align: center;
+      margin-bottom: 20px;
+      color: #1f2937;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+
+    .section-subtitle {
+      font-size: 1.35rem;
+      color: #6b7280;
+      text-align: center;
+      max-width: 750px;
+      margin: 0 auto 64px;
+      line-height: 1.6;
+      font-weight: 400;
+    }
+
+    .subsection-title {
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin-bottom: 16px;
+      color: #1f2937;
+    }
+
+    /* ========== BADGES ========== */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 24px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      margin-bottom: 24px;
+    }
+
+    .badge-success {
+      background: rgba(16, 185, 129, 0.1);
+      color: #10b981;
+      border: 2px solid rgba(16, 185, 129, 0.2);
+    }
+
+    .badge-warning {
+      background: rgba(245, 158, 11, 0.1);
+      color: #f59e0b;
+      border: 2px solid rgba(245, 158, 11, 0.2);
+    }
+
+    .badge-purple {
+      background: rgba(118, 75, 162, 0.1);
+      color: #764ba2;
+      border: 2px solid rgba(118, 75, 162, 0.2);
+    }
+
+    /* ========== BUTTONS ========== */
+    .btn-group {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 48px;
+    }
+
+    .btn {
+      padding: 18px 40px;
+      border-radius: 12px;
+      font-size: 1.125rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      text-decoration: none;
+      display: inline-block;
+      border: none;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.2);
+      transform: translate(-50%, -50%);
+      transition: width 0.6s, height 0.6s;
+    }
+
+    .btn:hover::before {
+      width: 300px;
+      height: 300px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      box-shadow: 0 10px 30px rgba(102, 126, 234, 0.35);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 15px 40px rgba(102, 126, 234, 0.45);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: #667eea;
+      border: 2px solid rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-secondary:hover {
+      border-color: #667eea;
+      background: rgba(102, 126, 234, 0.08);
+      transform: translateY(-3px);
+    }
+
+    .btn-large {
+      padding: 24px 56px;
+      font-size: 1.3rem;
+    }
+
+    /* ========== HERO SECTION ========== */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.03) 0%, rgba(118, 75, 162, 0.03) 100%);
+      position: relative;
+      padding: 140px 0 100px;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image:
+        linear-gradient(rgba(102, 126, 234, 0.03) 2px, transparent 2px),
+        linear-gradient(90deg, rgba(102, 126, 234, 0.03) 2px, transparent 2px);
+      background-size: 60px 60px;
+      opacity: 0.4;
+      animation: gridMove 20s linear infinite;
+    }
+
+    @keyframes gridMove {
+      0% { transform: translate(0, 0); }
+      100% { transform: translate(60px, 60px); }
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+      animation: fadeInUp 0.8s ease-out;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .hero-stats {
+      display: flex;
+      gap: 48px;
+      justify-content: center;
+      margin-top: 64px;
+      flex-wrap: wrap;
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-number {
+      font-size: 3rem;
+      font-weight: 900;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      display: block;
+      line-height: 1;
+    }
+
+    .stat-label {
+      font-size: 1rem;
+      color: #6b7280;
+      margin-top: 8px;
+      font-weight: 600;
+    }
+
+    /* ========== GRID LAYOUTS ========== */
+    .grid {
+      display: grid;
+      gap: 32px;
+      margin-top: 64px;
+    }
+
+    .grid-2 {
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    }
+
+    .grid-3 {
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    }
+
+    .grid-4 {
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    }
+
+    /* ========== CARDS ========== */
+    .card {
+      background: white;
+      padding: 40px;
+      border-radius: 16px;
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      opacity: 0;
+      transform: translateY(30px);
+    }
+
+    .card.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
+      border-color: rgba(102, 126, 234, 0.2);
+    }
+
+    .card-icon {
+      font-size: 3rem;
+      margin-bottom: 20px;
+      display: block;
+    }
+
+    .card-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: #1f2937;
+    }
+
+    .card-text {
+      color: #6b7280;
+      line-height: 1.7;
+      font-size: 1.05rem;
+    }
+
+    /* Colored Cards */
+    .card-colored {
+      border: 2px solid;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card-colored::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      transition: width 0.3s ease;
+    }
+
+    .card-colored:hover::before {
+      width: 100%;
+      opacity: 0.03;
+    }
+
+    .card-blue {
+      border-color: rgba(102, 126, 234, 0.25);
+      background: rgba(102, 126, 234, 0.02);
+    }
+
+    .card-blue::before {
+      background: #667eea;
+    }
+
+    .card-green {
+      border-color: rgba(16, 185, 129, 0.25);
+      background: rgba(16, 185, 129, 0.02);
+    }
+
+    .card-green::before {
+      background: #10b981;
+    }
+
+    .card-purple {
+      border-color: rgba(118, 75, 162, 0.25);
+      background: rgba(118, 75, 162, 0.02);
+    }
+
+    .card-purple::before {
+      background: #764ba2;
+    }
+
+    /* ========== LISTS ========== */
+    .checklist {
+      list-style: none;
+      padding: 0;
+      margin: 20px 0 0 0;
+    }
+
+    .checklist li {
+      padding: 12px 0;
+      padding-left: 36px;
+      position: relative;
+      color: #4b5563;
+      font-size: 1.05rem;
+      line-height: 1.6;
+    }
+
+    .checklist li::before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      top: 12px;
+      width: 24px;
+      height: 24px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 0.75rem;
+    }
+
+    /* ========== TECH TAGS ========== */
+    .tech-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .tech-tag {
+      background: rgba(102, 126, 234, 0.12);
+      color: #667eea;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+
+    .tech-tag:hover {
+      background: rgba(102, 126, 234, 0.2);
+      transform: scale(1.05);
+    }
+
+    /* ========== TIMELINE ========== */
+    .timeline {
+      position: relative;
+      max-width: 900px;
+      margin: 64px auto;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 4px;
+      height: 100%;
+      background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+      border-radius: 2px;
+    }
+
+    .timeline-item {
+      display: flex;
+      margin-bottom: 48px;
+      position: relative;
+      opacity: 0;
+      transform: translateX(-30px);
+    }
+
+    .timeline-item.visible {
+      opacity: 1;
+      transform: translateX(0);
+      transition: all 0.6s ease;
+    }
+
+    .timeline-item:nth-child(even) {
+      flex-direction: row-reverse;
+      transform: translateX(30px);
+    }
+
+    .timeline-content {
+      flex: 1;
+      padding: 24px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      margin: 0 32px;
+      border: 2px solid rgba(102, 126, 234, 0.1);
+    }
+
+    .timeline-dot {
+      width: 20px;
+      height: 20px;
+      background: white;
+      border: 4px solid #667eea;
+      border-radius: 50%;
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2;
+    }
+
+    .timeline-date {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #667eea;
+      margin-bottom: 8px;
+    }
+
+    .timeline-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: #1f2937;
+    }
+
+    .timeline-desc {
+      color: #6b7280;
+      line-height: 1.6;
+    }
+
+    /* ========== STATS SECTION ========== */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 32px;
+      margin-top: 64px;
+      text-align: center;
+    }
+
+    .stat-card {
+      padding: 32px;
+      background: white;
+      border-radius: 16px;
+      border: 2px solid rgba(102, 126, 234, 0.1);
+      transition: all 0.3s ease;
+    }
+
+    .stat-card:hover {
+      border-color: rgba(102, 126, 234, 0.3);
+      transform: scale(1.05);
+    }
+
+    /* ========== SECTION BACKGROUNDS ========== */
+    .bg-white {
+      background: #ffffff;
+    }
+
+    .bg-gray {
+      background: #f9fafb;
+    }
+
+    .bg-blue-light {
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.02) 0%, rgba(118, 75, 162, 0.02) 100%);
+    }
+
+    .bg-gradient {
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
+    }
+
+    /* ========== PHONE MOCKUP ========== */
+    .phone-mockup {
+      width: 350px;
+      height: 700px;
+      background: white;
+      border-radius: 40px;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.25);
+      border: 14px solid #1f2937;
+      position: relative;
+      overflow: hidden;
+      margin: 0 auto;
+    }
+
+    .phone-notch {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 45%;
+      height: 32px;
+      background: #1f2937;
+      border-bottom-left-radius: 22px;
+      border-bottom-right-radius: 22px;
+      z-index: 10;
+    }
+
+    .phone-screen {
+      width: 100%;
+      height: 100%;
+      background: #f5f5f5;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .phone-screen img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      object-position: top center;
+    }
+
+    /* Demo section spacing */
+    #demo .grid-2 {
+      gap: 48px;
+      max-width: 1000px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* ========== RESPONSIVE ========== */
+    @media (max-width: 768px) {
+      .hero-title {
+        font-size: 2.5rem;
+      }
+
+      .hero-subtitle {
+        font-size: 1.2rem;
+      }
+
+      .section-title {
+        font-size: 2.2rem;
+      }
+
+      .section-subtitle {
+        font-size: 1.1rem;
+      }
+
+      .subsection-title {
+        font-size: 1.8rem;
+      }
+
+      section {
+        padding: 80px 0;
+      }
+
+      .hero {
+        padding: 100px 0 60px;
+        min-height: auto;
+      }
+
+      .container {
+        padding: 0 20px;
+      }
+
+      .btn-group {
+        flex-direction: column;
+      }
+
+      .btn {
+        width: 100%;
+      }
+
+      .grid,
+      .grid-2,
+      .grid-3,
+      .grid-4 {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-stats {
+        gap: 32px;
+      }
+
+      .stat-number {
+        font-size: 2.5rem;
+      }
+
+      .timeline::before {
+        left: 20px;
+      }
+
+      .timeline-item,
+      .timeline-item:nth-child(even) {
+        flex-direction: row;
+        transform: translateX(0);
+      }
+
+      .timeline-content {
+        margin: 0 0 0 48px;
+      }
+
+      .timeline-dot {
+        left: 20px;
+      }
+
+      #sticky-nav {
+        padding: 0 20px;
+      }
+
+      .phone-mockup {
+        width: 280px;
+        height: 560px;
+      }
+
+      .grid-2 {
+        gap: 24px;
+      }
+    }
+
+    /* ========== ANIMATIONS ========== */
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-20px); }
+    }
+
+    .float-animation {
+      animation: float 6s ease-in-out infinite;
+    }
+
+    /* ========== HIGHLIGHT BOX ========== */
+    .highlight-box {
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
+      border: 2px solid rgba(102, 126, 234, 0.2);
+      border-radius: 16px;
+      padding: 48px;
+      text-align: center;
+      margin-top: 64px;
+    }
+
+    .highlight-box .icon {
+      font-size: 4rem;
+      margin-bottom: 24px;
+    }
+
+    .highlight-box h3 {
+      font-size: 2rem;
+      font-weight: 800;
+      margin-bottom: 16px;
+      color: #1f2937;
+    }
+
+    .highlight-box p {
+      font-size: 1.2rem;
+      color: #6b7280;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Progress Bar -->
+  <div id="progress-bar"></div>
+
+  <!-- Sticky Navigation -->
+  <nav id="sticky-nav">
+    <div class="logo">Pickom</div>
+    <a href="#contact" class="btn btn-primary" style="padding: 12px 28px; font-size: 1rem;">Get Early Access</a>
+  </nav>
+
+  <!-- 1. HERO SECTION -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-content">
+        <div class="badge badge-purple">
+          🤖 Built with 95% AI-Assisted Code
+        </div>
+
+        <h1 class="hero-title">
+          People-Powered<br>Delivery for Everyone
+        </h1>
+
+        <p class="hero-subtitle">
+          Connect package senders with travelers going the same route.<br>
+          Save time, earn money, reduce carbon footprint.
+        </p>
+
+        <div class="btn-group">
+          <a href="#how-it-works" class="btn btn-primary">See How It Works</a>
+          <a href="#why-pickom" class="btn btn-secondary">What Makes Us Different</a>
+        </div>
+
+        <!-- Hero Stats -->
+        <div class="hero-stats">
+          <div class="stat-item">
+            <span class="stat-number" data-count="95">0</span>
+            <div class="stat-label">% AI-Assisted</div>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number" data-count="4">0</span>
+            <div class="stat-label">Team Members</div>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number" data-count="10">0</span>
+            <div class="stat-label">x Faster Dev</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. PROBLEM SECTION -->
+  <section class="bg-white" id="how-it-works">
+    <div class="container">
+      <h2 class="section-title">Traditional Delivery is Broken</h2>
+      <p class="section-subtitle">The current system is expensive, slow, and inefficient</p>
+
+      <div class="grid grid-4">
+        <div class="card">
+          <div class="card-icon">📦</div>
+          <h3 class="card-title">Expensive</h3>
+          <p class="card-text">Courier services charge premium rates</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">⏱️</div>
+          <h3 class="card-title">Slow</h3>
+          <p class="card-text">Wait days for delivery, inflexible schedules</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🚗</div>
+          <h3 class="card-title">Inefficient</h3>
+          <p class="card-text">Long-distance routes rely on dedicated courier networks</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">💰</div>
+          <h3 class="card-title">Missed Opportunities</h3>
+          <p class="card-text">Travelers make trips without earning potential</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. SOLUTION SECTION -->
+  <section class="bg-gray" id="why-pickom">
+    <div class="container">
+      <h2 class="section-title">Pickom Connects People Who Need It</h2>
+      <p class="section-subtitle">A platform where everyone wins: senders, pickers, and receivers</p>
+
+      <div class="grid grid-3">
+        <div class="card card-colored card-blue">
+          <div class="card-icon">📤</div>
+          <h3 class="card-title">For Senders</h3>
+          <ul class="checklist">
+            <li>Select pickup and delivery locations</li>
+            <li>Enter package details</li>
+            <li>Choose from available pickers</li>
+            <li>Pay securely</li>
+            <li>Track in real-time</li>
+          </ul>
+        </div>
+        <div class="card card-colored card-green">
+          <div class="card-icon">📥</div>
+          <h3 class="card-title">For Receivers</h3>
+          <ul class="checklist">
+            <li>Get notified when package is on the way</li>
+            <li>Track real-time location</li>
+            <li>Confirm delivery and rate experience</li>
+          </ul>
+        </div>
+        <div class="card card-colored card-purple">
+          <div class="card-icon">🚶</div>
+          <h3 class="card-title">For Pickers</h3>
+          <ul class="checklist">
+            <li>Post your travel route</li>
+            <li>Browse available deliveries</li>
+            <li>Accept orders matching your trip</li>
+            <li>Pick up from sender</li>
+            <li>Deliver and earn money</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Win-Win Benefits -->
+      <div class="highlight-box">
+        <div class="icon">🤝</div>
+        <h3>Win-Win for Everyone</h3>
+        <p>
+          <strong>60% cheaper</strong> than traditional couriers •
+          <strong>Faster delivery</strong> with direct routes •
+          <strong>Extra income</strong> for travelers •
+          <strong>Reduced carbon footprint</strong>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. FEATURES SECTION -->
+  <section class="bg-blue-light">
+    <div class="container">
+      <h2 class="section-title">Built for Real People, Real Routes</h2>
+      <p class="section-subtitle">Everything you need for seamless, secure, and efficient peer-to-peer delivery</p>
+
+      <!-- Live Features -->
+      <div style="margin-top: 64px;">
+        <div class="badge badge-success">✓ Live Now</div>
+        <div class="grid grid-3" style="margin-top: 32px;">
+          <div class="card">
+            <div class="card-icon">🗺️</div>
+            <h3 class="card-title">Smart Route Matching</h3>
+            <p class="card-text">OpenStreetMap integration with Places API and visual map selection</p>
+          </div>
+          <div class="card">
+            <div class="card-icon">🔒</div>
+            <h3 class="card-title">Secure Authentication</h3>
+            <p class="card-text">Firebase-powered sign-in with session management</p>
+          </div>
+          <div class="card">
+            <div class="card-icon">💳</div>
+            <h3 class="card-title">Flexible Payments</h3>
+            <p class="card-text">Pay with account balance or saved cards</p>
+          </div>
+          <div class="card">
+            <div class="card-icon">💬</div>
+            <h3 class="card-title">In-App Chat</h3>
+            <p class="card-text">Direct messaging between senders and pickers</p>
+          </div>
+          <div class="card">
+            <div class="card-icon">⭐</div>
+            <h3 class="card-title">Rating & Reviews</h3>
+            <p class="card-text">Community-driven reputation system</p>
+          </div>
+          <div class="card">
+            <div class="card-icon">📍</div>
+            <h3 class="card-title">Real-Time Tracking</h3>
+            <p class="card-text">Live location updates and delivery confirmation</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Coming Soon -->
+      <div style="margin-top: 80px;">
+        <div class="badge badge-warning">🚀 Coming Soon</div>
+        <div class="grid grid-3" style="margin-top: 32px;">
+          <div class="card" style="opacity: 0.7;">
+            <div class="card-icon">🔐</div>
+            <h3 class="card-title">E2E Encrypted Messaging</h3>
+          </div>
+          <div class="card" style="opacity: 0.7;">
+            <div class="card-icon">🛡️</div>
+            <h3 class="card-title">Insurance & Protection</h3>
+          </div>
+          <div class="card" style="opacity: 0.7;">
+            <div class="card-icon">✅</div>
+            <h3 class="card-title">ID Verification</h3>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. TECH STACK SECTION -->
+  <section class="bg-white">
+    <div class="container">
+      <h2 class="section-title">Built with Modern Technologies</h2>
+      <p class="section-subtitle">Leveraging the latest tools and best practices for scalability and performance</p>
+
+      <div class="grid grid-3">
+        <div class="card card-colored card-blue">
+          <div class="card-icon">💻</div>
+          <h3 class="card-title">Frontend</h3>
+          <div class="tech-tags">
+            <span class="tech-tag">Next.js 15</span>
+            <span class="tech-tag">React 19</span>
+            <span class="tech-tag">TypeScript</span>
+            <span class="tech-tag">Material UI</span>
+            <span class="tech-tag">Tailwind CSS 4</span>
+            <span class="tech-tag">Capacitor</span>
+          </div>
+          <p class="card-text" style="margin-top: 20px;">
+            ⚡ Latest frameworks • 📱 Mobile-first PWA • 🎯 Type-safe
+          </p>
+        </div>
+
+        <div class="card card-colored card-purple">
+          <div class="card-icon">⚙️</div>
+          <h3 class="card-title">Backend</h3>
+          <div class="tech-tags">
+            <span class="tech-tag">NestJS</span>
+            <span class="tech-tag">TypeScript</span>
+            <span class="tech-tag">Firebase</span>
+            <span class="tech-tag">TypeORM</span>
+            <span class="tech-tag">Swagger</span>
+          </div>
+          <p class="card-text" style="margin-top: 20px;">
+            🏗️ Scalable architecture • 🔐 Security-first • ✅ Fully tested
+          </p>
+        </div>
+
+        <div class="card card-colored card-green">
+          <div class="card-icon">🛠️</div>
+          <h3 class="card-title">Infrastructure</h3>
+          <div class="tech-tags">
+            <span class="tech-tag">OpenStreetMap</span>
+            <span class="tech-tag">Leaflet</span>
+            <span class="tech-tag">Firebase Auth</span>
+            <span class="tech-tag">Git</span>
+          </div>
+          <p class="card-text" style="margin-top: 20px;">
+            🌍 Real-world integration • 🔄 DevOps ready • 📦 Monorepo
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. VIBE-CODING STORY SECTION -->
+  <section class="bg-gradient" id="vibe-coding">
+    <div class="container">
+      <h2 class="section-title">From Zero to MVP with AI</h2>
+      <p class="section-subtitle">How a 4-person team built a full-stack delivery platform with 95% AI-assisted code</p>
+
+      <!-- Key Numbers -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-number">15K+</div>
+          <div class="stat-label">Lines of Code</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">200+</div>
+          <div class="stat-label">Files Created</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">50+</div>
+          <div class="stat-label">Components</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">20+</div>
+          <div class="stat-label">API Endpoints</div>
+        </div>
+      </div>
+
+      <!-- Timeline -->
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-content">
+            <div class="timeline-date">Phase 1</div>
+            <h3 class="timeline-title">Authentication & Structure</h3>
+            <p class="timeline-desc">Firebase integration, user profiles, TypeScript setup, database schema with TypeORM</p>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-content">
+            <div class="timeline-date">Phase 2</div>
+            <h3 class="timeline-title">Core Delivery Flow</h3>
+            <p class="timeline-desc">Package management, picker offers, real-time chat, notifications, tracking, ratings</p>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-content">
+            <div class="timeline-date">Phase 3</div>
+            <h3 class="timeline-title">UI/UX Polish</h3>
+            <p class="timeline-desc">Material UI integration, mobile-responsive design, touch-friendly interactions</p>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-content">
+            <div class="timeline-date">Phase 4</div>
+            <h3 class="timeline-title">Advanced Features</h3>
+            <p class="timeline-desc">Payment system, dual map implementation (Google + Leaflet), receiver tracking, testing</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Impact Highlight -->
+      <div class="highlight-box">
+        <div class="icon">🤖</div>
+        <h3>The AI Advantage</h3>
+        <p>
+          <strong>Traditional dev: Extended timeline</strong> with same team<br>
+          <strong>With Claude Code: Rapid delivery</strong><br>
+          <strong>Significantly faster</strong> to MVP
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7. DEMO SECTION -->
+  <section class="bg-white" id="demo">
+    <div class="container">
+      <h2 class="section-title">See Pickom in Action</h2>
+      <p class="section-subtitle">A complete walkthrough of the sender and picker experience</p>
+
+      <div class="grid grid-2">
+        <div style="text-align: center;">
+          <div class="phone-mockup float-animation">
+            <div class="phone-notch"></div>
+            <div class="phone-screen">
+              <img src="1.png" alt="Send Package Screen" loading="eager">
+            </div>
+          </div>
+          <h3 class="card-title" style="margin-top: 32px;">For Senders</h3>
+          <p class="card-text">Send packages in minutes with intuitive flow</p>
+        </div>
+
+        <div style="text-align: center;">
+          <div class="phone-mockup float-animation" style="animation-delay: -3s;">
+            <div class="phone-notch"></div>
+            <div class="phone-screen">
+              <img src="2.png" alt="Available Deliveries" loading="eager">
+            </div>
+          </div>
+          <h3 class="card-title" style="margin-top: 32px;">For Pickers</h3>
+          <p class="card-text">Earn while traveling on your existing route</p>
+        </div>
+      </div>
+
+      <!-- Video Placeholder -->
+      <div style="margin-top: 80px; text-align: center;">
+        <div style="max-width: 800px; margin: 0 auto; padding: 100px 40px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%); border-radius: 20px; border: 2px dashed rgba(102, 126, 234, 0.3);">
+          <div style="font-size: 4rem; margin-bottom: 24px;">🎥</div>
+          <h3 style="font-size: 1.8rem; margin-bottom: 16px; color: #1f2937;">90-Second Demo Video</h3>
+          <p style="color: #6b7280; font-size: 1.1rem;">Watch how easy it is to send packages and earn money as a picker</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8. ROADMAP SECTION -->
+  <section class="bg-blue-light" id="roadmap">
+    <div class="container">
+      <h2 class="section-title">Building the Future of Delivery</h2>
+      <p class="section-subtitle">From working MVP to global platform</p>
+
+      <div class="grid grid-3">
+        <div class="card card-colored card-green">
+          <div class="badge badge-success" style="margin-bottom: 20px;">✓ Current</div>
+          <h3 class="card-title">MVP Complete</h3>
+          <ul class="checklist">
+            <li>Full sender/picker/receiver workflows</li>
+            <li>Real-time tracking & chat</li>
+            <li>Payment processing</li>
+            <li>Rating system</li>
+            <li>Mobile PWA + Android app</li>
+          </ul>
+        </div>
+
+        <div class="card card-colored card-blue">
+          <div class="badge badge-warning" style="margin-bottom: 20px;">🚀 Next Phase</div>
+          <h3 class="card-title">Polish & Scale</h3>
+          <ul class="checklist">
+            <li>Performance optimization</li>
+            <li>Enhanced security (E2E encryption)</li>
+            <li>iOS app launch</li>
+            <li>Multi-language support</li>
+            <li>Insurance options</li>
+          </ul>
+        </div>
+
+        <div class="card card-colored card-purple">
+          <div class="badge badge-purple" style="margin-bottom: 20px;">🌍 Long-term Vision</div>
+          <h3 class="card-title">Global Expansion</h3>
+          <ul class="checklist">
+            <li>100K+ active users</li>
+            <li>International coverage</li>
+            <li>ML-powered route matching</li>
+            <li>B2B partnerships</li>
+            <li>API for third-party apps</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Success Metrics -->
+      <div class="highlight-box">
+        <h3>Year 1 Targets</h3>
+        <div class="stats-grid" style="margin-top: 32px;">
+          <div>
+            <div class="stat-number">10K+</div>
+            <div class="stat-label">Active Users</div>
+          </div>
+          <div>
+            <div class="stat-number">5K+</div>
+            <div class="stat-label">Deliveries/Month</div>
+          </div>
+          <div>
+            <div class="stat-number">50+</div>
+            <div class="stat-label">Cities Covered</div>
+          </div>
+          <div>
+            <div class="stat-number">4.5+</div>
+            <div class="stat-label">Avg Rating</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9. TEAM & CONTACT SECTION -->
+  <section class="bg-white" id="team">
+    <div class="container">
+      <h2 class="section-title">Meet the Team Behind Pickom</h2>
+      <p class="section-subtitle">Four innovators leveraging AI to reshape delivery</p>
+
+      <div class="grid grid-4">
+        <div class="card" style="text-align: center;">
+          <div style="width: 120px; height: 120px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; color: white; overflow: hidden;">
+            👤
+          </div>
+          <h3 class="card-title">Tikay Kadiri</h3>
+          <p class="card-text" style="font-weight: 600; color: #667eea; margin-bottom: 8px;">Founder & CEO</p>
+          <p class="card-text" style="font-size: 0.95rem;">Visionary entrepreneur passionate about building simple, people-powered delivery solutions across Europe, Africa and beyond.</p>
+        </div>
+        <div class="card" style="text-align: center;">
+          <div style="width: 120px; height: 120px; border-radius: 50%; margin: 0 auto 20px; overflow: hidden; border: 3px solid #667eea;">
+            <img src="Сергей.png" alt="Sergiusz Sawicki" style="width: 100%; height: 100%; object-fit: cover;">
+          </div>
+          <h3 class="card-title">Sergiusz Sawicki</h3>
+          <p class="card-text" style="font-weight: 600; color: #667eea; margin-bottom: 8px;">Project Manager / CTO</p>
+          <p class="card-text" style="font-size: 0.95rem;">Leads the team with inspiration and organization, ensuring all tasks are completed on time and strategic goals are achieved.</p>
+        </div>
+        <div class="card" style="text-align: center;">
+          <div style="width: 120px; height: 120px; border-radius: 50%; margin: 0 auto 20px; overflow: hidden; border: 3px solid #667eea;">
+            <img src="Вадим.jpg" alt="Vadzim Vazniak" style="width: 100%; height: 100%; object-fit: cover;">
+          </div>
+          <h3 class="card-title">Vadzim Vazniak</h3>
+          <p class="card-text" style="font-weight: 600; color: #667eea; margin-bottom: 8px;">Frontend Developer</p>
+          <p class="card-text" style="font-size: 0.95rem;">Creative frontend developer transforming designs into vibrant, responsive web applications that work flawlessly on all devices.</p>
+        </div>
+        <div class="card" style="text-align: center;">
+          <div style="width: 120px; height: 120px; border-radius: 50%; margin: 0 auto 20px; overflow: hidden; border: 3px solid #667eea;">
+            <img src="Максим.jpg" alt="Maksim Mushynski" style="width: 100%; height: 100%; object-fit: cover;">
+          </div>
+          <h3 class="card-title">Maksim Mushynski</h3>
+          <p class="card-text" style="font-weight: 600; color: #667eea; margin-bottom: 8px;">Backend Developer</p>
+          <p class="card-text" style="font-size: 0.95rem;">Server-side specialist creating scalable, reliable solutions ensuring high performance and security. Expert in database management and API integration.</p>
+        </div>
+      </div>
+
+      <!-- Contact Categories -->
+      <div class="grid grid-2" style="margin-top: 80px;">
+        <div class="card card-colored card-blue">
+          <h3 class="card-title">💼 For Investors</h3>
+          <p class="card-text">Interested in funding the future of delivery?</p>
+          <a href="#contact" class="btn btn-primary" style="margin-top: 20px; width: 100%;">Get in Touch</a>
+        </div>
+        <div class="card card-colored card-purple">
+          <h3 class="card-title">👥 For Users</h3>
+          <p class="card-text">Want early access to the platform?</p>
+          <a href="#contact" class="btn btn-secondary" style="margin-top: 20px; width: 100%;">Join Waiting List</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10. CONTACT & CTA SECTION -->
+  <section class="bg-gradient" id="contact">
+    <div class="container" style="text-align: center;">
+      <div class="badge badge-success" style="font-size: 1rem; padding: 10px 24px;">
+        ✓ Coming Soon
+      </div>
+      <h2 class="section-title" style="margin-top: 32px;">Be the First to Know</h2>
+      <p class="section-subtitle">Join our waiting list and get early access when we launch</p>
+
+      <!-- Email Sign-up Forms -->
+      <div class="grid grid-2" style="margin-top: 64px; max-width: 900px; margin-left: auto; margin-right: auto;">
+        <!-- For Users -->
+        <div class="card card-colored card-blue" style="text-align: left;">
+          <div style="text-align: center; margin-bottom: 24px;">
+            <div class="card-icon">👥</div>
+            <h3 class="card-title">For Users</h3>
+            <p class="card-text">Get notified when Pickom launches</p>
+          </div>
+          <form id="user-form" style="margin-top: 24px;">
+            <div style="margin-bottom: 16px;">
+              <input type="email" name="email" placeholder="Your email address" required style="width: 100%; padding: 14px 18px; border: 2px solid rgba(102, 126, 234, 0.2); border-radius: 8px; font-size: 1rem; transition: all 0.3s;">
+            </div>
+            <div style="margin-bottom: 16px;">
+              <input type="text" name="name" placeholder="Your name (optional)" style="width: 100%; padding: 14px 18px; border: 2px solid rgba(102, 126, 234, 0.2); border-radius: 8px; font-size: 1rem;">
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 8px;">Join Waiting List</button>
+          </form>
+        </div>
+
+        <!-- For Investors -->
+        <div class="card card-colored card-purple" style="text-align: left;">
+          <div style="text-align: center; margin-bottom: 24px;">
+            <div class="card-icon">💼</div>
+            <h3 class="card-title">For Investors</h3>
+            <p class="card-text">Interested in funding the future of delivery?</p>
+          </div>
+          <form id="investor-form" style="margin-top: 24px;">
+            <div style="margin-bottom: 16px;">
+              <input type="email" name="email" placeholder="Your email address" required style="width: 100%; padding: 14px 18px; border: 2px solid rgba(118, 75, 162, 0.2); border-radius: 8px; font-size: 1rem;">
+            </div>
+            <div style="margin-bottom: 16px;">
+              <input type="text" name="name" placeholder="Your name" required style="width: 100%; padding: 14px 18px; border: 2px solid rgba(118, 75, 162, 0.2); border-radius: 8px; font-size: 1rem;">
+            </div>
+            <div style="margin-bottom: 16px;">
+              <input type="text" name="company" placeholder="Company / Fund name" style="width: 100%; padding: 14px 18px; border: 2px solid rgba(118, 75, 162, 0.2); border-radius: 8px; font-size: 1rem;">
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 8px;">Request Investment Info</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Social Links Placeholder -->
+      <div style="margin-top: 80px; padding-top: 48px; border-top: 2px solid rgba(0, 0, 0, 0.08);">
+        <p style="color: #6b7280; margin-bottom: 24px;">Connect with us</p>
+        <div style="display: flex; gap: 32px; justify-content: center; flex-wrap: wrap;">
+          <a href="mailto:hello@pickom.com" style="color: #6b7280; text-decoration: none; font-weight: 600;">📧 hello@pickom.com</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    // ========== PROGRESS BAR ==========
+    window.addEventListener('scroll', () => {
+      const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+      const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+      const scrolled = (winScroll / height) * 100;
+      document.getElementById('progress-bar').style.width = scrolled + '%';
+    });
+
+    // ========== STICKY NAV ==========
+    let lastScroll = 0;
+    window.addEventListener('scroll', () => {
+      const currentScroll = window.pageYOffset;
+      const nav = document.getElementById('sticky-nav');
+
+      if (currentScroll > 300) {
+        if (currentScroll > lastScroll) {
+          nav.classList.remove('visible');
+        } else {
+          nav.classList.add('visible');
+        }
+      } else {
+        nav.classList.remove('visible');
+      }
+
+      lastScroll = currentScroll;
+    });
+
+    // ========== SCROLL ANIMATIONS ==========
+    const observerOptions = {
+      threshold: 0.1,
+      rootMargin: '0px 0px -100px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry, index) => {
+        if (entry.isIntersecting) {
+          setTimeout(() => {
+            entry.target.classList.add('visible');
+          }, index * 100);
+        }
+      });
+    }, observerOptions);
+
+    document.querySelectorAll('.card, .timeline-item').forEach(card => {
+      observer.observe(card);
+    });
+
+    // ========== ANIMATED COUNTERS ==========
+    const animateCounter = (element, target, duration = 2000) => {
+      let current = 0;
+      const increment = target / (duration / 16);
+
+      const updateCounter = () => {
+        current += increment;
+        if (current < target) {
+          element.textContent = Math.floor(current);
+          requestAnimationFrame(updateCounter);
+        } else {
+          element.textContent = target;
+        }
+      };
+
+      updateCounter();
+    };
+
+    const counterObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const target = parseInt(entry.target.dataset.count);
+          animateCounter(entry.target, target);
+          counterObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.5 });
+
+    document.querySelectorAll('.stat-number[data-count]').forEach(counter => {
+      counterObserver.observe(counter);
+    });
+
+    // ========== SMOOTH SCROLL ==========
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+
+    console.log('🚀 Landing page loaded successfully!');
+    console.log('📏 Document height:', document.body.scrollHeight);
+
+    // ========== FORM SUBMISSIONS ==========
+    // User Form
+    document.getElementById('user-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const email = formData.get('email');
+      const name = formData.get('name');
+
+      // TODO: Send to your backend or email service
+      console.log('User signup:', { email, name });
+      alert('Thank you! We\'ll notify you when Pickom launches.');
+      e.target.reset();
+    });
+
+    // Investor Form
+    document.getElementById('investor-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const email = formData.get('email');
+      const name = formData.get('name');
+      const company = formData.get('company');
+
+      // TODO: Send to your backend or email service
+      console.log('Investor inquiry:', { email, name, company });
+      alert('Thank you! We\'ll be in touch soon with more information.');
+      e.target.reset();
+    });
+
+    // Input focus effects
+    document.querySelectorAll('input').forEach(input => {
+      input.addEventListener('focus', function() {
+        this.style.borderColor = '#667eea';
+        this.style.boxShadow = '0 0 0 3px rgba(102, 126, 234, 0.1)';
+      });
+      input.addEventListener('blur', function() {
+        this.style.borderColor = 'rgba(102, 126, 234, 0.2)';
+        this.style.boxShadow = 'none';
+      });
+    });
+  </script>
+
+</body>
+</html>
