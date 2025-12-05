@@ -1,0 +1,1 @@
+"use strict";exports.id=8404,exports.ids=[8404],exports.modules={8404:(a,b,c)=>{c.d(b,{F8:()=>f,aT:()=>h,createOffer:()=>e,i6:()=>g});var d=c(65290);let e=async a=>d.x.post("/offers",a),f=async a=>d.x.get(`/offers/delivery/${a}`),g=async(a,b)=>d.x.patch(`/offers/${a}`,b),h=async()=>d.x.get("/offers/my")}};

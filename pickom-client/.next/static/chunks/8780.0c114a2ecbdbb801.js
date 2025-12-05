@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunk_N_E=self.webpackChunk_N_E||[]).push([[8780],{78780:(e,s,c)=>{c.d(s,{F8:()=>t,aT:()=>n,createOffer:()=>f,i6:()=>r});var a=c(51070);let f=async e=>a.x.post("/offers",e),t=async e=>a.x.get("/offers/delivery/".concat(e)),r=async(e,s)=>a.x.patch("/offers/".concat(e),s),n=async()=>a.x.get("/offers/my")}}]);

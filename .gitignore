@@ -1,12 +1,7 @@
 # Build and cache files
-pickom-client/.next/
 pickom-client/node_modules/
-pickom-server/dist/
 pickom-server/node_modules/
 node_modules/
-.next/
-dist/
-build/
 
 # Environment files
 *.env.local
