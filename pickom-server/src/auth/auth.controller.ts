@@ -39,23 +39,23 @@ export class AuthController {
 
   @Post('login')
   @ApiOperation({
-    summary: 'Авторизация существующего пользователя',
+    summary: 'Login existing user',
     description:
-      'Авторизует существующего пользователя с помощью Firebase ID токена и создает сессионную куку',
+      'Authenticates existing user using Firebase ID token and creates session cookie',
   })
   @ApiHeader({
     name: 'Authorization',
-    description: 'Bearer токен от Firebase Auth',
+    description: 'Bearer token from Firebase Auth',
     required: true,
     example: 'Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...',
   })
   @ApiResponse({
     status: 200,
-    description: 'Пользователь успешно авторизован',
+    description: 'User successfully authenticated',
     type: LoginResponseDto,
   })
   @ApiBadRequestResponse({
-    description: 'Пользователь не найден или токен недействителен',
+    description: 'User not found or token invalid',
     type: ErrorResponseDto,
   })
   public async login(
@@ -95,23 +95,23 @@ export class AuthController {
 
   @Post('register')
   @ApiOperation({
-    summary: 'Регистрация нового пользователя',
+    summary: 'Register new user',
     description:
-      'Создает нового пользователя в БД с помощью Firebase ID токена и создает сессионную куку',
+      'Creates new user in DB using Firebase ID token and creates session cookie',
   })
   @ApiHeader({
     name: 'Authorization',
-    description: 'Bearer токен от Firebase Auth',
+    description: 'Bearer token from Firebase Auth',
     required: true,
     example: 'Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...',
   })
   @ApiResponse({
     status: 200,
-    description: 'Пользователь успешно зарегистрирован',
+    description: 'User successfully registered',
     type: LoginResponseDto,
   })
   @ApiBadRequestResponse({
-    description: 'Пользователь уже существует или токен недействителен',
+    description: 'User already exists or token invalid',
     type: ErrorResponseDto,
   })
   public async register(
@@ -159,18 +159,18 @@ export class AuthController {
   @Get('me')
   @UseGuards(FirebaseAuthGuard)
   @ApiOperation({
-    summary: 'Получение информации о текущем пользователе',
+    summary: 'Get current user information',
     description:
-      'Возвращает информацию о текущем авторизованном пользователе или null если не авторизован',
+      'Returns information about currently authenticated user or null if not authenticated',
   })
   @ApiCookieAuth('session')
   @ApiResponse({
     status: 200,
-    description: 'Информация о пользователе получена успешно',
+    description: 'User information retrieved successfully',
     type: MeResponseDto,
   })
   @ApiBadRequestResponse({
-    description: 'Внутренняя ошибка сервера',
+    description: 'Internal server error',
     type: ErrorResponseDto,
   })
   public async me(@Req() req: ReqWithUser) {
@@ -197,21 +197,21 @@ export class AuthController {
   @Post('logout')
   @UseGuards(FirebaseAuthGuard)
   @ApiOperation({
-    summary: 'Выход из системы',
-    description: 'Отзывает сессионную куку и токены пользователя',
+    summary: 'Logout',
+    description: 'Revokes session cookie and user tokens',
   })
   @ApiCookieAuth('session')
   @ApiResponse({
     status: 200,
-    description: 'Пользователь успешно вышел из системы',
+    description: 'User successfully logged out',
     type: LogoutResponseDto,
   })
   @ApiUnauthorizedResponse({
-    description: 'Пользователь не авторизован',
+    description: 'User not authenticated',
     type: ErrorResponseDto,
   })
   @ApiBadRequestResponse({
-    description: 'Внутренняя ошибка сервера',
+    description: 'Internal server error',
     type: ErrorResponseDto,
   })
   public async logout(

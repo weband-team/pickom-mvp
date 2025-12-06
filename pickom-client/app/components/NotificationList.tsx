@@ -101,7 +101,7 @@ export default function NotificationList() {
     return (
       <div className="p-6">
         <div className="text-center text-red-600">
-          <p>Ошибка загрузки уведомлений</p>
+          <p>Failed to load notifications</p>
           <p className="text-sm text-gray-500 mt-1">{error}</p>
         </div>
       </div>
@@ -113,10 +113,10 @@ export default function NotificationList() {
       <div className="p-6 text-center">
         <div className="text-6xl mb-4">🔔</div>
         <h3 className="text-lg font-medium text-gray-900 mb-2">
-          Уведомлений пока нет
+          No notifications yet
         </h3>
         <p className="text-gray-500">
-          Здесь будут появляться уведомления о ваших заказах
+          Notifications about your orders will appear here
         </p>
       </div>
     );
@@ -126,7 +126,7 @@ export default function NotificationList() {
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-semibold text-gray-900">
-          Уведомления
+          Notifications
           {unreadCount > 0 && (
             <span className="ml-2 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-500 rounded-full">
               {unreadCount}
@@ -139,7 +139,7 @@ export default function NotificationList() {
             onClick={markAllAsRead}
             className="text-sm text-blue-600 hover:text-blue-800 transition-colors"
           >
-            Отметить все как прочитанные
+            Mark all as read
           </button>
         )}
       </div>

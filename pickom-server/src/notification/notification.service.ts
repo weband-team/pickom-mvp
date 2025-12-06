@@ -124,7 +124,7 @@ export class NotificationService {
     };
   }
 
-  // Метод для создания уведомления о новом предложении
+  // Method to create notification about new offer
   async notifyOfferReceived(
     senderId: string,
     deliveryId: number,
@@ -141,7 +141,7 @@ export class NotificationService {
     });
   }
 
-  // Метод для создания уведомления о принятии предложения
+  // Method to create notification about offer acceptance
   async notifyOfferAccepted(
     senderId: string,
     deliveryId: number,
@@ -157,7 +157,7 @@ export class NotificationService {
     });
   }
 
-  // Метод для создания уведомления о входящей доставке
+  // Method to create notification about incoming delivery
   async notifyIncomingDelivery(
     recipientId: string,
     deliveryId: number,
@@ -173,7 +173,7 @@ export class NotificationService {
     });
   }
 
-  // Метод для создания уведомления об изменении статуса
+  // Method to create notification about status change
   async notifyStatusUpdate(
     userId: string,
     deliveryId: number,

@@ -4,7 +4,9 @@
       "Bash(cat:*)",
       "Bash(git add:*)",
       "Bash(rg:*)",
-      "Bash(npm run typeorm migration:run:*)"
+      "Bash(npm run typeorm migration:run:*)",
+      "Bash(find:*)",
+      "Bash(xargs grep:*)"
     ],
     "deny": [],
     "ask": []

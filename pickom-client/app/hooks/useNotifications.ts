@@ -18,7 +18,7 @@ export const useNotifications = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Загрузить уведомления
+  // Load notifications
   const fetchNotifications = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -39,12 +39,12 @@ export const useNotifications = () => {
     }
   }, []);
 
-  // Отметить уведомление как прочитанное
+  // Mark notification as read
   const markAsRead = useCallback(async (notificationId: number) => {
     try {
       await notificationsAPI.markAsRead(notificationId);
 
-      // Обновляем локальное состояние
+      // Update local state
       setNotifications(prev =>
         prev.map(notification =>
           notification.id === notificationId
@@ -53,7 +53,7 @@ export const useNotifications = () => {
         )
       );
 
-      // Обновляем счетчик непрочитанных
+      // Update unread counter
       setUnreadCount(prev => Math.max(0, prev - 1));
 
     } catch (err) {
@@ -62,12 +62,12 @@ export const useNotifications = () => {
     }
   }, []);
 
-  // Отметить все уведомления как прочитанные
+  // Mark all notifications as read
   const markAllAsRead = useCallback(async () => {
     try {
       await notificationsAPI.markAllAsRead();
 
-      // Обновляем локальное состояние
+      // Update local state
       setNotifications(prev =>
         prev.map(notification => ({ ...notification, read: true }))
       );
@@ -80,15 +80,15 @@ export const useNotifications = () => {
     }
   }, []);
 
-  // === МЕТОДЫ ДЛЯ СОЗДАНИЯ УВЕДОМЛЕНИЙ ===
+  // === METHODS FOR CREATING NOTIFICATIONS ===
 
-  // Создать уведомление о новом предложении
+  // Create notification about new offer
   const createOfferReceivedNotification = useCallback(async (data: OfferReceivedRequest) => {
     try {
       const newNotification = await notificationsAPI.notifyOfferReceived(data);
 
-      // Добавляем уведомление в локальное состояние, если оно для текущего пользователя
-      // (в реальном приложении это будет обработано через WebSocket или Push-уведомления)
+      // Add notification to local state if it's for the current user
+      // (in a real application this would be handled via WebSocket or Push notifications)
       setNotifications(prev => [newNotification, ...prev]);
       setUnreadCount(prev => prev + 1);
 
@@ -101,7 +101,7 @@ export const useNotifications = () => {
     }
   }, []);
 
-  // Создать уведомление о принятии предложения
+  // Create notification about offer acceptance
   const createOfferAcceptedNotification = useCallback(async (data: OfferAcceptedRequest) => {
     try {
       const newNotification = await notificationsAPI.notifyOfferAccepted(data);
@@ -117,7 +117,7 @@ export const useNotifications = () => {
     }
   }, []);
 
-  // Создать уведомление о входящей доставке
+  // Create notification about incoming delivery
   const createIncomingDeliveryNotification = useCallback(async (data: IncomingDeliveryRequest) => {
     try {
       const newNotification = await notificationsAPI.notifyIncomingDelivery(data);
@@ -133,7 +133,7 @@ export const useNotifications = () => {
     }
   }, []);
 
-  // Создать уведомление об обновлении статуса
+  // Create notification about status update
   const createStatusUpdateNotification = useCallback(async (data: StatusUpdateRequest) => {
     try {
       const newNotification = await notificationsAPI.notifyStatusUpdate(data);
@@ -149,7 +149,7 @@ export const useNotifications = () => {
     }
   }, []);
 
-  // Общий метод для создания произвольного уведомления
+  // General method for creating custom notification
   const createCustomNotification = useCallback(async (data: CreateNotificationRequest) => {
     try {
       const newNotification = await notificationsAPI.createNotification(data);
@@ -165,28 +165,28 @@ export const useNotifications = () => {
     }
   }, []);
 
-  // Получить непрочитанные уведомления
+  // Get unread notifications
   const unreadNotifications = notifications.filter(n => !n.read);
 
-  // Загрузить уведомления при монтировании компонента
+  // Load notifications when component mounts
   useEffect(() => {
     fetchNotifications();
   }, [fetchNotifications]);
 
   return {
-    // Базовые данные
+    // Basic data
     notifications,
     unreadNotifications,
     unreadCount,
     isLoading,
     error,
 
-    // Методы чтения и управления
+    // Read and management methods
     fetchNotifications,
     markAsRead,
     markAllAsRead,
 
-    // Методы создания уведомлений
+    // Notification creation methods
     createOfferReceivedNotification,
     createOfferAcceptedNotification,
     createIncomingDeliveryNotification,

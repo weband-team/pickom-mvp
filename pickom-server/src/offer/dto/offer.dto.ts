@@ -1,4 +1,4 @@
-// DTO для работы с mock данными (временно, пока используем строковые UID)
+// DTO for working with mock data (temporary, while using string UIDs)
 export interface OfferDto {
   id: number;
   delivery_id: number;

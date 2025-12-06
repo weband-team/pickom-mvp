@@ -2,50 +2,50 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class UserDto {
   @ApiProperty({
-    description: 'Уникальный идентификатор пользователя',
+    description: 'Unique user identifier',
     example: 'user_123456789',
   })
   uid: string;
 
   @ApiProperty({
-    description: 'Email пользователя',
+    description: 'User email',
     example: 'user@example.com',
   })
   email: string;
 
   @ApiProperty({
-    description: 'Имя пользователя',
+    description: 'User name',
     example: 'John Doe',
   })
   name: string;
 
   @ApiProperty({
-    description: 'URL аватара пользователя',
+    description: 'User avatar URL',
     example: 'https://example.com/avatar.jpg',
     required: false,
   })
   avatarUrl?: string;
 
   @ApiProperty({
-    description: 'Роль пользователя',
+    description: 'User role',
     example: 'picker',
   })
   role: string;
 
   @ApiProperty({
-    description: 'Дата последнего входа',
+    description: 'Last login date',
     example: '2024-01-01T00:00:00.000Z',
   })
   prevLoginAt: Date;
 
   @ApiProperty({
-    description: 'Дата создания аккаунта',
+    description: 'Account creation date',
     example: '2024-01-01T00:00:00.000Z',
   })
   createdAt: Date;
 
   @ApiProperty({
-    description: 'Подтвержден ли email',
+    description: 'Is email verified',
     example: true,
   })
   emailVerified: boolean;
@@ -53,14 +53,14 @@ export class UserDto {
 
 export class MeResponseDto {
   @ApiProperty({
-    description: 'Информация о пользователе',
+    description: 'User information',
     type: UserDto,
     required: false,
   })
   user?: UserDto | null;
 
   @ApiProperty({
-    description: 'Сообщение о статусе',
+    description: 'Status message',
     example: 'User data retrieved successfully',
   })
   message: string;
@@ -68,7 +68,7 @@ export class MeResponseDto {
 
 export class LogoutResponseDto {
   @ApiProperty({
-    description: 'Сообщение об успешном выходе',
+    description: 'Successful logout message',
     example: 'Logged out successfully',
   })
   message: string;
@@ -76,13 +76,13 @@ export class LogoutResponseDto {
 
 export class ErrorResponseDto {
   @ApiProperty({
-    description: 'Сообщение об ошибке',
+    description: 'Error message',
     example: 'Authorization token is missing',
   })
   message: string;
 
   @ApiProperty({
-    description: 'Статус код ошибки',
+    description: 'Error status code',
     example: 400,
   })
   statusCode: number;

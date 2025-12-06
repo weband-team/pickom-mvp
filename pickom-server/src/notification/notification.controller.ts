@@ -19,7 +19,7 @@ export class NotificationController {
 
   @Get()
   async getUserNotifications(@Request() req): Promise<NotificationDto[]> {
-    const userId = req.user.uid; // Получаем UID пользователя из Firebase token
+    const userId = req.user.uid; // Get user UID from Firebase token
     return await this.notificationService.getUserNotifications(userId);
   }
 
@@ -42,7 +42,7 @@ export class NotificationController {
     return { success: true };
   }
 
-  // Создать уведомление о новом предложении
+  // Create notification about new offer
   @Post('offer-received')
   async notifyOfferReceived(
     @Body()
@@ -61,7 +61,7 @@ export class NotificationController {
     );
   }
 
-  // Создать уведомление о принятии предложения
+  // Create notification about offer acceptance
   @Post('offer-accepted')
   async notifyOfferAccepted(
     @Body() body: { senderId: string; deliveryId: number },
@@ -72,7 +72,7 @@ export class NotificationController {
     );
   }
 
-  // Создать уведомление о входящей доставке
+  // Create notification about incoming delivery
   @Post('incoming-delivery')
   async notifyIncomingDelivery(
     @Body()
@@ -89,7 +89,7 @@ export class NotificationController {
     );
   }
 
-  // Создать уведомление об обновлении статуса
+  // Create notification about status update
   @Post('status-update')
   async notifyStatusUpdate(
     @Body()
@@ -108,7 +108,7 @@ export class NotificationController {
     );
   }
 
-  // Общий метод для создания произвольного уведомления
+  // General method to create custom notification
   @Post('create')
   async createNotification(
     @Body() notificationData: Omit<NotificationDto, 'id' | 'created_at'>,

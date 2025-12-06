@@ -12,10 +12,10 @@ async function bootstrap() {
     rawBody: true, // Enable raw body globally
   });
 
-  // Настройка статических файлов
+  // Setup static files
   app.useStaticAssets(join(__dirname, '..', 'public'));
 
-  // Настройка cookie-parser
+  // Setup cookie-parser
   app.use(cookieParser());
 
   // Request logging middleware
@@ -27,7 +27,7 @@ async function bootstrap() {
     next();
   });
 
-  // Настройка CORS
+  // Setup CORS
   const isDevelopment = process.env.NODE_ENV !== 'production';
 
   app.enableCors({
@@ -70,12 +70,12 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
   });
 
-  // Настройка Swagger
+  // Setup Swagger
   const config = new DocumentBuilder()
     .setTitle('Pickom API')
-    .setDescription('API документация для приложения Pickom')
+    .setDescription('API documentation for Pickom application')
     .setVersion('1.0')
-    .addTag('auth', 'Авторизация и аутентификация')
+    .addTag('auth', 'Authorization and authentication')
     .addBearerAuth(
       {
         type: 'http',

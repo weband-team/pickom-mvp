@@ -80,8 +80,8 @@ export class DeliveryService {
     return pickersWithDistance;
   }
 
-  // Создать запрос на доставку
-  // Принимает UID отправителя и данные о доставке через DTO
+  // Create delivery request
+  // Accepts sender UID and delivery data via DTO
   async createDeliveryRequest(
     senderUid: string,
     createDto: CreateDeliveryDto,
@@ -142,10 +142,10 @@ export class DeliveryService {
     delivery.status = createDto.status || 'pending';
     delivery.packageImageUrl = createDto.packageImageUrl || null;
 
-    // Сохраняем в базу данных
+    // Save to database
     const savedDelivery = await this.deliveryRepository.save(delivery);
 
-    // Если указан получатель, создаем уведомление о входящей доставке
+    // If recipient specified, create notification about incoming delivery
     if (recipient) {
       await this.notificationService.notifyIncomingDelivery(
         recipient.uid,
@@ -154,7 +154,7 @@ export class DeliveryService {
       );
     }
 
-    // Преобразуем в DTO для возврата
+    // Convert to DTO for return
     return this.toDto(
       savedDelivery,
       senderUid,
@@ -163,12 +163,12 @@ export class DeliveryService {
     );
   }
 
-  // Получить список всех запросов
+  // Get list of all requests
   async getAllDeliveryRequests(
     uid: string,
     role: string,
   ): Promise<DeliveryDto[]> {
-    // Найти пользователя по UID
+    // Find user by UID
     const user = (await this.userService.findOne(uid)) as UserEntity;
     if (!user) {
       throw new Error('User not found');
@@ -203,25 +203,25 @@ export class DeliveryService {
       });
     }
 
-    // Преобразовать в DTO
+    // Convert to DTO
     return Promise.all(
       deliveries.map((delivery) => this.entityToDto(delivery)),
     );
   }
 
-  // Получить запрос по ID
+  // Get request by ID
   async getDeliveryRequestById(
     id: number,
     uid: string,
     role: string,
   ): Promise<DeliveryDto | null> {
-    // Найти пользователя по UID
+    // Find user by UID
     const user = (await this.userService.findOne(uid)) as UserEntity;
     if (!user) {
       return null;
     }
 
-    // Найти доставку
+    // Find delivery
     const delivery = await this.deliveryRepository.findOne({
       where: { id },
       relations: ['sender', 'picker', 'recipient'],
@@ -255,19 +255,19 @@ export class DeliveryService {
     return await this.entityToDto(delivery);
   }
 
-  // Обновить статус запроса
+  // Update request status
   async updateDeliveryRequestStatus(
     id: number,
     status: 'accepted' | 'picked_up' | 'delivered' | 'cancelled',
     uid: string,
   ): Promise<DeliveryDto | null> {
-    // Найти пользователя по UID
+    // Find user by UID
     const user = (await this.userService.findOne(uid)) as UserEntity;
     if (!user) {
       return null;
     }
 
-    // Найти доставку
+    // Find delivery
     const delivery = await this.deliveryRepository.findOne({
       where: { id },
       relations: ['sender', 'picker', 'recipient'],
@@ -277,7 +277,7 @@ export class DeliveryService {
       return null;
     }
 
-    // Проверить права (только курьер может менять статус)
+    // Check permissions (only picker can change status)
     if (delivery.pickerId !== user.id) {
       return null;
     }
@@ -332,14 +332,14 @@ export class DeliveryService {
       );
     }
     const statusMessages: Record<string, string> = {
-      picked_up: 'Курьер забрал вашу посылку и направляется к получателю.',
-      delivered: 'Ваша посылка успешно доставлена!',
-      cancelled: 'Доставка была отменена.',
+      picked_up: 'The picker has collected your package and is heading to the recipient.',
+      delivered: 'Your package has been successfully delivered!',
+      cancelled: 'The delivery was cancelled.',
     };
 
     const message = statusMessages[status];
     if (message) {
-      // Уведомление для отправителя (используем UID)
+      // Notification for sender (using UID)
       await this.notificationService.notifyStatusUpdate(
         delivery.sender.uid,
         id,
@@ -347,12 +347,12 @@ export class DeliveryService {
         message,
       );
 
-      // Уведомление для получателя (если указан)
+      // Notification for recipient (if specified)
       if (delivery.recipient) {
         const recipientMessages: Record<string, string> = {
-          picked_up: 'Курьер забрал посылку и направляется к вам.',
-          delivered: 'Посылка доставлена к вам!',
-          cancelled: 'Доставка посылки была отменена.',
+          picked_up: 'The picker has collected the package and is heading to you.',
+          delivered: 'The package has been delivered to you!',
+          cancelled: 'The package delivery was cancelled.',
         };
 
         const recipientMessage = recipientMessages[status];
@@ -370,20 +370,20 @@ export class DeliveryService {
     return await this.entityToDto(delivery);
   }
 
-  // Обновить данные доставки
-  // Позволяет обновить любые поля доставки (title, description, address, price и т.д.)
+  // Update delivery data
+  // Allows updating any delivery fields (title, description, address, price, etc.)
   async updateDelivery(
     id: number,
     uid: string,
     updateDto: UpdateDeliveryDto,
   ): Promise<DeliveryDto | null> {
-    // Найти пользователя по UID
+    // Find user by UID
     const user = (await this.userService.findOne(uid)) as UserEntity;
     if (!user) {
       return null;
     }
 
-    // Найти доставку
+    // Find delivery
     const delivery = await this.deliveryRepository.findOne({
       where: { id },
       relations: ['sender', 'picker', 'recipient'],
@@ -393,12 +393,12 @@ export class DeliveryService {
       return null;
     }
 
-    // Проверить права (только отправитель может редактировать)
+    // Check permissions (only sender can edit)
     if (delivery.senderId !== user.id) {
       return null;
     }
 
-    // Подготовить данные для обновления
+    // Prepare data for update
     const updateData: Partial<Delivery> = {};
 
     if (updateDto.title !== undefined) updateData.title = updateDto.title;
@@ -416,7 +416,7 @@ export class DeliveryService {
     if (updateDto.notes !== undefined) updateData.notes = updateDto.notes;
     if (updateDto.status !== undefined) updateData.status = updateDto.status;
 
-    // Обновить курьера, если указан
+    // Update picker if specified
     if (updateDto.pickerId !== undefined) {
       if (updateDto.pickerId) {
         const picker = (await this.userService.findOne(
@@ -430,7 +430,7 @@ export class DeliveryService {
       }
     }
 
-    // Обновить получателя, если указан
+    // Update recipient if specified
     if (updateDto.recipientId !== undefined) {
       if (updateDto.recipientId) {
         const recipient = (await this.userService.findOne(

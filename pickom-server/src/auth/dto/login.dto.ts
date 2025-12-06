@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class LoginDto {
   @ApiProperty({
-    description: 'JWT токен доступа от Firebase',
+    description: 'JWT access token from Firebase',
     example: 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...',
   })
   authorization: string;
@@ -16,50 +16,50 @@ export class LoginBodyDto {
 
 export class LoginResponseDto {
   @ApiProperty({
-    description: 'Уникальный идентификатор пользователя',
+    description: 'Unique user identifier',
     example: 'user_123456789',
   })
   uid: string;
 
   @ApiProperty({
-    description: 'Email пользователя',
+    description: 'User email',
     example: 'user@example.com',
   })
   email: string;
 
   @ApiProperty({
-    description: 'Имя пользователя',
+    description: 'User name',
     example: 'John Doe',
   })
   name: string;
 
   @ApiProperty({
-    description: 'URL аватара пользователя',
+    description: 'User avatar URL',
     example: 'https://example.com/avatar.jpg',
     required: false,
   })
   avatarUrl?: string;
 
   @ApiProperty({
-    description: 'Роль пользователя',
+    description: 'User role',
     example: 'picker',
   })
   role: string;
 
   @ApiProperty({
-    description: 'Дата последнего входа',
+    description: 'Last login date',
     example: '2024-01-01T00:00:00.000Z',
   })
   prevLoginAt: Date;
 
   @ApiProperty({
-    description: 'Дата создания аккаунта',
+    description: 'Account creation date',
     example: '2024-01-01T00:00:00.000Z',
   })
   createdAt: Date;
 
   @ApiProperty({
-    description: 'Подтвержден ли email',
+    description: 'Email verified',
     example: true,
   })
   emailVerified: boolean;

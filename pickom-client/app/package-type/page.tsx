@@ -244,7 +244,7 @@ export default function PackageTypePage(){
                         />
                     </Box>
 
-                    {/* Other Description - показать только если выбран OTHER */}
+                    {/* Other Description - show only if OTHER is selected */}
                     {selectedType === PackageTypeEnum.OTHER && (
                         <Box sx={{ mb: 3 }}>
                             <TextInput

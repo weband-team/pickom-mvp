@@ -10,15 +10,15 @@ import {
 import { Type } from 'class-transformer';
 import { LocationDto } from './create-delivery.dto';
 
-// DTO для обновления существующей доставки
-// Все поля необязательные - можно обновить только нужные поля
+// DTO for updating existing delivery
+// All fields optional - can update only needed fields
 export class UpdateDeliveryDto {
-  // Название посылки (необязательное поле)
+  // Package title (optional)
   @IsString()
   @IsOptional()
   title?: string;
 
-  // Описание посылки (необязательное поле)
+  // Package description (optional)
   @IsString()
   @IsOptional()
   description?: string;
@@ -44,33 +44,33 @@ export class UpdateDeliveryDto {
   @Min(0)
   price?: number;
 
-  // Размер посылки (необязательное поле)
+  // Package size (optional)
   @IsEnum(['small', 'medium', 'large'])
   @IsOptional()
   size?: 'small' | 'medium' | 'large';
 
-  // Вес посылки в кг (необязательное поле)
+  // Package weight in kg (optional)
   @IsNumber()
   @IsOptional()
   @Min(0)
   weight?: number;
 
-  // Дополнительные заметки (необязательное поле)
+  // Additional notes (optional)
   @IsString()
   @IsOptional()
   notes?: string;
 
-  // Статус доставки (необязательное поле)
+  // Delivery status (optional)
   @IsEnum(['pending', 'accepted', 'picked_up', 'delivered', 'cancelled'])
   @IsOptional()
   status?: 'pending' | 'accepted' | 'picked_up' | 'delivered' | 'cancelled';
 
-  // UID курьера из Firebase (необязательное поле)
+  // Picker UID from Firebase (optional)
   @IsString()
   @IsOptional()
   pickerId?: string;
 
-  // UID получателя из Firebase (необязательное поле)
+  // Recipient UID from Firebase (optional)
   @IsString()
   @IsOptional()
   recipientId?: string;

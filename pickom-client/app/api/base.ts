@@ -28,7 +28,7 @@ export const protectedFetch = axios.create({
   },
 });
 
-// Добавляем interceptor для автоматического добавления Firebase токена
+// Add interceptor for automatic Firebase token addition
 protectedFetch.interceptors.request.use(
   async (config) => {
     const user = auth.currentUser;

@@ -197,11 +197,11 @@ export class PaymentService {
             currency,
             product_data: {
               name: deliveryId
-                ? `Оплата доставки #${deliveryId}`
-                : 'Тестовый платеж',
+                ? `Payment for delivery #${deliveryId}`
+                : 'Test payment',
               description:
                 description ||
-                (deliveryId ? `Доставка #${deliveryId}` : undefined),
+                (deliveryId ? `Delivery #${deliveryId}` : undefined),
             },
             unit_amount: Math.round(amount * 100),
           },

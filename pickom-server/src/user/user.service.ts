@@ -13,7 +13,7 @@ import { UserDto } from './dto/user.dto';
 
 @Injectable()
 export class UserService {
-  // Временный массив для хранения пользователей
+  // Temporary array for storing users
 
   constructor(
     @InjectRepository(UserEntity)
@@ -115,7 +115,7 @@ export class UserService {
   }
 
   async findAll(): Promise<UserEntity[]> {
-    return this.userRepository.find(); // Возвращаем копию массива
+    return this.userRepository.find(); // Return copy of array
   }
 
   async findAllPickers(): Promise<UserEntity[]> {
@@ -131,10 +131,10 @@ export class UserService {
   }
 
   async create(userData: Partial<UserDto>): Promise<UserDto> {
-    // Генерируем uid если его нет
+    // Generate uid if not provided
     const uid = userData.uid || this.generateUid();
 
-    // Проверяем, что пользователь с таким uid не существует
+    // Check that user with this uid doesn't exist
     const existingUser = await this.userRepository.findOne({
       where: { uid },
     });
@@ -143,7 +143,7 @@ export class UserService {
       throw new ConflictException(`User with uid ${uid} already exists`);
     }
 
-    // Проверяем, что пользователь с таким email не существует
+    // Check that user with this email doesn't exist
     if (userData.email) {
       const email = userData.email;
       const existingUserByEmail = await this.userRepository.findOne({
@@ -180,21 +180,21 @@ export class UserService {
       throw new NotFoundException(`User with uid ${uid} not found`);
     }
 
-    // Запрещаем изменение email через обычное обновление профиля
-    // Email изменяется только через Firebase Authentication
+    // Prohibit email changes through regular profile update
+    // Email changes only through Firebase Authentication
     if (updateData.email && updateData.email !== existingUpdateUser.email) {
       throw new ConflictException(
         'Email cannot be changed through profile update. Please use account settings.',
       );
     }
 
-    // Обновляем только разрешенные поля в Firebase (без email)
+    // Update only allowed fields in Firebase (without email)
     const firebaseUpdateData: any = {};
     if (updateData.name) firebaseUpdateData.displayName = updateData.name;
     if (updateData.avatarUrl)
       firebaseUpdateData.photoURL = updateData.avatarUrl;
 
-    // Добавляем телефон только если он в формате E.164 (начинается с +)
+    // Add phone only if in E.164 format (starts with +)
     if (updateData.phone) {
       const phoneStr = String(updateData.phone).trim();
       if (phoneStr.startsWith('+') && phoneStr.length >= 10) {
@@ -207,13 +207,13 @@ export class UserService {
       }
     }
 
-    // Обновляем только если есть что обновлять
+    // Update only if there's something to update
     if (Object.keys(firebaseUpdateData).length > 0) {
       try {
         await admin.auth().updateUser(uid, firebaseUpdateData);
       } catch (error) {
         console.error('Error updating Firebase user:', error);
-        // Не бросаем ошибку, т.к. данные все равно сохраняются в БД
+        // Don't throw error, as data is still saved in DB
       }
     }
 
@@ -245,11 +245,11 @@ export class UserService {
     try {
       await admin.auth().deleteUser(uid);
     } catch (error) {
-      // Логируем ошибку, но не прерываем выполнение
+      // Log error but don't interrupt execution
       console.error('Error deleting user from Firebase:', error);
     }
 
-    // Удаляем пользователя из БД
+    // Delete user from DB
     return await this.userRepository.remove(existingDeleteUser);
   }
 
@@ -279,7 +279,7 @@ export class UserService {
     };
   }
 
-  // Вспомогательный метод для генерации uid
+  // Helper method to generate uid
   private generateUid(): string {
     return 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
   }

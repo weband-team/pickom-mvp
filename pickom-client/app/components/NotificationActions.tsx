@@ -4,8 +4,8 @@ import { useState } from 'react';
 import { useNotifications } from '../hooks/useNotifications';
 
 /**
- * Компонент для демонстрации создания различных типов уведомлений
- * Этот компонент можно использовать для тестирования интеграции
+ * Component for demonstrating creation of various notification types
+ * This component can be used for testing integration
  */
 export default function NotificationActions() {
   const {
@@ -18,15 +18,15 @@ export default function NotificationActions() {
 
   const [isLoading, setIsLoading] = useState(false);
 
-  // === ОБРАБОТЧИКИ СОЗДАНИЯ УВЕДОМЛЕНИЙ ===
+  // === NOTIFICATION CREATION HANDLERS ===
 
   const handleCreateOfferReceived = async () => {
     setIsLoading(true);
     try {
       await createOfferReceivedNotification({
-        senderId: 'X43wZP2lAdNA9GyhMxxRjd4rQPg1', // В реальном приложении берется из auth
+        senderId: 'X43wZP2lAdNA9GyhMxxRjd4rQPg1', // In real app taken from auth
         deliveryId: 1,
-        pickerName: 'Иван Петров',
+        pickerName: 'Ivan Petrov',
         price: 25,
       });
     } catch {
@@ -54,7 +54,7 @@ export default function NotificationActions() {
       await createIncomingDeliveryNotification({
         recipientId: 'X43wZP2lAdNA9GyhMxxRjd4rQPg1',
         deliveryId: 2,
-        senderName: 'Анна Коваль',
+        senderName: 'Anna Koval',
       });
     } catch {
     } finally {
@@ -69,7 +69,7 @@ export default function NotificationActions() {
         userId: 'X43wZP2lAdNA9GyhMxxRjd4rQPg1',
         deliveryId: 1,
         status: 'picked_up',
-        message: 'Курьер забрал вашу посылку и направляется к получателю.',
+        message: 'The picker has collected your package and is heading to the recipient.',
       });
     } catch {
     } finally {
@@ -82,8 +82,8 @@ export default function NotificationActions() {
     try {
       await createCustomNotification({
         user_id: 'X43wZP2lAdNA9GyhMxxRjd4rQPg1',
-        title: 'Специальное предложение',
-        message: 'У нас есть специальное предложение для вас!',
+        title: 'Special Offer',
+        message: 'We have a special offer for you!',
         type: 'new_delivery',
         read: false,
         related_delivery_id: 3,
@@ -97,60 +97,60 @@ export default function NotificationActions() {
   return (
     <div className="p-6 bg-white rounded-lg shadow-sm border">
       <h3 className="text-lg font-semibold text-gray-900 mb-4">
-        Действия с уведомлениями
+        Notification Actions
       </h3>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Кнопка для создания уведомления о новом предложении */}
+        {/* Button to create new offer notification */}
         <button
           onClick={handleCreateOfferReceived}
           disabled={isLoading}
           className="px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          💼 Создать &quot;Новое предложение&quot;
+          💼 Create &quot;New Offer&quot;
         </button>
 
-        {/* Кнопка для создания уведомления о принятии предложения */}
+        {/* Button to create offer accepted notification */}
         <button
           onClick={handleCreateOfferAccepted}
           disabled={isLoading}
           className="px-4 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          ✅ Создать &quot;Предложение принято&quot;
+          ✅ Create &quot;Offer Accepted&quot;
         </button>
 
-        {/* Кнопка для создания уведомления о входящей доставке */}
+        {/* Button to create incoming delivery notification */}
         <button
           onClick={handleCreateIncomingDelivery}
           disabled={isLoading}
           className="px-4 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          📥 Создать &quot;Входящая доставка&quot;
+          📥 Create &quot;Incoming Delivery&quot;
         </button>
 
-        {/* Кнопка для создания уведомления об обновлении статуса */}
+        {/* Button to create status update notification */}
         <button
           onClick={handleCreateStatusUpdate}
           disabled={isLoading}
           className="px-4 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          📦 Создать &quot;Обновление статуса&quot;
+          📦 Create &quot;Status Update&quot;
         </button>
 
-        {/* Кнопка для создания кастомного уведомления */}
+        {/* Button to create custom notification */}
         <button
           onClick={handleCreateCustom}
           disabled={isLoading}
           className="px-4 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed md:col-span-2 transition-colors"
         >
-          🔔 Создать кастомное уведомление
+          🔔 Create Custom Notification
         </button>
       </div>
 
       {isLoading && (
         <div className="mt-4 flex items-center justify-center">
           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
-          <span className="ml-2 text-gray-600">Создание уведомления...</span>
+          <span className="ml-2 text-gray-600">Creating notification...</span>
         </div>
       )}
     </div>

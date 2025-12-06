@@ -76,7 +76,7 @@ export class DeliveryController {
     );
   }
 
-  // Найти получателя по email
+  // Find receiver by email
   @Post('find-receiver')
   @UseGuards(FirebaseAuthGuard)
   async findReceiver(@Body() dto: FindReceiverDto) {
@@ -94,24 +94,24 @@ export class DeliveryController {
     };
   }
 
-  // Создать запрос на доставку (POST /delivery/requests)
-  // Выполяняет это пользователь с role === 'sender'
-  // Принимает в теле запроса CreateDeliveryDto со всеми данными о доставке
+  // Create delivery request (POST /delivery/requests)
+  // Executed by user with role === 'sender'
+  // Accepts CreateDeliveryDto with all delivery data in request body
   @Post('requests')
   @UseGuards(FirebaseAuthGuard)
   async createDeliveryRequest(
     @Req() req: ReqWithUser,
-    @Body() createDto: CreateDeliveryDto, // Принимаем весь объект DTO
+    @Body() createDto: CreateDeliveryDto, // Accept entire DTO object
   ) {
-    // Получаем UID пользователя из Firebase токена
+    // Get user UID from Firebase token
     const { uid } = req.user as { uid: string };
 
-    // Вызываем сервис с UID отправителя и данными о доставке
+    // Call service with sender UID and delivery data
     return await this.deliveryService.createDeliveryRequest(uid, createDto);
   }
 
-  // Получить список запросов (GET /delivery/requests)
-  // Выполяняет это пользователь с role === 'sender' или 'picker'
+  // Get list of requests (GET /delivery/requests)
+  // Executed by user with role === 'sender' or 'picker'
   @Get('requests')
   @UseGuards(FirebaseAuthGuard)
   async getAllDeliveryRequests(@Req() req: ReqWithUser) {
@@ -123,8 +123,8 @@ export class DeliveryController {
     return await this.deliveryService.getAllDeliveryRequests(uid, user.role);
   }
 
-  // Получить детали запроса (GET /delivery/requests/:id)
-  // Выполяняет это пользователь с role === 'sender' или 'picker'
+  // Get request details (GET /delivery/requests/:id)
+  // Executed by user with role === 'sender' or 'picker'
   @Get('requests/:id')
   @UseGuards(FirebaseAuthGuard)
   async getDeliveryRequestById(
@@ -143,9 +143,9 @@ export class DeliveryController {
     );
   }
 
-  // Обновить данные доставки (PATCH /delivery/requests/:id)
-  // Выполяняет это отправитель (sender) - владелец доставки
-  // Позволяет изменить любые поля: title, description, addresses, price и т.д.
+  // Update delivery data (PATCH /delivery/requests/:id)
+  // Executed by sender - delivery owner
+  // Allows changing any fields: title, description, addresses, price, etc.
   @Patch('requests/:id')
   @UseGuards(FirebaseAuthGuard)
   async updateDelivery(
@@ -161,8 +161,8 @@ export class DeliveryController {
     return await this.deliveryService.updateDelivery(id, uid, updateDto);
   }
 
-  // Курьер принимает/отклоняет запрос (PUT /delivery/requests/:id/status)
-  // Выполяняет это пользователь с role === 'picker'
+  // Picker accepts/rejects request (PUT /delivery/requests/:id/status)
+  // Executed by user with role === 'picker'
   @Put('requests/:id/status')
   @UseGuards(FirebaseAuthGuard)
   async updateDeliveryRequestStatus(

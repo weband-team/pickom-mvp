@@ -15,7 +15,7 @@ export interface UnreadCountResponse {
   count: number;
 }
 
-// Типы для создания уведомлений
+// Types for creating notifications
 export interface CreateNotificationRequest {
   user_id: string;
   title: string;
@@ -51,56 +51,56 @@ export interface StatusUpdateRequest {
 }
 
 export const notificationsAPI = {
-  // Получить уведомления пользователя
+  // Get user notifications
   getUserNotifications: async (): Promise<Notification[]> => {
     const response = await api.get('/notifications');
     return response.data;
   },
 
-  // Получить количество непрочитанных уведомлений
+  // Get unread notification count
   getUnreadCount: async (): Promise<number> => {
     const response = await api.get<UnreadCountResponse>('/notifications/unread-count');
     return response.data.count;
   },
 
-  // Отметить уведомление как прочитанное
+  // Mark notification as read
   markAsRead: async (notificationId: number): Promise<Notification> => {
     const response = await api.patch(`/notifications/${notificationId}/read`);
     return response.data;
   },
 
-  // Отметить все уведомления как прочитанные
+  // Mark all notifications as read
   markAllAsRead: async (): Promise<void> => {
     await api.patch('/notifications/mark-all-read');
   },
 
-  // === МЕТОДЫ ДЛЯ СОЗДАНИЯ УВЕДОМЛЕНИЙ ===
+  // === METHODS FOR CREATING NOTIFICATIONS ===
 
-  // Создать уведомление о новом предложении
+  // Create notification about new offer
   notifyOfferReceived: async (data: OfferReceivedRequest): Promise<Notification> => {
     const response = await api.post('/notifications/offer-received', data);
     return response.data;
   },
 
-  // Создать уведомление о принятии предложения
+  // Create notification about offer acceptance
   notifyOfferAccepted: async (data: OfferAcceptedRequest): Promise<Notification> => {
     const response = await api.post('/notifications/offer-accepted', data);
     return response.data;
   },
 
-  // Создать уведомление о входящей доставке
+  // Create notification about incoming delivery
   notifyIncomingDelivery: async (data: IncomingDeliveryRequest): Promise<Notification> => {
     const response = await api.post('/notifications/incoming-delivery', data);
     return response.data;
   },
 
-  // Создать уведомление об обновлении статуса
+  // Create notification about status update
   notifyStatusUpdate: async (data: StatusUpdateRequest): Promise<Notification> => {
     const response = await api.post('/notifications/status-update', data);
     return response.data;
   },
 
-  // Общий метод для создания произвольного уведомления
+  // General method for creating custom notification
   createNotification: async (data: CreateNotificationRequest): Promise<Notification> => {
     const response = await api.post('/notifications/create', data);
     return response.data;

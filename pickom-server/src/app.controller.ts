@@ -6,12 +6,12 @@ import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 export class AppController {
   @Get()
   @ApiOperation({
-    summary: 'Информация о API',
-    description: 'Возвращает информацию о доступных эндпоинтах и документации',
+    summary: 'API Information',
+    description: 'Returns information about available endpoints and documentation',
   })
   @ApiResponse({
     status: 200,
-    description: 'Информация о API',
+    description: 'API Information',
     schema: {
       type: 'object',
       properties: {
