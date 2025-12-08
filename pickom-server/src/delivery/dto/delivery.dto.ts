@@ -21,7 +21,7 @@ export interface DeliveryDto {
     city?: string;
     placeId?: string;
   } | null;
-  deliveryType?: 'within-city' | 'inter-city';
+  deliveryType?: 'within-city' | 'inter-city' | 'international';
   price: number;
   size: 'small' | 'medium' | 'large';
   weight?: number | null;

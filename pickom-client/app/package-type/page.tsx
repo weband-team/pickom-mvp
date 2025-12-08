@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Box, Stack, Typography } from '@mui/material';
+import { Box, Stack, Typography, IconButton, Alert, Card, CardMedia, Tabs, Tab, TextField, InputAdornment } from '@mui/material';
+import { CloudUpload, Delete, Link as LinkIcon } from '@mui/icons-material';
 import {
     Button,
     TextInput,
@@ -25,6 +26,95 @@ export default function PackageTypePage(){
     const [recipientPhone, setRecipientPhone] = useState('');
     const [selectedType, setSelectedType] = useState<PackageTypeEnum | null>(null);
     const [isSearching, setIsSearching] = useState(false);
+    const [packageImage, setPackageImage] = useState<string>('');
+    const [imageError, setImageError] = useState<string>('');
+    const [imageUploadMethod, setImageUploadMethod] = useState<'file' | 'url'>('file');
+    const [imageUrl, setImageUrl] = useState<string>('');
+
+    // Handle image upload
+    const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        // Check file type
+        if (!file.type.startsWith('image/')) {
+            setImageError('Please select an image file');
+            return;
+        }
+
+        // Check file size (10MB = 10 * 1024 * 1024 bytes)
+        const maxSize = 10 * 1024 * 1024;
+        if (file.size > maxSize) {
+            setImageError('Image size must be less than 10MB');
+            return;
+        }
+
+        // Convert to base64
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const base64 = e.target?.result as string;
+            setPackageImage(base64);
+            setImageError('');
+        };
+        reader.onerror = () => {
+            setImageError('Failed to read image');
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const removeImage = () => {
+        setPackageImage('');
+        setImageError('');
+        setImageUrl('');
+    };
+
+    // Handle image URL upload
+    const handleImageUrlUpload = async () => {
+        if (!imageUrl.trim()) {
+            setImageError('Please enter an image URL');
+            return;
+        }
+
+        setImageError('');
+
+        try {
+            // Fetch the image
+            const response = await fetch(imageUrl);
+            if (!response.ok) {
+                throw new Error('Failed to load image');
+            }
+
+            // Get the blob
+            const blob = await response.blob();
+
+            // Check file size (10MB)
+            const maxSize = 10 * 1024 * 1024;
+            if (blob.size > maxSize) {
+                setImageError('Image size must be less than 10MB');
+                return;
+            }
+
+            // Check if it's an image
+            if (!blob.type.startsWith('image/')) {
+                setImageError('URL must point to an image file');
+                return;
+            }
+
+            // Convert to base64
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const base64 = e.target?.result as string;
+                setPackageImage(base64);
+                setImageError('');
+            };
+            reader.onerror = () => {
+                setImageError('Failed to process image');
+            };
+            reader.readAsDataURL(blob);
+        } catch (error) {
+            setImageError('Failed to load image from URL. Make sure the URL is valid and accessible.');
+        }
+    };
 
     // Map package type to size
     const getSizeFromType = (): 'small' | 'medium' | 'large' => {
@@ -244,6 +334,136 @@ export default function PackageTypePage(){
                         />
                     </Box>
 
+                    {/* Package Image Upload Section */}
+                    <Box sx={{ mb: 3 }}>
+                        <Typography variant="h6" sx={{ mb: 2 }}>
+                            Package Photo (Optional)
+                        </Typography>
+
+                        {!packageImage ? (
+                            <Box>
+                                {/* Tabs for upload method */}
+                                <Tabs
+                                    value={imageUploadMethod}
+                                    onChange={(_, newValue) => {
+                                        setImageUploadMethod(newValue);
+                                        setImageError('');
+                                    }}
+                                    sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}
+                                >
+                                    <Tab label="Upload File" value="file" />
+                                    <Tab label="From URL" value="url" />
+                                </Tabs>
+
+                                {imageUploadMethod === 'file' ? (
+                                    <Box>
+                                        <input
+                                            accept="image/*"
+                                            style={{ display: 'none' }}
+                                            id="package-image-upload"
+                                            type="file"
+                                            onChange={handleImageUpload}
+                                        />
+                                        <label htmlFor="package-image-upload">
+                                            <Box
+                                                sx={{
+                                                    border: '2px dashed',
+                                                    borderColor: imageError ? 'error.main' : 'divider',
+                                                    borderRadius: 2,
+                                                    p: 3,
+                                                    textAlign: 'center',
+                                                    cursor: 'pointer',
+                                                    transition: 'all 0.2s',
+                                                    '&:hover': {
+                                                        borderColor: 'primary.main',
+                                                        backgroundColor: 'action.hover'
+                                                    }
+                                                }}
+                                            >
+                                                <CloudUpload sx={{ fontSize: 48, color: 'text.secondary', mb: 1 }} />
+                                                <Typography variant="body1" color="text.secondary">
+                                                    Click to upload package photo
+                                                </Typography>
+                                                <Typography variant="caption" color="text.secondary">
+                                                    Max size: 10MB
+                                                </Typography>
+                                            </Box>
+                                        </label>
+                                    </Box>
+                                ) : (
+                                    <Box>
+                                        <Stack direction="row" spacing={1}>
+                                            <TextField
+                                                fullWidth
+                                                placeholder="https://example.com/image.jpg"
+                                                value={imageUrl}
+                                                onChange={(e) => setImageUrl(e.target.value)}
+                                                error={!!imageError}
+                                                size="small"
+                                                InputProps={{
+                                                    startAdornment: (
+                                                        <InputAdornment position="start">
+                                                            <LinkIcon />
+                                                        </InputAdornment>
+                                                    ),
+                                                }}
+                                            />
+                                            <Button
+                                                onClick={handleImageUrlUpload}
+                                                disabled={!imageUrl.trim()}
+                                                sx={{ whiteSpace: 'nowrap' }}
+                                            >
+                                                Load Image
+                                            </Button>
+                                        </Stack>
+                                        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                                            Enter image URL (Max size: 10MB)
+                                        </Typography>
+                                    </Box>
+                                )}
+
+                                {imageError && (
+                                    <Alert severity="error" sx={{ mt: 2 }}>
+                                        {imageError}
+                                    </Alert>
+                                )}
+                            </Box>
+                        ) : (
+                            <Box>
+                                <Card sx={{ position: 'relative' }}>
+                                    <CardMedia
+                                        component="img"
+                                        image={packageImage}
+                                        alt="Package preview"
+                                        sx={{
+                                            maxHeight: 300,
+                                            objectFit: 'contain',
+                                            backgroundColor: 'grey.100'
+                                        }}
+                                    />
+                                    <IconButton
+                                        onClick={removeImage}
+                                        sx={{
+                                            position: 'absolute',
+                                            top: 8,
+                                            right: 8,
+                                            backgroundColor: 'background.paper',
+                                            '&:hover': {
+                                                backgroundColor: 'error.light',
+                                                color: 'error.contrastText'
+                                            }
+                                        }}
+                                    >
+                                        <Delete />
+                                    </IconButton>
+                                </Card>
+                                <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                                    Image uploaded successfully
+                                </Typography>
+                            </Box>
+                        )}
+                    </Box>
+
                     {/* Other Description - show only if OTHER is selected */}
                     {selectedType === PackageTypeEnum.OTHER && (
                         <Box sx={{ mb: 3 }}>
@@ -315,6 +535,7 @@ export default function PackageTypePage(){
                                         notes: notes || undefined,
                                         recipientEmail: recipientId || undefined,
                                         recipientPhone: recipientPhone || undefined,
+                                        packageImageUrl: packageImage || undefined,
                                     });
 
                                     const deliveryId = response.data.id;

@@ -4,7 +4,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as cookieParser from 'cookie-parser';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
-import { json } from 'express';
+import { json, urlencoded } from 'express';
 import 'dotenv/config';
 
 async function bootstrap() {
@@ -17,6 +17,10 @@ async function bootstrap() {
 
   // Setup cookie-parser
   app.use(cookieParser());
+
+  // Increase body size limit for base64 images (10MB)
+  app.use(json({ limit: '10mb' }));
+  app.use(urlencoded({ limit: '10mb', extended: true }));
 
   // Request logging middleware
   app.use((req, res, next) => {
