@@ -149,12 +149,17 @@ export default function DualLocationPicker({
         onRouteCalculated(routeData);
       }
     } catch {
-      setError('Could not calculate route. Showing straight line.');
-      // Fallback to straight line
-      setRouteCoordinates([
-        [from.lat, from.lng],
-        [to.lat, to.lng]
-      ]);
+      // For international deliveries, don't show line if OSRM fails
+      if (deliveryType === 'international') {
+        setRouteCoordinates([]);
+      } else {
+        setError('Could not calculate route. Showing straight line.');
+        // Fallback to straight line for within-city and inter-city
+        setRouteCoordinates([
+          [from.lat, from.lng],
+          [to.lat, to.lng]
+        ]);
+      }
       setRouteInfo(null);
     } finally {
       setCalculatingRoute(false);
@@ -213,8 +218,8 @@ export default function DualLocationPicker({
         try {
           const { address, city, country } = await getAddressFromCoordinates(lat, lng);
 
-          // Check restriction based on type
-          if (restrictionType && restrictionValue) {
+          // Check restriction based on type (skip for international)
+          if (restrictionType && restrictionValue && deliveryType !== 'international') {
             if (restrictionType === 'city') {
               if (!city) {
                 setError('Could not determine city. Please select a more specific location.');

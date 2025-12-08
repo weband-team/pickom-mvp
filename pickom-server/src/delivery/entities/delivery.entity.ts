@@ -64,11 +64,11 @@ export class Delivery {
 
   @Column({
     type: 'enum',
-    enum: ['within-city', 'inter-city'],
+    enum: ['within-city', 'inter-city', 'international'],
     default: 'within-city',
     name: 'delivery_type',
   })
-  deliveryType: 'within-city' | 'inter-city';
+  deliveryType: 'within-city' | 'inter-city' | 'international';
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   price: number;

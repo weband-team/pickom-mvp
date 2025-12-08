@@ -294,14 +294,8 @@ export default function PackageTypePage(){
                                         return;
                                     }
 
-                                    // Determine delivery type based on cities
-                                    let deliveryType: 'within-city' | 'inter-city' | undefined = 'within-city';
-                                    const fromCity = deliveryMethodData.fromLocation.city;
-                                    const toCity = deliveryMethodData.toLocation.city;
-
-                                    if (fromCity && toCity && fromCity !== toCity) {
-                                        deliveryType = 'inter-city';
-                                    }
+                                    // Use the selected delivery method from deliveryData
+                                    let deliveryType: 'within-city' | 'inter-city' | 'international' = deliveryMethodData.selectedMethod || 'within-city';
 
                                     // Create delivery request
                                     const { createDeliveryRequest } = await import('../api/delivery');
@@ -331,6 +325,7 @@ export default function PackageTypePage(){
                                     const completeDeliveryData = {
                                         ...deliveryMethodData,
                                         deliveryId,
+                                        deliveryType,
                                         packageType: selectedType,
                                         title,
                                         description: description || undefined,

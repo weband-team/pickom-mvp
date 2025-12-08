@@ -51,9 +51,9 @@ export class CreateDeliveryDto {
   @IsNotEmpty()
   toLocation: LocationDto;
 
-  @IsEnum(['within-city', 'inter-city'])
+  @IsEnum(['within-city', 'inter-city', 'international'])
   @IsOptional()
-  deliveryType?: 'within-city' | 'inter-city';
+  deliveryType?: 'within-city' | 'inter-city' | 'international';
 
   @IsNumber()
   @Min(0)
