@@ -10,6 +10,7 @@ import { User } from 'src/user/types/user.type';
 import { User as UserEntity } from 'src/user/entities/user.entity';
 import { NotificationService } from 'src/notification/notification.service';
 import { ChatService } from 'src/chat/chat.service';
+import { Payment } from 'src/payment/entities/payment.entity';
 import {
   calculateHaversineDistance,
   getRadiusByDeliveryType,
@@ -21,6 +22,8 @@ export class DeliveryService {
   constructor(
     @InjectRepository(Delivery)
     private readonly deliveryRepository: Repository<Delivery>,
+    @InjectRepository(Payment)
+    private readonly paymentRepository: Repository<Payment>,
     private readonly userService: UserService,
     private readonly notificationService: NotificationService,
     @Inject(forwardRef(() => ChatService))
@@ -286,12 +289,8 @@ export class DeliveryService {
     await this.deliveryRepository.save(delivery);
 
     if (status === 'accepted') {
-      if (delivery.sender) {
-        await this.userService.subtractFromBalance(
-          delivery.sender.uid,
-          Number(delivery.price),
-        );
-      }
+      // Balance deduction is handled by offer acceptance flow via /payment/pay-with-balance
+      // Do NOT deduct balance here to avoid double deduction
 
       // Create chat between sender and picker
       console.log('[DeliveryService] Creating chat between picker and sender', {
@@ -326,10 +325,40 @@ export class DeliveryService {
     }
 
     if (status === 'delivered' && delivery.picker) {
-      await this.userService.addToBalance(
-        delivery.picker.uid,
-        Number(delivery.price),
-      );
+      // Find the pending payment for this delivery and complete it
+      const pendingPayment = await this.paymentRepository.findOne({
+        where: {
+          deliveryId: delivery.id,
+          status: 'pending',
+        },
+        order: { createdAt: 'DESC' },
+      });
+
+      if (pendingPayment) {
+        // Transfer funds to picker in a transaction
+        await this.paymentRepository.manager.transaction(
+          async (transactionalEntityManager) => {
+            // Increment picker's balance
+            await transactionalEntityManager.increment(
+              UserEntity,
+              { id: delivery.picker.id },
+              'balance',
+              Number(delivery.price),
+            );
+
+            // Mark payment as completed
+            pendingPayment.status = 'completed';
+            await transactionalEntityManager.save(Payment, pendingPayment);
+          },
+        );
+        console.log(
+          `[DeliveryService] Delivery ${delivery.id} completed, transferred $${delivery.price} to picker ${delivery.picker.uid}`,
+        );
+      } else {
+        console.warn(
+          `[DeliveryService] No pending payment found for delivery ${delivery.id}`,
+        );
+      }
     }
     const statusMessages: Record<string, string> = {
       picked_up: 'The picker has collected your package and is heading to the recipient.',

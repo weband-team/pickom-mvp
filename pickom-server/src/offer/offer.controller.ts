@@ -85,7 +85,12 @@ export class OfferController {
       throw new ForbiddenException('Only senders can update offer status');
     }
 
-    return await this.offerService.updateOfferStatus(id, updateDto.status);
+    return await this.offerService.updateOfferStatus(
+      id,
+      updateDto.status,
+      updateDto.paymentMethod,
+      updateDto.paymentIntentId,
+    );
   }
 
   @Get('my')

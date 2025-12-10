@@ -68,7 +68,7 @@ export class User {
 
   @ApiProperty()
   @Column({ type: 'text', nullable: true, name: 'stripe_customer_id' })
-  stripeCustomerId: string;
+  stripeCustomerId: string | null;
 
   @ApiProperty()
   @Column({ type: 'boolean', default: true })

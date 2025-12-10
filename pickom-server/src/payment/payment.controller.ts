@@ -6,7 +6,6 @@ import {
   Param,
   Req,
   Headers,
-  RawBodyRequest,
   HttpCode,
   Delete,
   Put,
@@ -69,14 +68,16 @@ export class PaymentController {
   @HttpCode(200)
   async handleWebhook(
     @Headers('stripe-signature') signature: string,
-    @Req() req: RawBodyRequest<Request>,
+    @Req() req: Request,
   ) {
-    if (!req.rawBody) {
-      throw new Error(
-        'Raw body is required for webhook signature verification',
-      );
+    // When using express.raw(), the body is a Buffer
+    const rawBody = Buffer.isBuffer(req.body) ? req.body : Buffer.from(JSON.stringify(req.body));
+
+    if (!signature) {
+      throw new Error('Stripe signature header is missing');
     }
-    return this.paymentService.handleWebhook(signature, req.rawBody);
+
+    return this.paymentService.handleWebhook(signature, rawBody);
   }
 
   @Get('user')

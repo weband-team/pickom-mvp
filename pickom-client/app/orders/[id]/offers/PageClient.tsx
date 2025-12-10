@@ -220,11 +220,38 @@ export default function DeliveryOffersPage({ params }: { params: Promise<{ id: s
         return;
       }
 
-      // Update offer status
-      await updateOfferStatus(confirmDialog.offerId, { status: newStatus });
-
       if (confirmDialog.type === 'accept') {
-        // 1. Assign picker to delivery and update status to 'accepted'
+        // Pay with balance first
+        const API_URL = process.env.NEXT_PUBLIC_SERVER || 'http://localhost:4242';
+        try {
+          await fetch(`${API_URL}/payment/pay-with-balance`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+              amount: Number(selectedOffer.price),
+              deliveryId: deliveryId,
+              description: `Payment for delivery #${deliveryId}`,
+              toUserId: selectedOffer.pickerId,
+            }),
+          });
+        } catch (err) {
+          console.error('Balance payment failed:', err);
+          const error = err as { message?: string };
+          alert(`Payment failed: ${error.message || 'Unknown error'}`);
+          setProcessing(false);
+          return;
+        }
+
+        // Update offer status with balance payment method
+        await updateOfferStatus(confirmDialog.offerId, {
+          status: newStatus,
+          paymentMethod: 'balance'
+        });
+
+        // Assign picker to delivery and update status to 'accepted'
         await updateDeliveryRequest(deliveryId, {
           pickerId: selectedOffer.pickerId,
           status: 'accepted'
@@ -244,6 +271,9 @@ export default function DeliveryOffersPage({ params }: { params: Promise<{ id: s
         alert('Offer accepted! The picker has been assigned and other offers have been rejected.');
         router.push(`/orders/${deliveryId}`);
       } else {
+        // Update offer status for rejection
+        await updateOfferStatus(confirmDialog.offerId, { status: newStatus });
+
         // Update local state for rejected offer
         setOffers(prev =>
           prev.map(offer =>

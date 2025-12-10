@@ -5,6 +5,7 @@ import * as cookieParser from 'cookie-parser';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 import { json, urlencoded } from 'express';
+import * as express from 'express';
 import 'dotenv/config';
 
 async function bootstrap() {
@@ -18,9 +19,26 @@ async function bootstrap() {
   // Setup cookie-parser
   app.use(cookieParser());
 
+  // IMPORTANT: Stripe webhook needs raw body for signature verification
+  // Apply raw body parser ONLY for webhook route
+  app.use('/payment/webhook', express.raw({ type: 'application/json' }));
+
   // Increase body size limit for base64 images (10MB)
-  app.use(json({ limit: '10mb' }));
-  app.use(urlencoded({ limit: '10mb', extended: true }));
+  // Apply JSON parser for all OTHER routes
+  app.use((req, res, next) => {
+    if (req.originalUrl === '/payment/webhook') {
+      next(); // Skip JSON parsing for webhook
+    } else {
+      json({ limit: '10mb' })(req, res, next);
+    }
+  });
+  app.use((req, res, next) => {
+    if (req.originalUrl === '/payment/webhook') {
+      next(); // Skip urlencoded for webhook
+    } else {
+      urlencoded({ limit: '10mb', extended: true })(req, res, next);
+    }
+  });
 
   // Request logging middleware
   app.use((req, res, next) => {

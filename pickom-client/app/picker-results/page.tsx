@@ -429,7 +429,6 @@ export default function PickerResultsPage() {
 
           {/* Results */}
           <Box sx={{ flex: 1, overflow: 'auto' }}>
-            {console.log('Render check:', { viewMode, loading, displayedPickersLength: displayedPickers.length, filteredPickersLength: filteredPickers.length })}
             {loading && filteredPickers.length === 0 ? (
               <Box sx={{ py: 8 }}>
                 <LoadingIndicator

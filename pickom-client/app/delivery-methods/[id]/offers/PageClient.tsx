@@ -264,12 +264,13 @@ export default function DeliveryOffersPage({ params }: { params: Promise<{ id: s
 
       if (confirmDialog.type === 'accept') {
         const API_URL = process.env.NEXT_PUBLIC_SERVER || 'http://localhost:4242';
+        let paymentIntentId: string | undefined;
 
         // Process payment based on selected method
         if (selectedPaymentMethod.type === 'card' && selectedPaymentMethod.cardId) {
           try {
             // Create payment intent with saved card
-            await axios.post(
+            const paymentResponse = await axios.post(
               `${API_URL}/payment/create-intent`,
               {
                 amount: Number(selectedOffer.price),
@@ -280,6 +281,9 @@ export default function DeliveryOffersPage({ params }: { params: Promise<{ id: s
               },
               { withCredentials: true }
             );
+
+            // Get payment intent ID from response
+            paymentIntentId = paymentResponse.data.paymentIntentId;
           } catch (err) {
             console.error('Payment failed:', err);
             const error = err as { response?: { data?: { message?: string } }; message?: string };
@@ -311,8 +315,12 @@ export default function DeliveryOffersPage({ params }: { params: Promise<{ id: s
           }
         }
 
-        // Update offer status
-        await updateOfferStatus(confirmDialog.offerId, { status: newStatus });
+        // Update offer status with payment method info
+        await updateOfferStatus(confirmDialog.offerId, {
+          status: newStatus,
+          paymentMethod: selectedPaymentMethod.type || undefined,
+          paymentIntentId: paymentIntentId,
+        });
 
         // Assign picker to delivery and update status to 'accepted'
         await updateDeliveryRequest(deliveryId, {

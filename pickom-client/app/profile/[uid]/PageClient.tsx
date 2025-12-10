@@ -177,7 +177,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ uid: str
                   {user.createdAt && (
                     <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                       <Typography variant="body2" color="text.secondary">Member since:</Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }} suppressHydrationWarning>
                         {new Date(user.createdAt).toLocaleDateString()}
                       </Typography>
                     </Box>

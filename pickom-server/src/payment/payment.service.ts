@@ -590,8 +590,8 @@ export class PaymentService {
         },
       ],
       mode: 'payment',
-      success_url: `${this.configService.get<string>('CLIENT_URI')}/test-balance-topup/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${this.configService.get<string>('CLIENT_URI')}/test-balance-topup`,
+      success_url: `${this.configService.get<string>('CLIENT_URI')}/profile`,
+      cancel_url: `${this.configService.get<string>('CLIENT_URI')}/profile`,
       metadata: {
         userId: user.id.toString(),
         type: 'balance_topup',
@@ -653,9 +653,22 @@ export class PaymentService {
           throw new NotFoundException(`User with id ${userId} not found`);
         }
 
-        // If user already has a Stripe customer ID, return it
+        // If user already has a Stripe customer ID, verify it exists in Stripe
         if (user.stripeCustomerId) {
-          return user.stripeCustomerId;
+          try {
+            const customer = await this.stripe.customers.retrieve(user.stripeCustomerId);
+            // If customer was deleted in Stripe, create a new one
+            if (customer.deleted) {
+              console.log(`Stripe customer ${user.stripeCustomerId} was deleted, creating new one`);
+              user.stripeCustomerId = null;
+            } else {
+              return user.stripeCustomerId;
+            }
+          } catch (error: any) {
+            // Customer doesn't exist in Stripe, create a new one
+            console.log(`Stripe customer ${user.stripeCustomerId} not found in Stripe, creating new one`);
+            user.stripeCustomerId = null;
+          }
         }
 
         // Create new Stripe customer (outside of transaction, but row is locked)
@@ -1048,15 +1061,9 @@ export class PaymentService {
           amount,
         );
 
-        // If toUserId is provided, increment their balance immediately
-        if (toUserId) {
-          await transactionalEntityManager.increment(
-            User,
-            { id: toUserId },
-            'balance',
-            amount,
-          );
-        }
+        // DO NOT increment picker's balance here!
+        // The balance will be transferred to picker only when delivery is completed
+        // This holds the funds in escrow until delivery completion
 
         // Create payment record
         const payment = this.paymentRepository.create({
@@ -1065,7 +1072,7 @@ export class PaymentService {
           deliveryId,
           amount,
           currency: 'usd',
-          status: 'completed',
+          status: 'pending', // Changed from 'completed' to 'pending' - will be completed when delivery finishes
           paymentMethod: 'balance',
           description:
             description || `Payment for delivery #${deliveryId} using balance`,

@@ -73,6 +73,8 @@ export class OfferService {
   async updateOfferStatus(
     offerId: number,
     status: 'accepted' | 'rejected',
+    paymentMethod?: 'balance' | 'card',
+    paymentIntentId?: string,
   ): Promise<Offer> {
     const offer = await this.offerRepository.findOne({
       where: { id: offerId },
@@ -88,31 +90,49 @@ export class OfferService {
       throw new NotFoundException('Offer not found');
     }
 
-    // If offer is being accepted, deduct balance from sender and create payment record
+    // If offer is being accepted, handle payment based on payment method
     if (status === 'accepted' && offer.delivery?.sender && offer.picker) {
-      // Deduct balance from sender
-      await this.userService.deductBalance(
-        offer.delivery.sender.uid,
-        offer.price,
-      );
+      // Payment is already processed by the client before calling this method:
+      // - For 'balance': /payment/pay-with-balance has already deducted balance and created payment record
+      // - For 'card': /payment/create-intent has already charged the card and created payment record
+      // We just need to link the payment record to this offer
+      if (paymentMethod === 'balance') {
+        // Find the payment record created by /payment/pay-with-balance
+        const existingPayment = await this.paymentRepository.findOne({
+          where: {
+            deliveryId: offer.deliveryId,
+            paymentMethod: 'balance',
+            status: 'pending' // Changed from 'completed' to 'pending'
+          },
+          order: { createdAt: 'DESC' }
+        });
 
-      // Create payment record for audit trail
-      const payment = this.paymentRepository.create({
-        fromUserId: offer.delivery.sender.id,
-        toUserId: offer.picker.id,
-        deliveryId: offer.deliveryId,
-        amount: offer.price,
-        currency: 'usd',
-        status: 'pending', // Will be 'completed' when delivery is finished
-        paymentMethod: 'balance',
-        description: `Payment for delivery #${offer.deliveryId} - Offer #${offerId}`,
-        metadata: {
-          offerId: offerId.toString(),
-          type: 'delivery_payment',
-        },
-      });
+        if (existingPayment) {
+          // Link payment to this offer
+          existingPayment.metadata = {
+            ...existingPayment.metadata,
+            offerId: offerId.toString(),
+            type: 'delivery_payment',
+          };
+          // Keep status as 'pending' - will be completed when delivery finishes
+          await this.paymentRepository.save(existingPayment);
+        }
+      } else if (paymentMethod === 'card' && paymentIntentId) {
+        // For card payment, the payment record was already created by /payment/create-intent
+        // Update it with additional metadata if needed
+        const existingPayment = await this.paymentRepository.findOne({
+          where: { stripePaymentIntentId: paymentIntentId },
+        });
 
-      await this.paymentRepository.save(payment);
+        if (existingPayment) {
+          existingPayment.metadata = {
+            ...existingPayment.metadata,
+            offerId: offerId.toString(),
+            type: 'delivery_payment',
+          };
+          await this.paymentRepository.save(existingPayment);
+        }
+      }
 
       // Update delivery: set picker and status to 'accepted'
       console.log(

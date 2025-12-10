@@ -19,6 +19,8 @@ export interface CreateOfferRequest {
 
 export interface UpdateOfferStatusRequest {
   status: 'accepted' | 'rejected';
+  paymentMethod?: 'balance' | 'card';
+  paymentIntentId?: string;
 }
 
 export const createOffer = async (data: CreateOfferRequest): Promise<AxiosResponse<Offer>> => {
