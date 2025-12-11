@@ -28,6 +28,7 @@ export interface DeliveryDto {
   status: 'pending' | 'accepted' | 'picked_up' | 'delivered' | 'cancelled';
   notes?: string | null;
   deliveriesUrl?: string | null;
+  packageImageUrl?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }

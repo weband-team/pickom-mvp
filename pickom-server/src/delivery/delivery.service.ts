@@ -721,6 +721,7 @@ export class DeliveryService {
       status: delivery.status,
       notes: delivery.notes,
       deliveriesUrl: delivery.deliveriesUrl,
+      packageImageUrl: delivery.packageImageUrl,
       createdAt: delivery.createdAt,
       updatedAt: delivery.updatedAt,
     };
@@ -750,6 +751,7 @@ export class DeliveryService {
       status: delivery.status,
       notes: delivery.notes,
       deliveriesUrl: delivery.deliveriesUrl,
+      packageImageUrl: delivery.packageImageUrl,
       createdAt: delivery.createdAt,
       updatedAt: delivery.updatedAt,
     };

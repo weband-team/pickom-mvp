@@ -49,6 +49,7 @@ export interface DeliveryRequest {
   size: 'small' | 'medium' | 'large';
   weight?: number;
   notes?: string;
+  packageImageUrl?: string;
   status: 'pending' | 'accepted' | 'picked_up' | 'delivered' | 'cancelled';
   createdAt: string;
   updatedAt: string;

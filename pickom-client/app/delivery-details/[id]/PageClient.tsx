@@ -82,6 +82,7 @@ interface DeliveryRequest {
   deliveryType?: 'within-city' | 'inter-city';
   packageType?: string;
   packageDescription?: string;
+  packageImageUrl?: string;
   status: 'pending' | 'accepted' | 'picked_up' | 'delivered' | 'cancelled';
   createdAt: string;
 }
@@ -146,7 +147,32 @@ export default function DeliveryDetailsPage({ params }: { params: Promise<{ id: 
         // Get delivery
         const response = await getDeliveryRequestById(Number(resolvedParams.id));
         const deliveryData = response.data;
-        setDelivery(deliveryData as any);
+
+        // Map API data to local interface
+        const mappedDelivery: DeliveryRequest = {
+          id: deliveryData.id,
+          senderId: deliveryData.senderId || '',
+          pickerId: deliveryData.pickerId,
+          recipientId: deliveryData.recipientId ? Number(deliveryData.recipientId) : undefined,
+          recipientPhone: deliveryData.recipientPhone,
+          title: deliveryData.title,
+          description: deliveryData.description,
+          fromAddress: deliveryData.fromLocation?.address || '',
+          toAddress: deliveryData.toLocation?.address || '',
+          fromLocation: deliveryData.fromLocation ? { lat: deliveryData.fromLocation.lat, lng: deliveryData.fromLocation.lng } : undefined,
+          toLocation: deliveryData.toLocation ? { lat: deliveryData.toLocation.lat, lng: deliveryData.toLocation.lng } : undefined,
+          price: deliveryData.price,
+          size: deliveryData.size,
+          weight: deliveryData.weight,
+          notes: deliveryData.notes,
+          deliveryType: deliveryData.deliveryType,
+          packageDescription: deliveryData.description,
+          packageImageUrl: deliveryData.packageImageUrl,
+          status: deliveryData.status,
+          createdAt: deliveryData.createdAt,
+        };
+
+        setDelivery(mappedDelivery);
 
         // Fetch sender data
         try {
@@ -573,6 +599,27 @@ export default function DeliveryDetailsPage({ params }: { params: Promise<{ id: 
                           {delivery.packageDescription}
                         </Typography>
                       </Box>
+                    </Box>
+                  )}
+
+                  {delivery.packageImageUrl && (
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                        Package Image
+                      </Typography>
+                      <Box
+                        component="img"
+                        src={delivery.packageImageUrl}
+                        alt="Package"
+                        sx={{
+                          width: '100%',
+                          maxHeight: 300,
+                          objectFit: 'contain',
+                          borderRadius: 1,
+                          border: 1,
+                          borderColor: 'divider',
+                        }}
+                      />
                     </Box>
                   )}
 
