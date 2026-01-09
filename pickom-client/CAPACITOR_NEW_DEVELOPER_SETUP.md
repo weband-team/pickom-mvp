@@ -85,9 +85,12 @@ npm install
 
 ```bash
 # API Server URLs
-# Browser will always use localhost:4242
+# NEXT_PUBLIC_API_URL - Primary API URL (set to production URL for production builds)
+# NEXT_PUBLIC_SERVER - Fallback API URL for development
+# Browser will use NEXT_PUBLIC_API_URL or NEXT_PUBLIC_SERVER
 # Mobile: 10.0.2.2 for emulator, or your computer's IP for real device
 
+NEXT_PUBLIC_API_URL=
 NEXT_PUBLIC_SERVER=http://localhost:4242
 NEXT_PUBLIC_SERVER_MOBILE=http://10.0.2.2:4242
 

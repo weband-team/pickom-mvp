@@ -12,8 +12,8 @@ function getApiUrl(): string {
     return process.env.NEXT_PUBLIC_SERVER_MOBILE || 'http://10.0.2.2:4242';
   }
 
-  // Browser environment
-  return 'http://localhost:4242';
+  // Browser environment - use NEXT_PUBLIC_API_URL or NEXT_PUBLIC_SERVER
+  return process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_SERVER || 'http://localhost:4242';
 }
 
 // Export API_URL so other files can use it
