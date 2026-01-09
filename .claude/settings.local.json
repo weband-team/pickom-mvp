@@ -6,7 +6,8 @@
       "Bash(rg:*)",
       "Bash(npm run typeorm migration:run:*)",
       "Bash(find:*)",
-      "Bash(xargs grep:*)"
+      "Bash(xargs grep:*)",
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": []

@@ -9,6 +9,8 @@ interface PickerFiltersProps {
     maxPrice?: number;
     maxDuration?: number;
     minTrustLevel?: number;
+    sortBy: 'price' | 'duration' | 'trust' | 'rating' | 'distance';
+    sortOrder: 'asc' | 'desc';
   }) => void;
 }
 
@@ -16,20 +18,29 @@ export const PickerFilters = memo(function PickerFilters({ onFiltersChange }: Pi
   const [maxPrice, setMaxPrice] = useState<number>(30);
   const [maxDuration, setMaxDuration] = useState<number>(60);
   const [minTrustLevel, setMinTrustLevel] = useState<number>(0);
+  const [sortBy, setSortBy] = useState<'price' | 'duration' | 'trust' | 'rating' | 'distance'>('price');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
   const handleFilterChange = useCallback(() => {
     onFiltersChange({
       maxPrice: maxPrice < 30 ? maxPrice : undefined,
       maxDuration: maxDuration < 60 ? maxDuration : undefined,
       minTrustLevel: minTrustLevel > 0 ? minTrustLevel : undefined,
+      sortBy,
+      sortOrder,
     });
-  }, [maxPrice, maxDuration, minTrustLevel, onFiltersChange]);
+  }, [maxPrice, maxDuration, minTrustLevel, sortBy, sortOrder, onFiltersChange]);
 
   const resetFilters = useCallback(() => {
     setMaxPrice(30);
     setMaxDuration(60);
     setMinTrustLevel(0);
-    onFiltersChange({});
+    setSortBy('price');
+    setSortOrder('asc');
+    onFiltersChange({
+      sortBy: 'price',
+      sortOrder: 'asc',
+    });
   }, [onFiltersChange]);
 
   const hasActiveFilters = maxPrice < 30 || maxDuration < 60 || minTrustLevel > 0;

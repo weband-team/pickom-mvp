@@ -79,7 +79,7 @@ interface DeliveryRequest {
   size: 'small' | 'medium' | 'large';
   weight?: number;
   notes?: string;
-  deliveryType?: 'within-city' | 'inter-city';
+  deliveryType?: 'within-city' | 'inter-city' | 'international';
   packageType?: string;
   packageDescription?: string;
   packageImageUrl?: string;
