@@ -77,14 +77,17 @@ async function bootstrap() {
       const allowedOrigins = [
         process.env.CLIENT_URI,
         'http://localhost:3000',
-        'capacitor://localhost',
+        'https://pickom.qirelab.com', // Production hosting
+        'capacitor://localhost', // iOS Capacitor
+        'http://localhost', // Android Capacitor
       ].filter(Boolean);
 
       if (allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
         console.warn(`⚠️  CORS blocked origin: ${origin}`);
-        callback(null, true); // In dev, allow anyway and just warn
+        // Allow anyway in production for mobile apps (they may have different origins)
+        callback(null, true);
       }
     },
     credentials: true,
