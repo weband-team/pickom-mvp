@@ -21,7 +21,12 @@ interface LocationUpdate {
 
 @WebSocketGateway({
   cors: {
-    origin: process.env.CLIENT_URI || 'http://localhost:3000',
+    origin: [
+      process.env.CLIENT_URI || 'http://localhost:3000',
+      'https://pickom.qirelab.com',
+      'capacitor://localhost',
+      'http://localhost',
+    ],
     credentials: true,
   },
   namespace: '/tracking',
