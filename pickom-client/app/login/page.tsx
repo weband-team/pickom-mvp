@@ -78,12 +78,16 @@ export default function LoginPage() {
     setFieldErrors({});
 
     try {
+      console.log('🔐 Starting Firebase login...');
+      console.log('📧 Email:', formData.email);
+
       // Step 1: Authenticate with Firebase
       const userCredential = await signInWithEmailAndPassword(
         auth,
         formData.email,
         formData.password
       );
+      console.log('✅ Firebase login successful:', userCredential.user.uid);
 
       // Step 2: Get Firebase ID token
       const idToken = await userCredential.user.getIdToken();
@@ -98,6 +102,9 @@ export default function LoginPage() {
         router.push('/delivery-methods');
       }
     } catch (err) {
+      console.error('❌ Login error:', err);
+      console.error('❌ Error details:', JSON.stringify(err, null, 2));
+
       // Handle Firebase-specific errors
       let errorMessage = 'Invalid email or password. Please try again.';
 

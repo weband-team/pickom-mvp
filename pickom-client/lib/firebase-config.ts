@@ -1,5 +1,6 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { getAuth, indexedDBLocalPersistence, browserLocalPersistence, setPersistence } from 'firebase/auth';
+import { Capacitor } from '@capacitor/core';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -12,3 +13,11 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
+
+// Set persistence for Capacitor WebView compatibility
+if (typeof window !== 'undefined') {
+  const isNative = Capacitor.isNativePlatform();
+  // Use indexedDB for native apps, browserLocal for web
+  const persistence = isNative ? indexedDBLocalPersistence : browserLocalPersistence;
+  setPersistence(auth, persistence).catch(console.error);
+}
