@@ -8,12 +8,12 @@ function getApiUrl(): string {
 
   if (isNative) {
     // For mobile: use NEXT_PUBLIC_SERVER_MOBILE from .env
-    // Default: 10.0.2.2 for Android emulator
-    return process.env.NEXT_PUBLIC_SERVER_MOBILE || 'http://10.0.2.2:4242';
+    // Default: production server (fallback for builds without env vars)
+    return process.env.NEXT_PUBLIC_SERVER_MOBILE || 'https://pickom.qirelab.com';
   }
 
   // Browser environment - use NEXT_PUBLIC_API_URL or NEXT_PUBLIC_SERVER
-  return process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_SERVER || 'http://localhost:4242';
+  return process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_SERVER || 'https://pickom.qirelab.com';
 }
 
 // Export API_URL so other files can use it

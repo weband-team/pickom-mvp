@@ -5,14 +5,10 @@ const config: CapacitorConfig = {
   appName: 'Pickom',
   webDir: 'out',
 
-  // Development server configuration
-  // Uncomment to use dev server, comment out to use static build from 'out/' directory
+  // Server configuration - loads from production hosting
   server: {
-    // Point to your local dev server
-    // For Android Studio emulator: use 10.0.2.2
-    // For real device: use your computer's IP (e.g., 192.168.100.28)
-    url: 'http://10.0.2.2:3000',
-    cleartext: true,
+    url: 'https://pickom.qirelab.com',
+    // cleartext not needed for HTTPS
   },
 
   // Android specific configuration

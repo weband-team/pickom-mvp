@@ -263,7 +263,7 @@ export default function DeliveryOffersPage({ params }: { params: Promise<{ id: s
       }
 
       if (confirmDialog.type === 'accept') {
-        const API_URL = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_SERVER || 'http://localhost:4242';
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_SERVER || 'https://pickom.qirelab.com';
         let paymentIntentId: string | undefined;
 
         // Process payment based on selected method
