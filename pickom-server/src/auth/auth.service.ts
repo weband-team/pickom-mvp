@@ -83,7 +83,9 @@ export class AuthService {
   }
 
   /**
-   * For REGISTER: Verify token and create user in DB
+   * For REGISTER: Verify token and create user in DB (idempotent).
+   * If user already exists in DB (e.g. Firebase user was created but DB insert
+   * failed on a previous attempt), returns the existing user instead of throwing.
    */
   public async verifyAndCreateUser(
     accessToken: string,
@@ -100,12 +102,16 @@ export class AuthService {
       decodedToken.firebase.sign_in_provider,
     );
 
-    // Check if user already exists
+    // If user already exists in DB, return them (handles partial registration recovery)
     const existingUser = await this.userService.findOne(decodedToken.uid);
     if (existingUser) {
-      throw new BadRequestException(
-        'User already exists. Please login instead.',
-      );
+      const updatedUser = await this.userService.update(existingUser.uid, {
+        prevLoginAt: new Date(),
+      });
+      return {
+        decodedToken,
+        userInfo: updatedUser,
+      };
     }
 
     // Create new user
@@ -123,7 +129,7 @@ export class AuthService {
     });
 
     return {
-      decodedToken: decodedToken,
+      decodedToken,
       userInfo,
     };
   }

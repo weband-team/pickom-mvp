@@ -7,7 +7,12 @@
       "Bash(npm run typeorm migration:run:*)",
       "Bash(find:*)",
       "Bash(xargs grep:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(curl:*)",
+      "Bash(dir:*)",
+      "Bash(powershell.exe -Command \"Get-ChildItem ''D:\\\\prog\\\\yarovit\\\\project'' -ErrorAction SilentlyContinue | Select-Object Name\")",
+      "Bash(findstr:*)",
+      "Bash(npx tsc:*)"
     ],
     "deny": [],
     "ask": []

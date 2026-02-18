@@ -1,7 +1,7 @@
 'use client';
 
-import { MapContainer, TileLayer, Marker, useMapEvents, Polyline } from 'react-leaflet';
-import { useState, useEffect } from 'react';
+import { MapContainer, TileLayer, Marker, useMapEvents, Polyline, useMap } from 'react-leaflet';
+import { useState, useEffect, useRef } from 'react';
 import { Box, Typography, Paper, ToggleButtonGroup, ToggleButton, Alert, Chip } from '@mui/material';
 import { LocationOn, Flag, DirectionsCar, Schedule } from '@mui/icons-material';
 import L from 'leaflet';
@@ -68,6 +68,8 @@ export default function DualLocationPicker({
   const [calculatingRoute, setCalculatingRoute] = useState(false);
   const [restrictionType, setRestrictionType] = useState<'city' | 'country' | null>(null);
   const [restrictionValue, setRestrictionValue] = useState<string | null>(null);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const hasRequestedGeo = useRef(false);
 
   // Set restriction type based on delivery type
   useEffect(() => {
@@ -109,6 +111,36 @@ export default function DualLocationPicker({
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  // Request user geolocation on mount if no initial locations provided
+  useEffect(() => {
+    if (hasRequestedGeo.current) return;
+    if (initialFromLocation || initialToLocation) return;
+    hasRequestedGeo.current = true;
+
+    if (typeof navigator !== 'undefined' && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        },
+        () => { /* geolocation denied or unavailable — keep default */ },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
+      );
+    }
+  }, [initialFromLocation, initialToLocation]);
+
+  // Helper component to fly map to user location after mount
+  function MapCenterUpdater({ center }: { center: { lat: number; lng: number } | null }) {
+    const map = useMap();
+    const hasCentered = useRef(false);
+    useEffect(() => {
+      if (center && !hasCentered.current) {
+        hasCentered.current = true;
+        map.setView([center.lat, center.lng], map.getZoom());
+      }
+    }, [center, map]);
+    return null;
+  }
 
   // Calculate route using OSRM API
   const calculateRoute = async (from: LocationData, to: LocationData) => {
@@ -281,8 +313,8 @@ export default function DualLocationPicker({
     );
   }
 
-  const centerLat = fromLocation?.lat || toLocation?.lat || 52.2297;
-  const centerLng = fromLocation?.lng || toLocation?.lng || 21.0122;
+  const centerLat = fromLocation?.lat || toLocation?.lat || userLocation?.lat || 52.2297;
+  const centerLng = fromLocation?.lng || toLocation?.lng || userLocation?.lng || 21.0122;
 
   return (
     <Box>
@@ -360,6 +392,7 @@ export default function DualLocationPicker({
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
+        <MapCenterUpdater center={!fromLocation && !toLocation ? userLocation : null} />
         <MapClickHandler />
 
         {fromLocation && (

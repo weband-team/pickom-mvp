@@ -22,7 +22,7 @@ import {
   validateCity,
   validatePasswordConfirmation,
 } from '../../utils/validation';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase-config';
 import { handleRegister as registerWithBackend } from '../api/auth';
 import { AxiosError } from 'axios';
@@ -232,40 +232,60 @@ export default function RegisterPage() {
     setError('');
 
     try {
-      // Step 1: Create user in Firebase
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        state.userData.email!,
-        state.password
-      );
-
-      // Step 2: Get Firebase ID token
-      const idToken = await userCredential.user.getIdToken();
-
-      // Step 3: Register with backend
+      let idToken: string;
       const role = state.selectedUserType === UserType.PICKER ? 'picker' : 'sender';
-      const response = await registerWithBackend(
+
+      try {
+        // Step 1: Create user in Firebase
+        const userCredential = await createUserWithEmailAndPassword(
+          auth,
+          state.userData.email!,
+          state.password
+        );
+        idToken = await userCredential.user.getIdToken();
+      } catch (firebaseErr) {
+        const fbError = firebaseErr as { code?: string };
+        if (fbError.code === 'auth/email-already-in-use') {
+          // Firebase user exists but DB record may be missing (partial registration).
+          // Try signing in and completing registration on the backend.
+          try {
+            const userCredential = await signInWithEmailAndPassword(
+              auth,
+              state.userData.email!,
+              state.password
+            );
+            idToken = await userCredential.user.getIdToken();
+          } catch {
+            // Password doesn't match the existing Firebase account
+            setError('This email is already registered. Please sign in instead.');
+            setIsLoading(false);
+            return;
+          }
+        } else {
+          throw firebaseErr;
+        }
+      }
+
+      // Step 2: Register with backend (idempotent — safe to call even if user exists)
+      await registerWithBackend(
         role,
         idToken,
         state.userData.phoneNumber,
         state.userData.fullName
       );
 
-      // Step 4: Redirect based on user role
+      // Step 3: Redirect based on user role
       if (role === 'picker') {
         router.push('/available-deliveries');
       } else {
         router.push('/delivery-methods');
       }
     } catch (err) {
-      // Handle Firebase-specific errors
       let errorMessage = 'Registration failed. Please try again.';
 
       const error = err as unknown as { code?: string };
       if (error && typeof error === 'object' && 'code' in error) {
-        if (error.code === 'auth/email-already-in-use') {
-          errorMessage = 'This email is already registered. Please sign in instead.';
-        } else if (error.code === 'auth/weak-password') {
+        if (error.code === 'auth/weak-password') {
           errorMessage = 'Password is too weak. Please use a stronger password.';
         } else if (error.code === 'auth/invalid-email') {
           errorMessage = 'Invalid email address.';
@@ -353,6 +373,7 @@ export default function RegisterPage() {
                 helperText={state.errors.email}
                 fullWidth
                 required
+                autoComplete="email"
               />
 
               <TextInput
@@ -405,6 +426,7 @@ export default function RegisterPage() {
                 helperText={state.errors.password || 'Minimum 8 characters with letters and numbers'}
                 fullWidth
                 required
+                autoComplete="new-password"
               />
 
               <TextInput
@@ -416,6 +438,7 @@ export default function RegisterPage() {
                 helperText={state.errors.confirmPassword}
                 fullWidth
                 required
+                autoComplete="new-password"
               />
 
               <Stack direction="row" spacing={2} sx={{ mt: 3 }}>
