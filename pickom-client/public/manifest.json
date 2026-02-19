@@ -1,0 +1,19 @@
+{
+  "name": "Pickom - People-Powered Delivery",
+  "short_name": "Pickom",
+  "description": "People-Powered Delivery",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFFFFF",
+  "theme_color": "#FF9500",
+  "orientation": "portrait",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

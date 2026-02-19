@@ -1,0 +1,38 @@
+621:69  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+74:76  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+110:22  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+110:40  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+119:21  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+119:41  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+128:22  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+128:40  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+137:22  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+137:41  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+94:50  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+125:37  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+413:59  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+101:40  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+487:22  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+63:40  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+308:74  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+44:56  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+33:44  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+79:48  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+80:46  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+101:40  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+487:22  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+31:50  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+113:44  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+114:42  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+46:52  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+115:9  Error: 'value' is never reassigned. Use 'const' instead.  prefer-const
+22:36  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+30:40  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+30:40  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+38:57  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+56:57  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+11:1  Error: Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free.  @typescript-eslint/ban-ts-comment
+77:50  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+149:13  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+149:29  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+164:61  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
