@@ -1,0 +1,302 @@
+name: Deploy Pickom MVP to VPS
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      # ====================
+      # CLIENT BUILD
+      # ====================
+      - name: Install client dependencies
+        working-directory: ./pickom-client
+        run: npm ci
+
+      - name: Security audit - Client
+        working-directory: ./pickom-client
+        run: npm audit --audit-level=critical
+        continue-on-error: false
+
+      - name: Create client .env file
+        working-directory: ./pickom-client
+        run: |
+          echo "Creating client .env file from secrets..."
+          cat > .env.local << 'EOF'
+          ${{ secrets.ENV_FILE_CLIENT }}
+          EOF
+          echo ".env.local created successfully!"
+          echo "File size (bytes and lines):"
+          wc .env.local
+          if [ ! -s .env.local ]; then
+            echo "ERROR: .env.local is empty! Check ENV_FILE_CLIENT secret."
+            exit 1
+          fi
+
+      - name: Build Next.js client
+        working-directory: ./pickom-client
+        run: |
+          set -a
+          source .env.local
+          set +a
+          npm run build
+
+      # ====================
+      # SERVER BUILD
+      # ====================
+      - name: Install server dependencies
+        working-directory: ./pickom-server
+        run: npm ci
+
+      - name: Security audit - Server
+        working-directory: ./pickom-server
+        run: npm audit --audit-level=critical
+        continue-on-error: false
+
+      - name: Create server .env file
+        working-directory: ./pickom-server
+        run: |
+          echo "Creating server .env file from secrets..."
+          cat > .env << 'EOF'
+          ${{ secrets.ENV_FILE_SERVER }}
+          EOF
+          echo ".env created successfully!"
+          echo "File size (bytes and lines):"
+          wc .env
+          echo "Checking critical variables:"
+          grep -c "DATABASE_URL" .env || echo "WARNING: DATABASE_URL not found!"
+          grep -c "FIREBASE_PROJECT_ID" .env || echo "WARNING: FIREBASE_PROJECT_ID not found!"
+          if [ ! -s .env ]; then
+            echo "ERROR: .env is empty! Check ENV_FILE_SERVER secret."
+            exit 1
+          fi
+
+      - name: Build NestJS server
+        working-directory: ./pickom-server
+        run: |
+          set -a
+          source .env
+          set +a
+          npm run build
+
+      # ====================
+      # CREATE DEPLOYMENT ARCHIVES
+      # ====================
+      - name: Prepare deployment archives
+        run: |
+          echo "Creating deployment directory..."
+          mkdir -p deploy
+
+          echo "=== CLIENT ARCHIVE ==="
+          echo "Verifying client .env.local exists..."
+          ls -la pickom-client/.env.local
+
+          echo "Creating client archive..."
+          cd pickom-client
+          tar -czf ../deploy/pickom-client.tar.gz \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='node_modules' \
+            --exclude='android' \
+            --exclude='storybook-static' \
+            .
+          cd ..
+
+          echo "Verifying client .env.local in archive:"
+          tar -tzf deploy/pickom-client.tar.gz | grep "\.env\.local" || echo "WARNING: .env.local not in archive!"
+
+          echo "=== SERVER ARCHIVE ==="
+          echo "Verifying server .env exists..."
+          ls -la pickom-server/.env
+
+          echo "Creating server archive..."
+          cd pickom-server
+          tar -czf ../deploy/pickom-server.tar.gz \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='node_modules' \
+            .
+          cd ..
+
+          echo "Verifying server .env in archive:"
+          tar -tzf deploy/pickom-server.tar.gz | grep "^\.env$" || echo "WARNING: .env not in archive!"
+
+          echo "=== ARCHIVES CREATED ==="
+          ls -lh deploy/
+
+      # ====================
+      # COPY TO VPS
+      # ====================
+      - name: Copy archives to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_KEY }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          source: "deploy/*.tar.gz"
+          target: "/tmp/"
+          strip_components: 1
+
+      # ====================
+      # DEPLOY ON VPS
+      # ====================
+      - name: Deploy on VPS
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_KEY }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          script_stop: true
+          script: |
+            set -e
+
+            echo "========================================"
+            echo "  Pickom MVP Deployment Started"
+            echo "========================================"
+            date
+
+            PROJECT_DIR="/var/www/pickom-mvp"
+            CLIENT_DIR="$PROJECT_DIR/pickom-client"
+            SERVER_DIR="$PROJECT_DIR/pickom-server"
+
+            # Create base directories
+            echo "Creating project directories..."
+            mkdir -p $CLIENT_DIR
+            mkdir -p $SERVER_DIR
+            mkdir -p $PROJECT_DIR/logs
+
+            # ==================
+            # DEPLOY CLIENT
+            # ==================
+            echo ""
+            echo "--- Deploying Client ---"
+
+            # Clean old client files (keep node_modules if exists)
+            echo "Cleaning old client files..."
+            find $CLIENT_DIR -mindepth 1 -maxdepth 1 ! -name 'node_modules' -exec rm -rf {} +
+
+            # Extract client archive
+            echo "Extracting client archive..."
+            tar -xzf /tmp/pickom-client.tar.gz -C $CLIENT_DIR/
+
+            # Verify .env.local exists
+            echo "Verifying client .env.local..."
+            if [ ! -f $CLIENT_DIR/.env.local ]; then
+              echo "ERROR: Client .env.local not found after extraction!"
+              exit 1
+            fi
+            ls -la $CLIENT_DIR/.env.local
+
+            # Install client dependencies (production only)
+            echo "Installing client dependencies..."
+            cd $CLIENT_DIR
+            npm install --production
+
+            # Load client environment and restart PM2
+            echo "Managing client PM2 process..."
+            if pm2 describe pickom-client > /dev/null 2>&1; then
+              echo "Restarting pickom-client..."
+              pm2 delete pickom-client
+            fi
+
+            echo "Starting pickom-client on port 3909..."
+            env $(cat .env.local | grep -v '^#' | grep -v '^$' | xargs) pm2 start npm --name pickom-client -- start
+
+            # ==================
+            # DEPLOY SERVER
+            # ==================
+            echo ""
+            echo "--- Deploying Server ---"
+
+            # Clean old server files (keep node_modules and uploads if exist)
+            echo "Cleaning old server files..."
+            find $SERVER_DIR -mindepth 1 -maxdepth 1 ! -name 'node_modules' ! -name 'uploads' -exec rm -rf {} +
+
+            # Extract server archive
+            echo "Extracting server archive..."
+            tar -xzf /tmp/pickom-server.tar.gz -C $SERVER_DIR/
+
+            # Verify .env exists
+            echo "Verifying server .env..."
+            if [ ! -f $SERVER_DIR/.env ]; then
+              echo "ERROR: Server .env not found after extraction!"
+              exit 1
+            fi
+            ls -la $SERVER_DIR/.env
+            echo "First 3 lines of .env (sanitized):"
+            head -n 3 $SERVER_DIR/.env
+
+            # Install server dependencies (production only)
+            echo "Installing server dependencies..."
+            cd $SERVER_DIR
+            npm install --production
+
+            # Run database migrations (if any)
+            echo "Running database migrations..."
+            set -a
+            source .env
+            set +a
+            npm run migration:run || echo "No migrations to run or migration failed (continuing...)"
+
+            # Load server environment and restart PM2
+            echo "Managing server PM2 process..."
+            if pm2 describe pickom-server > /dev/null 2>&1; then
+              echo "Restarting pickom-server..."
+              pm2 delete pickom-server
+            fi
+
+            echo "Starting pickom-server on port 3910..."
+            pm2 start dist/main.js --name pickom-server --update-env
+
+            # ==================
+            # FINALIZE
+            # ==================
+            echo ""
+            echo "--- Finalizing Deployment ---"
+
+            # Configure PM2 startup
+            echo "Configuring PM2 startup..."
+            pm2 startup || true
+
+            # Save PM2 process list
+            echo "Saving PM2 configuration..."
+            pm2 save
+
+            # Cleanup
+            echo "Cleaning up temporary files..."
+            rm -f /tmp/pickom-client.tar.gz
+            rm -f /tmp/pickom-server.tar.gz
+
+            # Show final status
+            echo ""
+            echo "========================================"
+            echo "  PM2 Process Status"
+            echo "========================================"
+            pm2 list
+
+            echo ""
+            echo "========================================"
+            echo "  Deployment Completed Successfully!"
+            echo "========================================"
+            date
+
+            echo ""
+            echo "Client running at: http://localhost:3909"
+            echo "Server running at: http://localhost:3910"
+            echo "Public URL: https://pickom.qirelab.com"

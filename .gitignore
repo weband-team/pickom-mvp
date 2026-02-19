@@ -12,6 +12,9 @@ nul
 *.env.local
 *.env
 .env
+.env.prod
+*.env.prod
+ecosystem.config.cjs
 
 # Logs
 *.log
