@@ -64,7 +64,7 @@ export class AuthController {
     @Headers('authorization') authorization?: string,
   ) {
     try {
-      console.log('🔥 Login request received');
+      this.logger.log(`Login request received from origin: ${req.headers.origin}`);
       const accessToken = authorization?.replace('Bearer ', '');
       if (!accessToken) {
         throw new BadRequestException('Authorization token is missing');
@@ -72,21 +72,30 @@ export class AuthController {
 
       const { userInfo } =
         await this.authService.verifyAndLoginUser(accessToken);
-      const { sessionCookie, expiresIn } =
-        await this.authService.createSessionCookie(accessToken);
+      this.logger.log(`Login: user verified successfully (uid: ${userInfo.uid})`);
 
-      res.cookie('session', sessionCookie, {
-        maxAge: expiresIn,
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-      });
+      // Session cookie is best-effort — client can fall back to Bearer token auth
+      try {
+        const { sessionCookie, expiresIn } =
+          await this.authService.createSessionCookie(accessToken);
+
+        res.cookie('session', sessionCookie, {
+          maxAge: expiresIn,
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        });
+      } catch (cookieError) {
+        this.logger.warn(
+          `Login: session cookie creation failed, user will use Bearer token auth: ${cookieError.message}`,
+        );
+      }
 
       return {
         ...userInfo,
       };
     } catch (error) {
-      this.logger.error(error);
+      this.logger.error(`Login failed: ${error.message}`);
       throw new BadRequestException(
         error.message || "You're not authorized to access this resource",
       );
@@ -121,7 +130,7 @@ export class AuthController {
     @Body() body?: LoginBodyDto,
   ) {
     try {
-      console.log('🔥 Register request received');
+      this.logger.log(`Register request received from origin: ${req.headers.origin}`);
       const accessToken = authorization?.replace('Bearer ', '');
       if (!accessToken) {
         throw new BadRequestException('Authorization token is missing');
@@ -131,27 +140,37 @@ export class AuthController {
         throw new BadRequestException('User role is required');
       }
 
+      // Step 1: Create user (critical)
       const { userInfo } = await this.authService.verifyAndCreateUser(
         accessToken,
         body.role,
         body.name,
         body.phone,
       );
-      const { sessionCookie, expiresIn } =
-        await this.authService.createSessionCookie(accessToken);
+      this.logger.log(`Register: user created successfully (uid: ${userInfo.uid})`);
 
-      res.cookie('session', sessionCookie, {
-        maxAge: expiresIn,
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-      });
+      // Step 2: Session cookie is best-effort — client can fall back to Bearer token auth
+      try {
+        const { sessionCookie, expiresIn } =
+          await this.authService.createSessionCookie(accessToken);
+
+        res.cookie('session', sessionCookie, {
+          maxAge: expiresIn,
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        });
+      } catch (cookieError) {
+        this.logger.warn(
+          `Register: session cookie creation failed, user will use Bearer token auth: ${cookieError.message}`,
+        );
+      }
 
       return {
         ...userInfo,
       };
     } catch (error) {
-      this.logger.error(error);
+      this.logger.error(`Register failed: ${error.message}`);
       throw new BadRequestException(error.message || 'Registration failed');
     }
   }

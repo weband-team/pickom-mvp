@@ -281,19 +281,35 @@ export default function RegisterPage() {
         router.push('/delivery-methods');
       }
     } catch (err) {
+      console.error('Registration error:', err);
+
       let errorMessage = 'Registration failed. Please try again.';
 
-      const error = err as unknown as { code?: string };
-      if (error && typeof error === 'object' && 'code' in error) {
-        if (error.code === 'auth/weak-password') {
-          errorMessage = 'Password is too weak. Please use a stronger password.';
-        } else if (error.code === 'auth/invalid-email') {
-          errorMessage = 'Invalid email address.';
+      const firebaseError = err as { code?: string; message?: string };
+      if (firebaseError?.code?.startsWith('auth/')) {
+        // Firebase Auth errors
+        switch (firebaseError.code) {
+          case 'auth/weak-password':
+            errorMessage = 'Password is too weak. Please use a stronger password.';
+            break;
+          case 'auth/invalid-email':
+            errorMessage = 'Invalid email address.';
+            break;
+          case 'auth/network-request-failed':
+            errorMessage = 'Network error. Please check your internet connection.';
+            break;
+          default:
+            errorMessage = `Authentication error: ${firebaseError.message || firebaseError.code}`;
         }
       } else {
         const axiosError = err as AxiosError<{ message?: string }>;
-        if (axiosError.response?.data?.message) {
-          errorMessage = axiosError.response.data.message;
+        if (axiosError.response) {
+          // Server responded with an error
+          const serverMsg = axiosError.response.data?.message;
+          errorMessage = serverMsg || `Server error (${axiosError.response.status})`;
+        } else if (axiosError.request) {
+          // Request was sent but no response received
+          errorMessage = 'No response from server. Please check your connection and try again.';
         }
       }
 
