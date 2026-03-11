@@ -9,11 +9,11 @@ function getApiUrl(): string {
   if (isNative) {
     // For mobile: use NEXT_PUBLIC_SERVER_MOBILE from .env
     // Default: production server (fallback for builds without env vars)
-    return process.env.NEXT_PUBLIC_SERVER_MOBILE || 'https://pickom.qirelab.com';
+    return process.env.NEXT_PUBLIC_SERVER_MOBILE || 'https://pickom.qirelab.com/api';
   }
 
   // Browser environment - use NEXT_PUBLIC_API_URL or NEXT_PUBLIC_SERVER
-  return process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_SERVER || 'https://pickom.qirelab.com';
+  return process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_SERVER || 'https://pickom.qirelab.com/api';
 }
 
 // Export API_URL so other files can use it
@@ -85,7 +85,7 @@ basicFetch.interceptors.response.use(
  */
 export async function testServerConnection(): Promise<boolean> {
   try {
-    await axios.get(`${API_URL}/api`, { timeout: 5000 });
+    await axios.get(`${API_URL}`, { timeout: 5000 });
     return true;
   } catch {
     return false;

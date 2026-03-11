@@ -222,7 +222,7 @@ export default function DeliveryOffersPage({ params }: { params: Promise<{ id: s
 
       if (confirmDialog.type === 'accept') {
         // Pay with balance first
-        const API_URL = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_SERVER || 'https://pickom.qirelab.com';
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_SERVER || 'https://pickom.qirelab.com/api';
         try {
           await fetch(`${API_URL}/payment/pay-with-balance`, {
             method: 'POST',

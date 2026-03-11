@@ -51,18 +51,18 @@ interface UseWebSocketTrackingOptions {
 function getSocketUrl(): string {
   // Check if running in browser (not SSR)
   if (typeof window === 'undefined') {
-    return process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_SERVER || 'https://pickom.qirelab.com';
+    return process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_SERVER || 'https://pickom.qirelab.com/api';
   }
 
   const isNative = Capacitor.isNativePlatform();
 
   if (isNative) {
     // For mobile: use NEXT_PUBLIC_SERVER_MOBILE from .env
-    return process.env.NEXT_PUBLIC_SERVER_MOBILE || 'https://pickom.qirelab.com';
+    return process.env.NEXT_PUBLIC_SERVER_MOBILE || 'https://pickom.qirelab.com/api';
   }
 
   // Browser environment
-  return process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_SERVER || 'https://pickom.qirelab.com';
+  return process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_SERVER || 'https://pickom.qirelab.com/api';
 }
 
 const MOVING_THRESHOLD = 5; // meters (reduced for testing)
